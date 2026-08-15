@@ -987,6 +987,145 @@
             }
         }
 
+
+        /* =========================================================
+           PRINT SCHEDULE
+        ========================================================= */
+        @media print {
+            @page {
+                size: A4 landscape;
+                margin: 10mm;
+            }
+
+            body {
+                background: #fff !important;
+                color: #222 !important;
+            }
+
+            #auth-screen,
+            header,
+            aside,
+            .toolbar,
+            .notes-toolbar,
+            .page-title p,
+            .nav-btn,
+            #toast-container,
+            .modal,
+            .small-btn,
+            button {
+                display: none !important;
+            }
+
+            #app,
+            #page-schedule,
+            main,
+            .layout {
+                display: block !important;
+                visibility: visible !important;
+                width: 100% !important;
+                max-width: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                box-shadow: none !important;
+                background: #fff !important;
+            }
+
+            #page-schedule {
+                opacity: 1 !important;
+                transform: none !important;
+                filter: none !important;
+            }
+
+            #page-schedule .page-title {
+                display: block !important;
+                animation: none !important;
+                margin-bottom: 8mm !important;
+            }
+
+            #page-schedule .page-title h2 {
+                display: block !important;
+                font-size: 20pt !important;
+                text-align: center !important;
+                color: #222 !important;
+            }
+
+            .schedule-wrapper {
+                width: 100% !important;
+                overflow: visible !important;
+                border: 1px solid #aaa !important;
+                box-shadow: none !important;
+            }
+
+            .schedule-grid {
+                width: 100% !important;
+                min-width: 0 !important;
+                display: grid !important;
+            }
+
+            .grid-header,
+            .period-cell {
+                color: #222 !important;
+                border-color: #aaa !important;
+                break-inside: avoid !important;
+            }
+
+            .subject-card {
+                box-shadow: none !important;
+                transform: none !important;
+                border: 1px solid #aaa !important;
+                color: #222 !important;
+                break-inside: avoid !important;
+            }
+
+            .subject-card strong,
+            .subject-card small,
+            .period-label,
+            .period-label span {
+                color: #222 !important;
+            }
+
+            .empty-slot {
+                display: none !important;
+            }
+        }
+
+
+        #print-semester-title {
+            display: none;
+        }
+
+        .period-row {
+            display: grid;
+            grid-template-columns: 90px minmax(130px, 1fr) minmax(130px, 1fr) auto;
+            gap: 10px;
+            align-items: center;
+        }
+
+        @media (max-width: 700px) {
+            .period-row {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .period-row strong {
+                grid-column: 1 / -1;
+            }
+
+            .period-row .delete-period-btn {
+                grid-column: 1 / -1;
+                width: 100%;
+            }
+        }
+
+        @media print {
+            #print-semester-title {
+                display: block !important;
+                text-align: center !important;
+                font-size: 11pt !important;
+                color: #555 !important;
+                margin-top: 2mm !important;
+            }
+        }
+
     </style>
 </head>
 
@@ -1123,6 +1262,7 @@
                 <div class="page-title">
                     <h2>📅 Thời khóa biểu</h2>
                     <p>Lên kế hoạch cho một tuần thật xinh ♡</p>
+                    <div id="print-semester-title"></div>
                 </div>
 
                 <div class="toolbar">
@@ -1138,6 +1278,14 @@
                         id="add-schedule-btn"
                     >
                         + Thêm môn
+                    </button>
+
+                    <button
+                        class="small-btn"
+                        id="print-schedule-btn"
+                        type="button"
+                    >
+                        🖨️ In lịch học
                     </button>
 
                 </div>
@@ -1257,7 +1405,7 @@
 
                 <div class="page-title">
                     <h2>⚙️ Cài đặt</h2>
-                    <p>Tùy chỉnh thời gian của 12 tiết học.</p>
+                    <p>Thêm, xóa và tùy chỉnh số tiết học theo nhu cầu của bạn.</p>
                 </div>
 
                 <div class="settings-section">
@@ -1833,60 +1981,9 @@ async function loadAllData() {
 ========================================================= */
 
 async function ensurePeriods() {
-
-    if (periods.length >= 12) {
-        return;
-    }
-
-    const existing =
-        new Set(
-            periods.map(
-                p => p.period_number
-            )
-        );
-
-    const rows = [];
-
-    for (
-        let i = 1;
-        i <= 12;
-        i++
-    ) {
-
-        if (!existing.has(i)) {
-
-            rows.push({
-                user_id: currentUser.id,
-                period_number: i,
-                start_time: defaultStartTime(i),
-                end_time: defaultEndTime(i)
-            });
-        }
-    }
-
-    if (!rows.length) {
-        return;
-    }
-
-    const { data, error } =
-        await db
-            .from("periods")
-            .insert(rows)
-            .select();
-
-    if (error) {
-
-        console.error(error);
-        return;
-    }
-
-    periods =
-        [...periods, ...(data || [])]
-            .sort(
-                (a,b) =>
-                    a.period_number -
-                    b.period_number
-            );
+    // Không tự động tạo 12 tiết nữa.
+    // Người dùng tự quản lý danh sách tiết trong phần Cài đặt.
+    return;
 }
 
 
@@ -2124,6 +2221,21 @@ function renderSchedule() {
 
     renderSemesterSelect();
 
+    const printTitle =
+        document.getElementById("print-semester-title");
+
+    if (printTitle) {
+        const semester =
+            semesters.find(
+                s => s.id === currentSemesterId
+            );
+
+        printTitle.textContent =
+            semester
+                ? semester.name
+                : "";
+    }
+
     const container =
         document.getElementById(
             "schedule-container"
@@ -2165,18 +2277,17 @@ function renderSchedule() {
         `;
     });
 
-    for (
-        let period = 1;
-        period <= 12;
-        period++
-    ) {
+    const visiblePeriods =
+        [...periods].sort(
+            (a, b) =>
+                Number(a.period_number) -
+                Number(b.period_number)
+        );
 
-        const periodInfo =
-            periods.find(
-                p =>
-                    p.period_number ===
-                    period
-            );
+    visiblePeriods.forEach(periodInfo => {
+
+        const period =
+            Number(periodInfo.period_number);
 
         html += `
             <div class="period-cell period-label">
@@ -2275,6 +2386,15 @@ function renderSchedule() {
                 }
             }
         }
+    });
+
+    if (!visiblePeriods.length) {
+        html += `
+            <div class="period-cell empty-period-message"
+                 style="grid-column: 1 / -1; padding: 24px; text-align:center;">
+                Chưa có tiết học. Vào <strong>Cài đặt</strong> để thêm tiết.
+            </div>
+        `;
     }
 
     html += `
@@ -3694,50 +3814,167 @@ function openFolderModal() {
 function renderPeriodSettings() {
 
     const container =
-        document.getElementById(
-            "period-settings"
+        document.getElementById("period-settings");
+
+    const sortedPeriods =
+        [...periods].sort(
+            (a, b) =>
+                Number(a.period_number) -
+                Number(b.period_number)
         );
 
-    let html = "";
+    if (!sortedPeriods.length) {
+        container.innerHTML = `
+            <div class="empty" style="margin-bottom:16px;">
+                <div class="emoji">📚</div>
+                <h3>Chưa có tiết học</h3>
+                <p>Nhấn “+ Thêm tiết” để tạo tiết đầu tiên.</p>
+            </div>
+        `;
+        return;
+    }
 
-    for (
-        let i = 1;
-        i <= 12;
-        i++
-    ) {
-
-        const period =
-            periods.find(
-                p =>
-                    p.period_number === i
-            );
-
-        html += `
-            <div class="period-row">
+    container.innerHTML =
+        sortedPeriods.map(period => `
+            <div class="period-row"
+                 data-period-id="${escapeHTML(period.id)}">
 
                 <strong>
-                    Tiết ${i}
+                    Tiết ${Number(period.period_number)}
                 </strong>
 
                 <input
                     type="time"
-                    id="period-start-${i}"
-                    value="${timeToDisplay(period?.start_time)}"
+                    id="period-start-${period.id}"
+                    value="${timeToDisplay(period.start_time)}"
                 >
 
                 <input
                     type="time"
-                    id="period-end-${i}"
-                    value="${timeToDisplay(period?.end_time)}"
+                    id="period-end-${period.id}"
+                    value="${timeToDisplay(period.end_time)}"
                 >
 
-                <span></span>
+                <button
+                    type="button"
+                    class="small-btn danger-btn delete-period-btn"
+                    data-period-id="${escapeHTML(period.id)}"
+                    data-period-number="${Number(period.period_number)}"
+                >
+                    🗑️ Xóa
+                </button>
 
             </div>
-        `;
+        `).join("");
+
+    container
+        .querySelectorAll(".delete-period-btn")
+        .forEach(button => {
+            button.addEventListener("click", () => {
+                deletePeriod(
+                    button.dataset.periodId,
+                    Number(button.dataset.periodNumber)
+                );
+            });
+        });
+}
+
+
+async function addPeriod() {
+
+    try {
+        const maxPeriod =
+            periods.reduce(
+                (max, period) =>
+                    Math.max(
+                        max,
+                        Number(period.period_number) || 0
+                    ),
+                0
+            );
+
+        const nextPeriod =
+            maxPeriod + 1;
+
+        const { data, error } =
+            await db
+                .from("periods")
+                .insert({
+                    user_id: currentUser.id,
+                    period_number: nextPeriod,
+                    start_time: defaultStartTime(nextPeriod),
+                    end_time: defaultEndTime(nextPeriod)
+                })
+                .select()
+                .single();
+
+        if (error) throw error;
+
+        periods.push(data);
+
+        renderPeriodSettings();
+        renderSchedule();
+
+        showToast(`Đã thêm Tiết ${nextPeriod} ♡`);
+
+    } catch (error) {
+        console.error(error);
+        showToast(error.message, true);
+    }
+}
+
+
+async function deletePeriod(periodId, periodNumber) {
+
+    if (!confirm(
+        `Xóa Tiết ${periodNumber}?\n\nCác môn học đang nằm ở tiết này cũng sẽ bị xóa khỏi thời khóa biểu.`
+    )) {
+        return;
     }
 
-    container.innerHTML = html;
+    try {
+
+        const { error: scheduleError } =
+            await db
+                .from("schedule_entries")
+                .delete()
+                .eq("user_id", currentUser.id)
+                .eq("period_number", periodNumber);
+
+        if (scheduleError)
+            throw scheduleError;
+
+        const { error: periodError } =
+            await db
+                .from("periods")
+                .delete()
+                .eq("id", periodId)
+                .eq("user_id", currentUser.id);
+
+        if (periodError)
+            throw periodError;
+
+        periods =
+            periods.filter(
+                p => p.id !== periodId
+            );
+
+        scheduleEntries =
+            scheduleEntries.filter(
+                e =>
+                    Number(e.period_number) !==
+                    Number(periodNumber)
+            );
+
+        renderPeriodSettings();
+        renderSchedule();
+
+        showToast(`Đã xóa Tiết ${periodNumber}.`);
+
+    } catch (error) {
+        console.error(error);
+        showToast(error.message, true);
+    }
 }
 
 
@@ -3749,40 +3986,41 @@ document
 
             try {
 
-                for (
-                    let i = 1;
-                    i <= 12;
-                    i++
-                ) {
+                const sortedPeriods =
+                    [...periods].sort(
+                        (a, b) =>
+                            Number(a.period_number) -
+                            Number(b.period_number)
+                    );
 
-                    const start =
-                        document.getElementById(
-                            `period-start-${i}`
-                        ).value;
+                for (const period of sortedPeriods) {
 
-                    const end =
+                    const startInput =
                         document.getElementById(
-                            `period-end-${i}`
-                        ).value;
+                            `period-start-${period.id}`
+                        );
+
+                    const endInput =
+                        document.getElementById(
+                            `period-end-${period.id}`
+                        );
 
                     const { error } =
                         await db
                             .from("periods")
-                            .upsert(
-                                {
-                                    user_id:
-                                        currentUser.id,
-                                    period_number:
-                                        i,
-                                    start_time:
-                                        start || null,
-                                    end_time:
-                                        end || null
-                                },
-                                {
-                                    onConflict:
-                                        "user_id,period_number"
-                                }
+                            .update({
+                                start_time:
+                                    startInput?.value || null,
+                                end_time:
+                                    endInput?.value || null
+                            })
+                            .eq(
+                                "id",
+                                period.id
+                            )
+                            .eq(
+                                "user_id",
+                                currentUser.id
                             );
 
                     if (error)
@@ -3795,7 +4033,7 @@ document
                 renderSchedule();
 
                 showToast(
-                    "Đã lưu thời gian 12 tiết ♡"
+                    "Đã lưu thời gian các tiết ♡"
                 );
 
             } catch (error) {
@@ -3807,6 +4045,66 @@ document
                     true
                 );
             }
+        }
+    );
+
+
+const addPeriodButton =
+    document.createElement("button");
+
+addPeriodButton.type = "button";
+addPeriodButton.className =
+    "small-btn pink";
+addPeriodButton.id =
+    "add-period-btn";
+addPeriodButton.textContent =
+    "+ Thêm tiết";
+
+const periodSettingsContainer =
+    document.getElementById("period-settings");
+
+periodSettingsContainer.parentElement.insertBefore(
+    addPeriodButton,
+    periodSettingsContainer
+);
+
+addPeriodButton.addEventListener(
+    "click",
+    addPeriod
+);
+
+
+/* =========================================================
+   PRINT SCHEDULE
+========================================================= */
+
+document
+    .getElementById("print-schedule-btn")
+    .addEventListener(
+        "click",
+        () => {
+
+            if (!currentSemesterId) {
+                showToast(
+                    "Hãy chọn học kỳ trước khi in.",
+                    true
+                );
+                return;
+            }
+
+            if (!periods.length) {
+                showToast(
+                    "Chưa có tiết học để in.",
+                    true
+                );
+                return;
+            }
+
+            // Give the browser a moment to finish rendering the
+            // current schedule before opening the print dialog.
+            requestAnimationFrame(() => {
+                window.print();
+            });
         }
     );
 
