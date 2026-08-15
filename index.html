@@ -2473,10 +2473,9 @@
 
                 <div class="page-title">
                     <h2>📅 Thời khóa biểu</h2>
-                    <p>Chúc vợ iuu có 1 ngày học tập vuii vẻ ♡</p>
+                    <p>Chúc vợ iuuu có 1 ngày học tập vuii vẻ ♡</p>
+                    <div id="print-semester-title"></div>
                 </div>
-
-
 
                 <div class="toolbar">
 
@@ -2489,13 +2488,12 @@
                     <button
                         class="small-btn pink"
                         id="add-schedule-btn"
-                        type="button"
                     >
                         + Thêm môn
                     </button>
 
                     <button
-                        class="small-btn print-schedule-btn"
+                        class="small-btn"
                         id="print-schedule-btn"
                         type="button"
                     >
@@ -2513,11 +2511,112 @@
                  NOTES PAGE
             ================================================= -->
 
-            <div 
-        <section class="page hidden" id="page-weather" data-page="weather">
+            <div id="page-notes" class="page hidden">
+
+                <div class="page-title">
+                    <h2>📝 Ghi chú</h2>
+                    <p>Note lại những gì quan trọng vợ nhé ♡</p>
+                </div>
+
+                <div class="notes-toolbar">
+
+                    <input
+                        id="note-search"
+                        type="search"
+                        placeholder="🔎 Tìm kiếm ghi chú..."
+                    >
+
+                    <select id="note-folder-filter">
+                        <option value="">Tất cả thư mục</option>
+                    </select>
+
+                    <button
+                        class="small-btn pink"
+                        id="new-note-btn"
+                    >
+                        + Ghi chú mới
+                    </button>
+
+                    <button
+                        class="small-btn"
+                        id="new-folder-btn"
+                    >
+                        + Thư mục
+                    </button>
+
+                </div>
+
+                <div id="notes-container"></div>
+
+            </div>
+
+
+            <!-- =================================================
+                 SUBJECTS PAGE
+            ================================================= -->
+
+            <div id="page-subjects" class="page hidden">
+
+                <div class="page-title">
+                    <h2>📚 Môn học</h2>
+                    <p>Thêm môn học ở đây nha vợ iuu.</p>
+                </div>
+
+                <div class="toolbar">
+                    <button
+                        class="small-btn pink"
+                        id="new-subject-btn"
+                    >
+                        + Thêm môn học
+                    </button>
+                </div>
+
+                <div
+                    class="cards"
+                    id="subjects-container"
+                ></div>
+
+            </div>
+
+
+            <!-- =================================================
+                 SEMESTERS PAGE
+            ================================================= -->
+
+            <div id="page-semesters" class="page hidden">
+
+                <div class="page-title">
+                    <h2>🌸 Học kỳ</h2>
+                    <p>Vợ nhớ thêm học kỳ đầu tiên nhaaa.</p>
+                </div>
+
+                <div class="toolbar">
+
+                    <button
+                        class="small-btn pink"
+                        id="new-semester-btn"
+                    >
+                        + Thêm học kỳ
+                    </button>
+
+                </div>
+
+                <div
+                    class="cards"
+                    id="semesters-container"
+                ></div>
+
+            </div>
+
+
+            <!-- =================================================
+                 SETTINGS PAGE
+            ================================================= -->
+
+            <section class="page hidden" id="page-weather" data-page="weather">
             <div class="page-title">
                 <h2>Thời tiết</h2>
-                <p>Tình hình thời tiết hiện tại và lời nhắc cho 2 giờ tới ♡</p>
+                <p>Tình hình thời tiết hiện tại và lời nhắc cho 2 giờ tới cho vợ đâyyy ♡</p>
             </div>
 
                 <section class="weather-card" id="weather-card">
@@ -2569,113 +2668,11 @@
                 </section>
         </section>
 
-id="page-notes" class="page hidden">
-
-                <div class="page-title">
-                    <h2>📝 Ghi chú</h2>
-                    <p>Note lại những điều quan trọng nèe vợ ♡</p>
-                </div>
-
-                <div class="notes-toolbar">
-
-                    <input
-                        id="note-search"
-                        type="search"
-                        placeholder="🔎 Tìm kiếm ghi chú..."
-                    >
-
-                    <select id="note-folder-filter">
-                        <option value="">Tất cả thư mục</option>
-                    </select>
-
-                    <button
-                        class="small-btn pink"
-                        id="new-note-btn"
-                    >
-                        + Ghi chú mới
-                    </button>
-
-                    <button
-                        class="small-btn"
-                        id="new-folder-btn"
-                    >
-                        + Thư mục
-                    </button>
-
-                </div>
-
-                <div id="notes-container"></div>
-
-            </div>
-
-
-            <!-- =================================================
-                 SUBJECTS PAGE
-            ================================================= -->
-
-            <div id="page-subjects" class="page hidden">
-
-                <div class="page-title">
-                    <h2>📚 Môn học</h2>
-                    <p>Thêm môn học của vợ ở đâyyy nha.</p>
-                </div>
-
-                <div class="toolbar">
-                    <button
-                        class="small-btn pink"
-                        id="new-subject-btn"
-                    >
-                        + Thêm môn học
-                    </button>
-                </div>
-
-                <div
-                    class="cards"
-                    id="subjects-container"
-                ></div>
-
-            </div>
-
-
-            <!-- =================================================
-                 SEMESTERS PAGE
-            ================================================= -->
-
-            <div id="page-semesters" class="page hidden">
-
-                <div class="page-title">
-                    <h2>🌸 Học kỳ</h2>
-                    <p>Nhớ thêm học kỳ đầu tiên nha vợ iuuu.</p>
-                </div>
-
-                <div class="toolbar">
-
-                    <button
-                        class="small-btn pink"
-                        id="new-semester-btn"
-                    >
-                        + Thêm học kỳ
-                    </button>
-
-                </div>
-
-                <div
-                    class="cards"
-                    id="semesters-container"
-                ></div>
-
-            </div>
-
-
-            <!-- =================================================
-                 SETTINGS PAGE
-            ================================================= -->
-
             <div id="page-settings" class="page hidden">
 
                 <div class="page-title">
                     <h2>⚙️ Cài đặt</h2>
-                    <p>Thêm, xóa và tùy chỉnh thời gian từng tiết học ở đây vợ nha.</p>
+                    <p>Thêm, xóa và tùy chỉnh số tiết học theo nhu cầu của vợ nha.</p>
                 </div>
 
                 <div class="settings-section">
@@ -2698,8 +2695,8 @@ id="page-notes" class="page hidden">
                             id="save-periods-btn"
                             type="button"
                         >
-                            💾 Lưu thời gian
-                        </button>
+                            Lưu thời gian
+                    </button>
                     </div>
 
                 </div>
@@ -3174,7 +3171,7 @@ const weatherState = {
     longitude: null,
     timezone: null,
     hourly: null,
-    locationName: "Vị trí của bạn"
+    locationName: "Vị trí của vợ"
 };
 
 function weatherIcon(type, small = false) {
@@ -3187,6 +3184,14 @@ function weatherIcon(type, small = false) {
                 <circle cx="24" cy="24" r="8" class="weather-fill"></circle>
                 <circle cx="24" cy="24" r="8"></circle>
                 <path d="M24 5V10M24 38V43M5 24H10M38 24H43M10.6 10.6L14.2 14.2M33.8 33.8L37.4 37.4M37.4 10.6L33.8 14.2M14.2 33.8L10.6 37.4"></path>
+            </svg>`;
+    }
+
+    if (type === "moon") {
+        return `
+            <svg ${common}>
+                <path class="weather-fill" d="M31 6.5C25.8 8.3 22 13.3 22 19.2C22 26.8 28.2 33 35.8 33C37.9 33 39.9 32.5 41.6 31.7C39.1 38 33 42.5 25.8 42.5C16.2 42.5 8.5 34.8 8.5 25.2C8.5 17.4 13.6 10.8 20.6 8.7C23.9 7.7 27.7 7.2 31 6.5Z"></path>
+                <path d="M31 6.5C25.8 8.3 22 13.3 22 19.2C22 26.8 28.2 33 35.8 33C37.9 33 39.9 32.5 41.6 31.7C39.1 38 33 42.5 25.8 42.5C16.2 42.5 8.5 34.8 8.5 25.2C8.5 17.4 13.6 10.8 20.6 8.7C23.9 7.7 27.7 7.2 31 6.5Z"></path>
             </svg>`;
     }
 
@@ -3325,14 +3330,14 @@ async function reverseGeocode(latitude, longitude) {
             );
 
         if (!response.ok) {
-            return "Vị trí của bạn";
+            return "Vị trí của vợ";
         }
 
         const data = await response.json();
         const result = data?.results?.[0];
 
         if (!result) {
-            return "Vị trí của bạn";
+            return "Vị trí của vợ";
         }
 
         return (
@@ -3340,12 +3345,12 @@ async function reverseGeocode(latitude, longitude) {
             result.city ||
             result.town ||
             result.municipality ||
-            "Vị trí của bạn"
+            "Vị trí của vợ"
         );
 
     } catch (error) {
 
-        return "Vị trí của bạn";
+        return "Vị trí của vợ";
     }
 }
 
@@ -3452,6 +3457,27 @@ async function requestWeatherLocation() {
     );
 }
 
+// Tự động cập nhật thời tiết định kỳ để dữ liệu không bị dừng
+// khi chuyển sang ngày mới. Timer chỉ gọi khi trang đang mở.
+let weatherRefreshTimer = null;
+
+function startWeatherAutoRefresh() {
+    if (weatherRefreshTimer) {
+        clearInterval(weatherRefreshTimer);
+    }
+
+    // Cập nhật mỗi 15 phút.
+    weatherRefreshTimer = setInterval(
+        () => {
+            if (weatherState.latitude !== null &&
+                weatherState.longitude !== null) {
+                loadWeather();
+            }
+        },
+        15 * 60 * 1000
+    );
+}
+
 async function loadWeather() {
 
     if (
@@ -3480,7 +3506,9 @@ async function loadWeather() {
                 "temperature_2m,apparent_temperature,weather_code,is_day,cloud_cover",
             hourly:
                 "temperature_2m,precipitation_probability,precipitation,weather_code,cloud_cover,is_day",
-            forecast_days: "1",
+            // Lấy dự báo nhiều ngày để khi sang 00:00
+            // dữ liệu thời tiết vẫn tiếp tục từ ngày hôm sau.
+            forecast_days: "7",
             timezone: "auto"
         });
 
@@ -3526,6 +3554,8 @@ async function loadWeather() {
         refresh?.classList.remove("loading");
     }
 }
+
+startWeatherAutoRefresh();
 
 function renderWeather(data) {
 
@@ -3779,6 +3809,23 @@ function renderWeatherAdvice(data, startIndex) {
 
     advice.classList.remove("hidden");
 
+    /*
+     * Khung giờ ban đêm: 22:00 -> 05:00.
+     * Giữ nguyên lời khuyên thời tiết hiện có, bao gồm cả
+     * cảnh báo mưa đã được code sẵn, rồi nối thêm lời nhắc đi đêm.
+     */
+    const currentHour = new Date().getHours();
+    const isNightTime =
+        currentHour >= 22 || currentHour < 5;
+
+    if (isNightTime) {
+        const nightReminder =
+            "Vợ đi đêm nhớ chú ý cẩn thận nhaaa. Anh yeuuu vợ";
+
+        text.textContent =
+            `${text.textContent} ${nightReminder}`;
+    }
+
     if (rainIndex >= 0) {
 
         const rainTime =
@@ -3790,7 +3837,7 @@ function renderWeatherAdvice(data, startIndex) {
             "Sắp có mưa";
 
         text.textContent =
-            `Khoảng ${rainTime} có khả năng mưa. Vợ nhớ mang ô và áo mưa trước khi ra ngoài đó nhé ♡`;
+            `Khoảng ${rainTime} có khả năng mưa. Vợ nhớ mang ô và áo mưa trước khi ra ngoài nhé ♡`;
 
         adviceIcon.innerHTML =
             weatherIcon("rain");
@@ -3809,7 +3856,7 @@ function renderWeatherAdvice(data, startIndex) {
             "Nắng khá gắt";
 
         text.textContent =
-            `Khoảng ${sunTime} trời có thể nắng mạnh. Vợ nhớ mang ô, áo nắng và uống đủ nước nhé ♡`;
+            `Khoảng ${sunTime} trời có thể nắng mạnh. Vợ nhớ mang ô, áo nắng và uống đủ nước đó nhé ♡`;
 
         adviceIcon.innerHTML =
             weatherIcon("sun");
@@ -4583,7 +4630,7 @@ async function(
             document.createElement("button");
 
         deleteButton.className =
-            "small-btn danger-btn";
+            "small-btn danger-btn schedule-delete-btn";
 
         deleteButton.textContent =
             "Xóa";
@@ -6355,6 +6402,22 @@ function openModal(
     saveText = "Lưu"
 ) {
 
+    /*
+     * Mỗi lần mở modal phải dọn nút Xóa được thêm động
+     * từ lần mở modal trước. Nếu không, mỗi lần mở lại
+     * một tiết học cũ sẽ tạo thêm một nút Xóa.
+     */
+    const modalFooter =
+        document.querySelector(
+            "#modal .modal-footer"
+        );
+
+    if (modalFooter) {
+        modalFooter
+            .querySelectorAll(".schedule-delete-btn")
+            .forEach(button => button.remove());
+    }
+
     document
         .getElementById("modal-title")
         .textContent = title;
@@ -6381,6 +6444,17 @@ function closeModal() {
     document
         .getElementById("modal")
         .classList.add("hidden");
+
+    const modalFooter =
+        document.querySelector(
+            "#modal .modal-footer"
+        );
+
+    if (modalFooter) {
+        modalFooter
+            .querySelectorAll(".schedule-delete-btn")
+            .forEach(button => button.remove());
+    }
 
     modalSaveHandler =
         null;
