@@ -1016,6 +1016,19 @@
         }
 
 
+
+        /* Weather standalone page */
+        #page-weather .weather-card {
+            margin-bottom: 0;
+            min-height: 260px;
+        }
+
+        @media (min-width: 701px) {
+            #page-weather .weather-card {
+                max-width: 920px;
+            }
+        }
+
         /* =========================================================
            MODERN SVG NAV ICONS
         ========================================================= */
@@ -1091,7 +1104,7 @@
                 padding: 5px 2px !important;
                 flex-direction: column;
                 justify-content: center;
-                font-size: 9px !important;
+                font-size: 8.5px !important;
             }
 
             .nav-icon {
@@ -2426,7 +2439,16 @@
                 <span class="nav-label">Học kỳ</span>
             </button>
 
-            <button class="nav-btn" data-page="settings" type="button">
+            <button class="nav-btn" data-page="weather" type="button">
+    <span class="nav-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none">
+            <path d="M7.5 18.5H17C19.8 18.5 21.5 16.7 21.5 14.3C21.5 12 19.7 10.2 17.5 10.2C16.8 7.1 14.3 5.3 11.3 5.3C8.2 5.3 5.8 7.4 5.6 10.5C3.4 10.7 2 12.2 2 14.3C2 16.7 4 18.5 7.5 18.5Z"></path>
+            <path d="M8 21L7 23M13 21L12 23M18 21L17 23"></path>
+        </svg>
+    </span>
+    <span class="nav-label">Thời tiết</span>
+</button>
+<button class="nav-btn" data-page="settings" type="button">
                 <span class="nav-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24" fill="none">
                         <path d="M5 6.5H19M5 12H19M5 17.5H19"></path>
@@ -2451,8 +2473,52 @@
 
                 <div class="page-title">
                     <h2>📅 Thời khóa biểu</h2>
-                    <p>Lên kế hoạch cho một tuần thật xinh ♡</p>
+                    <p>Chúc vợ iuu có 1 ngày học tập vuii vẻ ♡</p>
                 </div>
+
+
+
+                <div class="toolbar">
+
+                    <select id="semester-select">
+                        <option value="">
+                            Chọn học kỳ
+                        </option>
+                    </select>
+
+                    <button
+                        class="small-btn pink"
+                        id="add-schedule-btn"
+                        type="button"
+                    >
+                        + Thêm môn
+                    </button>
+
+                    <button
+                        class="small-btn print-schedule-btn"
+                        id="print-schedule-btn"
+                        type="button"
+                    >
+                        🖨️ In lịch học
+                    </button>
+
+                </div>
+
+                <div id="schedule-container"></div>
+
+            </div>
+
+
+            <!-- =================================================
+                 NOTES PAGE
+            ================================================= -->
+
+            <div 
+        <section class="page hidden" id="page-weather" data-page="weather">
+            <div class="page-title">
+                <h2>Thời tiết</h2>
+                <p>Tình hình thời tiết hiện tại và lời nhắc cho 2 giờ tới ♡</p>
+            </div>
 
                 <section class="weather-card" id="weather-card">
                     <div class="weather-main">
@@ -2501,47 +2567,13 @@
                         <span>Cho phép trình duyệt lấy vị trí để xem thời tiết gần bạn.</span>
                     </div>
                 </section>
+        </section>
 
-                <div class="toolbar">
-
-                    <select id="semester-select">
-                        <option value="">
-                            Chọn học kỳ
-                        </option>
-                    </select>
-
-                    <button
-                        class="small-btn pink"
-                        id="add-schedule-btn"
-                        type="button"
-                    >
-                        + Thêm môn
-                    </button>
-
-                    <button
-                        class="small-btn print-schedule-btn"
-                        id="print-schedule-btn"
-                        type="button"
-                    >
-                        🖨️ In lịch học
-                    </button>
-
-                </div>
-
-                <div id="schedule-container"></div>
-
-            </div>
-
-
-            <!-- =================================================
-                 NOTES PAGE
-            ================================================= -->
-
-            <div id="page-notes" class="page hidden">
+id="page-notes" class="page hidden">
 
                 <div class="page-title">
                     <h2>📝 Ghi chú</h2>
-                    <p>Lưu lại những điều quan trọng của bạn ♡</p>
+                    <p>Note lại những điều quan trọng nèe vợ ♡</p>
                 </div>
 
                 <div class="notes-toolbar">
@@ -2585,7 +2617,7 @@
 
                 <div class="page-title">
                     <h2>📚 Môn học</h2>
-                    <p>Quản lý các môn học của bạn.</p>
+                    <p>Thêm môn học của vợ ở đâyyy nha.</p>
                 </div>
 
                 <div class="toolbar">
@@ -2613,7 +2645,7 @@
 
                 <div class="page-title">
                     <h2>🌸 Học kỳ</h2>
-                    <p>Quản lý các học kỳ của bạn.</p>
+                    <p>Nhớ thêm học kỳ đầu tiên nha vợ iuuu.</p>
                 </div>
 
                 <div class="toolbar">
@@ -2643,7 +2675,7 @@
 
                 <div class="page-title">
                     <h2>⚙️ Cài đặt</h2>
-                    <p>Thêm, xóa và tùy chỉnh thời gian từng tiết học.</p>
+                    <p>Thêm, xóa và tùy chỉnh thời gian từng tiết học ở đây vợ nha.</p>
                 </div>
 
                 <div class="settings-section">
@@ -3758,7 +3790,7 @@ function renderWeatherAdvice(data, startIndex) {
             "Sắp có mưa";
 
         text.textContent =
-            `Khoảng ${rainTime} có khả năng mưa. Nhớ mang ô và áo mưa trước khi ra ngoài nhé ♡`;
+            `Khoảng ${rainTime} có khả năng mưa. Vợ nhớ mang ô và áo mưa trước khi ra ngoài đó nhé ♡`;
 
         adviceIcon.innerHTML =
             weatherIcon("rain");
@@ -3777,7 +3809,7 @@ function renderWeatherAdvice(data, startIndex) {
             "Nắng khá gắt";
 
         text.textContent =
-            `Khoảng ${sunTime} trời có thể nắng mạnh. Nhớ mang ô và áo nắng, uống đủ nước nhé ♡`;
+            `Khoảng ${sunTime} trời có thể nắng mạnh. Vợ nhớ mang ô, áo nắng và uống đủ nước nhé ♡`;
 
         adviceIcon.innerHTML =
             weatherIcon("sun");
@@ -3887,12 +3919,7 @@ async function enterApp(user) {
      * Thời tiết chỉ dùng vị trí trên thiết bị,
      * không lưu latitude/longitude vào Supabase.
      */
-    if (
-        navigator.geolocation &&
-        document.getElementById("weather-card")
-    ) {
-        requestWeatherLocation();
-    }
+    /* Weather is standalone; request location only when its page opens. */
 }
 
 
@@ -4135,13 +4162,6 @@ function renderCurrentPage() {
 
     if (currentPage === "schedule") {
         renderSchedule();
-
-        if (
-            weatherState.latitude !== null &&
-            document.getElementById("weather-card")
-        ) {
-            loadWeather();
-        }
     }
 
     if (currentPage === "notes") {
@@ -4159,6 +4179,15 @@ function renderCurrentPage() {
 
     if (currentPage === "settings") {
         renderPeriodSettings();
+    }
+
+
+    if (currentPage === "weather") {
+        if (weatherState.latitude === null) {
+            requestWeatherLocation();
+        } else {
+            loadWeather();
+        }
     }
 }
 
