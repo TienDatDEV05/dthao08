@@ -1154,6 +1154,320 @@
             body::after { display: none; }
         }
 
+
+        /* =========================================================
+           PERIOD MANAGEMENT + PRINT
+        ========================================================= */
+
+        .period-settings-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 14px;
+        }
+
+        .period-row {
+            display: grid;
+            grid-template-columns: 110px minmax(130px, 1fr) minmax(130px, 1fr) auto;
+            gap: 12px;
+            align-items: end;
+            padding: 14px;
+            margin-bottom: 10px;
+            border-radius: 18px;
+            background: rgba(255,255,255,.42);
+            border: 1px solid rgba(255,255,255,.75);
+            box-shadow: 0 8px 24px rgba(121,76,103,.07);
+        }
+
+        .period-number {
+            align-self: center;
+        }
+
+        .period-time {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .period-time span {
+            font-size: 11px;
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        .delete-period-btn {
+            white-space: nowrap;
+        }
+
+        .period-empty {
+            margin-bottom: 14px;
+        }
+
+        .print-schedule-btn {
+            border-color: rgba(255,255,255,.85);
+        }
+
+        #schedule-print-area {
+            display: none;
+        }
+
+        .printing-schedule #app,
+        .printing-schedule #auth-screen {
+            display: none !important;
+        }
+
+        .printing-schedule #schedule-print-area {
+            display: block !important;
+        }
+
+        .print-sheet {
+            width: 100%;
+            color: #222;
+            background: #fff;
+            padding: 8mm;
+        }
+
+        .print-heading {
+            text-align: center;
+            margin-bottom: 7mm;
+        }
+
+        .print-heading h1 {
+            font-size: 22px;
+            margin-bottom: 4px;
+        }
+
+        .print-heading p {
+            font-size: 14px;
+        }
+
+        .print-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+
+        .print-table th,
+        .print-table td {
+            border: 1px solid #b8b8b8;
+            padding: 7px 5px;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .print-table thead th {
+            background: #f3e8ee;
+            font-weight: 700;
+        }
+
+        .print-table tbody th {
+            width: 13%;
+            background: #faf6f8;
+            font-weight: 700;
+        }
+
+        .print-table tbody th span {
+            display: block;
+            margin-top: 3px;
+            font-size: 10px;
+            font-weight: 400;
+        }
+
+        .print-table td {
+            height: 60px;
+            font-size: 12px;
+        }
+
+        .print-table td strong,
+        .print-table td small {
+            display: block;
+        }
+
+        .print-table td small {
+            margin-top: 2px;
+            font-size: 9px;
+        }
+
+        .print-footer {
+            margin-top: 6mm;
+            text-align: right;
+            font-size: 10px;
+            color: #666;
+        }
+
+        /* Explicit icon/label layout fixes the mobile emoji disappearing issue. */
+        .nav-icon {
+            display: inline-flex;
+            width: 24px;
+            height: 24px;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 24px;
+            font-size: 20px;
+            line-height: 1;
+        }
+
+        .nav-label {
+            display: inline-block;
+            margin-left: 8px;
+            font-size: 13px;
+            line-height: 1.1;
+        }
+
+        @media print {
+            @page {
+                size: A4 landscape;
+                margin: 8mm;
+            }
+
+            html,
+            body {
+                background: #fff !important;
+                min-width: 0 !important;
+            }
+
+            .printing-schedule #schedule-print-area {
+                display: block !important;
+            }
+
+            .print-sheet {
+                padding: 0;
+            }
+        }
+
+        @media (max-width: 800px) {
+
+            .layout {
+                padding-bottom: 82px;
+            }
+
+            main {
+                padding: 14px 10px 90px;
+            }
+
+            .toolbar {
+                gap: 8px;
+            }
+
+            .toolbar select {
+                width: 100%;
+                max-width: none;
+                min-height: 44px;
+            }
+
+            .toolbar .small-btn {
+                flex: 1 1 calc(50% - 8px);
+                min-height: 44px;
+            }
+
+            aside {
+                left: 8px;
+                right: 8px;
+                bottom: 8px;
+                height: 68px;
+                padding: 6px;
+                border-radius: 24px;
+                grid-template-columns: repeat(5, minmax(0, 1fr));
+            }
+
+            .nav-btn,
+            .nav-btn:hover,
+            .nav-btn.active {
+                transform: none;
+                padding: 5px 2px;
+                height: 56px;
+                margin: 0;
+                gap: 3px;
+                flex-direction: column;
+                justify-content: center;
+                text-align: center;
+                font-size: initial;
+            }
+
+            .nav-btn::before,
+            .nav-btn::after {
+                display: none;
+            }
+
+            .nav-icon {
+                width: 27px;
+                height: 27px;
+                flex-basis: 27px;
+                font-size: 21px;
+                margin: 0;
+            }
+
+            .nav-label {
+                margin: 0;
+                font-size: 10px;
+                font-weight: 700;
+                white-space: nowrap;
+            }
+
+            .period-row {
+                grid-template-columns: 1fr 1fr;
+                gap: 9px;
+                padding: 12px;
+            }
+
+            .period-number {
+                grid-column: 1 / -1;
+            }
+
+            .delete-period-btn {
+                width: 100%;
+                min-height: 42px;
+            }
+
+            .period-settings-actions {
+                position: sticky;
+                bottom: 78px;
+                z-index: 20;
+                padding: 8px;
+                border-radius: 16px;
+                background: rgba(255,255,255,.72);
+                backdrop-filter: blur(18px);
+                -webkit-backdrop-filter: blur(18px);
+            }
+
+            .period-settings-actions .small-btn {
+                flex: 1;
+                min-height: 44px;
+            }
+
+            .schedule-wrapper {
+                border-radius: 16px;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .schedule-grid {
+                min-width: 880px;
+            }
+        }
+
+        @media (max-width: 420px) {
+
+            .toolbar .small-btn {
+                flex: 1 1 100%;
+            }
+
+            .nav-label {
+                font-size: 9px;
+            }
+
+            .nav-icon {
+                font-size: 20px;
+            }
+
+            .period-row {
+                grid-template-columns: 1fr;
+            }
+
+            .period-number {
+                grid-column: auto;
+            }
+        }
+
     </style>
 </head>
 
@@ -1247,24 +1561,29 @@
 
         <aside>
 
-            <button class="nav-btn active" data-page="schedule">
-                📅 Lịch học
+            <button class="nav-btn active" data-page="schedule" type="button">
+                <span class="nav-icon" aria-hidden="true">📅</span>
+                <span class="nav-label">Lịch học</span>
             </button>
 
-            <button class="nav-btn" data-page="notes">
-                📝 Ghi chú
+            <button class="nav-btn" data-page="notes" type="button">
+                <span class="nav-icon" aria-hidden="true">📝</span>
+                <span class="nav-label">Ghi chú</span>
             </button>
 
-            <button class="nav-btn" data-page="subjects">
-                📚 Môn học
+            <button class="nav-btn" data-page="subjects" type="button">
+                <span class="nav-icon" aria-hidden="true">📚</span>
+                <span class="nav-label">Môn học</span>
             </button>
 
-            <button class="nav-btn" data-page="semesters">
-                🌸 Học kỳ
+            <button class="nav-btn" data-page="semesters" type="button">
+                <span class="nav-icon" aria-hidden="true">🌸</span>
+                <span class="nav-label">Học kỳ</span>
             </button>
 
-            <button class="nav-btn" data-page="settings">
-                ⚙️ Cài đặt
+            <button class="nav-btn" data-page="settings" type="button">
+                <span class="nav-icon" aria-hidden="true">⚙️</span>
+                <span class="nav-label">Cài đặt</span>
             </button>
 
         </aside>
@@ -1294,8 +1613,17 @@
                     <button
                         class="small-btn pink"
                         id="add-schedule-btn"
+                        type="button"
                     >
                         + Thêm môn
+                    </button>
+
+                    <button
+                        class="small-btn print-schedule-btn"
+                        id="print-schedule-btn"
+                        type="button"
+                    >
+                        🖨️ In lịch học
                     </button>
 
                 </div>
@@ -1415,7 +1743,7 @@
 
                 <div class="page-title">
                     <h2>⚙️ Cài đặt</h2>
-                    <p>Tùy chỉnh thời gian của 12 tiết học.</p>
+                    <p>Thêm, xóa và tùy chỉnh thời gian từng tiết học.</p>
                 </div>
 
                 <div class="settings-section">
@@ -1424,12 +1752,23 @@
 
                     <div id="period-settings"></div>
 
-                    <button
-                        class="small-btn pink"
-                        id="save-periods-btn"
-                    >
-                        Lưu thời gian
-                    </button>
+                    <div class="period-settings-actions">
+                        <button
+                            class="small-btn pink"
+                            id="add-period-btn"
+                            type="button"
+                        >
+                            ＋ Thêm tiết
+                        </button>
+
+                        <button
+                            class="small-btn"
+                            id="save-periods-btn"
+                            type="button"
+                        >
+                            💾 Lưu thời gian
+                        </button>
+                    </div>
 
                 </div>
 
@@ -1492,6 +1831,8 @@
 
 </div>
 
+
+<div id="schedule-print-area" aria-hidden="true"></div>
 
 <div id="toast-container"></div>
 
@@ -1992,45 +2333,31 @@ async function loadAllData() {
 
 async function ensurePeriods() {
 
-    if (periods.length >= 12) {
-        return;
-    }
-
-    const existing =
-        new Set(
-            periods.map(
-                p => p.period_number
-            )
-        );
-
-    const rows = [];
-
-    for (
-        let i = 1;
-        i <= 12;
-        i++
-    ) {
-
-        if (!existing.has(i)) {
-
-            rows.push({
-                user_id: currentUser.id,
-                period_number: i,
-                start_time: defaultStartTime(i),
-                end_time: defaultEndTime(i)
-            });
-        }
-    }
-
-    if (!rows.length) {
+    /*
+     * Không còn tự động tạo 12 tiết.
+     * Nếu tài khoản hoàn toàn chưa có tiết nào,
+     * tạo 1 tiết mẫu để người dùng bắt đầu.
+     * Các tiết tiếp theo được thêm bằng nút "＋ Thêm tiết".
+     */
+    if (periods.length > 0) {
         return;
     }
 
     const { data, error } =
         await db
             .from("periods")
-            .insert(rows)
-            .select();
+            .insert({
+                user_id:
+                    currentUser.id,
+                period_number:
+                    1,
+                start_time:
+                    defaultStartTime(1),
+                end_time:
+                    defaultEndTime(1)
+            })
+            .select()
+            .single();
 
     if (error) {
 
@@ -2038,13 +2365,7 @@ async function ensurePeriods() {
         return;
     }
 
-    periods =
-        [...periods, ...(data || [])]
-            .sort(
-                (a,b) =>
-                    a.period_number -
-                    b.period_number
-            );
+    periods = [data];
 }
 
 
@@ -2275,18 +2596,17 @@ function renderSchedule() {
         `;
     });
 
-    for (
-        let period = 1;
-        period <= 12;
-        period++
-    ) {
-
-        const periodInfo =
-            periods.find(
-                p =>
-                    p.period_number ===
-                    period
+    const visiblePeriods =
+        [...periods]
+            .sort((a, b) =>
+                Number(a.period_number) -
+                Number(b.period_number)
             );
+
+    visiblePeriods.forEach(periodInfo => {
+
+        const period =
+            Number(periodInfo.period_number);
 
         html += `
             <div class="period-cell period-label">
@@ -2385,7 +2705,7 @@ function renderSchedule() {
                 }
             }
         }
-    }
+    });
 
     html += `
             </div>
@@ -3804,51 +4124,262 @@ function openFolderModal() {
 function renderPeriodSettings() {
 
     const container =
-        document.getElementById(
-            "period-settings"
+        document.getElementById("period-settings");
+
+    const sortedPeriods =
+        [...periods].sort(
+            (a, b) =>
+                Number(a.period_number) -
+                Number(b.period_number)
         );
 
-    let html = "";
-
-    for (
-        let i = 1;
-        i <= 12;
-        i++
-    ) {
-
-        const period =
-            periods.find(
-                p =>
-                    p.period_number === i
-            );
-
-        html += `
-            <div class="period-row">
-
-                <strong>
-                    Tiết ${i}
-                </strong>
-
-                <input
-                    type="time"
-                    id="period-start-${i}"
-                    value="${timeToDisplay(period?.start_time)}"
-                >
-
-                <input
-                    type="time"
-                    id="period-end-${i}"
-                    value="${timeToDisplay(period?.end_time)}"
-                >
-
-                <span></span>
-
+    if (!sortedPeriods.length) {
+        container.innerHTML = `
+            <div class="empty period-empty">
+                <div class="emoji">⏰</div>
+                <h3>Chưa có tiết học</h3>
+                <p>Nhấn "＋ Thêm tiết" để tạo tiết đầu tiên.</p>
             </div>
         `;
+        return;
     }
 
-    container.innerHTML = html;
+    container.innerHTML =
+        sortedPeriods.map(period => {
+
+            const number =
+                Number(period.period_number);
+
+            return `
+                <div class="period-row" data-period="${number}">
+
+                    <div class="period-number">
+                        <strong>Tiết ${number}</strong>
+                    </div>
+
+                    <label class="period-time">
+                        <span>Bắt đầu</span>
+                        <input
+                            type="time"
+                            id="period-start-${number}"
+                            value="${timeToDisplay(period.start_time)}"
+                        >
+                    </label>
+
+                    <label class="period-time">
+                        <span>Kết thúc</span>
+                        <input
+                            type="time"
+                            id="period-end-${number}"
+                            value="${timeToDisplay(period.end_time)}"
+                        >
+                    </label>
+
+                    <button
+                        class="small-btn danger-btn delete-period-btn"
+                        type="button"
+                        onclick="deletePeriod(${number})"
+                        title="Xóa tiết ${number}"
+                    >
+                        🗑️ Xóa
+                    </button>
+
+                </div>
+            `;
+        }).join("");
 }
+
+
+window.addPeriod =
+async function() {
+
+    if (!currentUser) {
+        return;
+    }
+
+    try {
+
+        const maxPeriod =
+            periods.reduce(
+                (max, period) =>
+                    Math.max(
+                        max,
+                        Number(period.period_number) || 0
+                    ),
+                0
+            );
+
+        const nextNumber =
+            maxPeriod + 1;
+
+        const { error } =
+            await db
+                .from("periods")
+                .insert({
+                    user_id:
+                        currentUser.id,
+                    period_number:
+                        nextNumber,
+                    start_time:
+                        null,
+                    end_time:
+                        null
+                });
+
+        if (error) {
+            throw error;
+        }
+
+        await loadAllData();
+
+        renderPeriodSettings();
+        renderSchedule();
+
+        showToast(
+            `Đã thêm Tiết ${nextNumber} ♡`
+        );
+
+    } catch (error) {
+
+        console.error(error);
+
+        showToast(
+            error.message ||
+            "Không thể thêm tiết.",
+            true
+        );
+    }
+};
+
+
+window.deletePeriod =
+async function(periodNumber) {
+
+    if (!currentUser) {
+        return;
+    }
+
+    const number =
+        Number(periodNumber);
+
+    const confirmed =
+        confirm(
+            `Xóa Tiết ${number}?\n\n` +
+            `Các môn đang nằm ở tiết này cũng sẽ được xóa khỏi thời khóa biểu. ` +
+            `Các tiết phía sau sẽ tự đánh lại số.`
+        );
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+
+        const maxPeriod =
+            periods.reduce(
+                (max, period) =>
+                    Math.max(
+                        max,
+                        Number(period.period_number) || 0
+                    ),
+                0
+            );
+
+        /*
+         * Xóa các lịch nằm ở tiết bị xóa trước.
+         * Sau đó xóa period và dồn các tiết phía sau xuống 1.
+         * Làm theo thứ tự giảm dần để tránh xung đột unique
+         * (user_id, period_number).
+         */
+
+        let { error } =
+            await db
+                .from("schedule_entries")
+                .delete()
+                .eq("user_id", currentUser.id)
+                .eq("period_number", number);
+
+        if (error) {
+            throw error;
+        }
+
+        ({ error } =
+            await db
+                .from("periods")
+                .delete()
+                .eq("user_id", currentUser.id)
+                .eq("period_number", number));
+
+        if (error) {
+            throw error;
+        }
+
+        for (
+            let oldNumber = maxPeriod;
+            oldNumber > number;
+            oldNumber--
+        ) {
+
+            const newNumber =
+                oldNumber - 1;
+
+            ({ error } =
+                await db
+                    .from("schedule_entries")
+                    .update({
+                        period_number:
+                            newNumber
+                    })
+                    .eq("user_id", currentUser.id)
+                    .eq("period_number", oldNumber));
+
+            if (error) {
+                throw error;
+            }
+
+            ({ error } =
+                await db
+                    .from("periods")
+                    .update({
+                        period_number:
+                            newNumber
+                    })
+                    .eq("user_id", currentUser.id)
+                    .eq("period_number", oldNumber));
+
+            if (error) {
+                throw error;
+            }
+        }
+
+        await loadAllData();
+
+        renderPeriodSettings();
+        renderSchedule();
+
+        showToast(
+            `Đã xóa Tiết ${number} và cập nhật lại thời khóa biểu.`
+        );
+
+    } catch (error) {
+
+        console.error(error);
+
+        showToast(
+            error.message ||
+            "Không thể xóa tiết.",
+            true
+        );
+    }
+};
+
+
+document
+    .getElementById("add-period-btn")
+    .addEventListener(
+        "click",
+        () => addPeriod()
+    );
 
 
 document
@@ -3859,44 +4390,51 @@ document
 
             try {
 
-                for (
-                    let i = 1;
-                    i <= 12;
-                    i++
-                ) {
+                const rows =
+                    document.querySelectorAll(
+                        "#period-settings .period-row"
+                    );
 
-                    const start =
-                        document.getElementById(
-                            `period-start-${i}`
-                        ).value;
+                for (const row of rows) {
 
-                    const end =
+                    const number =
+                        Number(
+                            row.dataset.period
+                        );
+
+                    const startInput =
                         document.getElementById(
-                            `period-end-${i}`
-                        ).value;
+                            `period-start-${number}`
+                        );
+
+                    const endInput =
+                        document.getElementById(
+                            `period-end-${number}`
+                        );
 
                     const { error } =
                         await db
                             .from("periods")
-                            .upsert(
-                                {
-                                    user_id:
-                                        currentUser.id,
-                                    period_number:
-                                        i,
-                                    start_time:
-                                        start || null,
-                                    end_time:
-                                        end || null
-                                },
-                                {
-                                    onConflict:
-                                        "user_id,period_number"
-                                }
+                            .update({
+                                start_time:
+                                    startInput?.value ||
+                                    null,
+                                end_time:
+                                    endInput?.value ||
+                                    null
+                            })
+                            .eq(
+                                "user_id",
+                                currentUser.id
+                            )
+                            .eq(
+                                "period_number",
+                                number
                             );
 
-                    if (error)
+                    if (error) {
                         throw error;
+                    }
                 }
 
                 await loadAllData();
@@ -3905,7 +4443,7 @@ document
                 renderSchedule();
 
                 showToast(
-                    "Đã lưu thời gian 12 tiết ♡"
+                    "Đã lưu thời gian các tiết ♡"
                 );
 
             } catch (error) {
@@ -3913,11 +4451,179 @@ document
                 console.error(error);
 
                 showToast(
-                    error.message,
+                    error.message ||
+                    "Không thể lưu thời gian.",
                     true
                 );
             }
         }
+    );
+
+
+/* =========================================================
+   PRINT SCHEDULE
+========================================================= */
+
+window.printSchedule =
+function() {
+
+    if (!currentSemesterId) {
+        showToast(
+            "Hãy chọn học kỳ trước khi in.",
+            true
+        );
+        return;
+    }
+
+    if (!semesters.length) {
+        showToast(
+            "Chưa có học kỳ để in.",
+            true
+        );
+        return;
+    }
+
+    const semester =
+        semesters.find(
+            item =>
+                item.id ===
+                currentSemesterId
+        );
+
+    const printRoot =
+        document.getElementById(
+            "schedule-print-area"
+        );
+
+    if (!printRoot) {
+        showToast(
+            "Không tìm thấy khu vực in.",
+            true
+        );
+        return;
+    }
+
+    const sortedPeriods =
+        [...periods].sort(
+            (a, b) =>
+                Number(a.period_number) -
+                Number(b.period_number)
+        );
+
+    let html = `
+        <div class="print-sheet">
+            <div class="print-heading">
+                <h1>📅 Thời khóa biểu</h1>
+                <p>${escapeHTML(semester?.name || "Học kỳ")}</p>
+            </div>
+
+            <table class="print-table">
+                <thead>
+                    <tr>
+                        <th>Tiết</th>
+                        ${DAYS.map(day =>
+                            `<th>${day}</th>`
+                        ).join("")}
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
+    sortedPeriods.forEach(periodInfo => {
+
+        const period =
+            Number(periodInfo.period_number);
+
+        html += `
+            <tr>
+                <th>
+                    Tiết ${period}
+                    <span>
+                        ${timeToDisplay(periodInfo.start_time)}
+                        -
+                        ${timeToDisplay(periodInfo.end_time)}
+                    </span>
+                </th>
+        `;
+
+        for (let day = 1; day <= 7; day++) {
+
+            const entry =
+                scheduleEntries.find(
+                    item =>
+                        item.semester_id === currentSemesterId &&
+                        item.day_of_week === day &&
+                        Number(item.period_number) === period
+                );
+
+            const subject =
+                entry
+                    ? subjects.find(
+                        item =>
+                            item.id ===
+                            entry.subject_id
+                    )
+                    : null;
+
+            html += `
+                <td>
+                    ${
+                        subject
+                            ? `
+                                <strong>
+                                    ${escapeHTML(subject.name)}
+                                </strong>
+                                ${
+                                    subject.teacher
+                                        ? `<small>${escapeHTML(subject.teacher)}</small>`
+                                        : ""
+                                }
+                                ${
+                                    subject.room
+                                        ? `<small>${escapeHTML(subject.room)}</small>`
+                                        : ""
+                                }
+                              `
+                            : ""
+                    }
+                </td>
+            `;
+        }
+
+        html += `</tr>`;
+    });
+
+    html += `
+                </tbody>
+            </table>
+
+            <div class="print-footer">
+                In ngày ${new Date().toLocaleDateString("vi-VN")}
+            </div>
+        </div>
+    `;
+
+    printRoot.innerHTML = html;
+    document.body.classList.add("printing-schedule");
+
+    setTimeout(() => {
+        window.print();
+
+        setTimeout(() => {
+            document.body.classList.remove(
+                "printing-schedule"
+            );
+            printRoot.innerHTML = "";
+        }, 500);
+    }, 80);
+};
+
+
+document
+    .getElementById("print-schedule-btn")
+    .addEventListener(
+        "click",
+        () => printSchedule()
     );
 
 
