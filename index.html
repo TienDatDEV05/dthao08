@@ -2145,10 +2145,147 @@
             }
         }
 
+        /* =========================================================
+           MOBILE HAMBURGER NAVIGATION
+        ========================================================= */
+        .mobile-menu-toggle {
+            display: none;
+            width: 42px;
+            height: 42px;
+            flex: 0 0 42px;
+            align-items: center;
+            justify-content: center;
+            border-radius: 13px;
+            background: rgba(255,255,255,.72);
+            border: 1px solid rgba(255,255,255,.82);
+            color: var(--pink-dark);
+            box-shadow: 0 8px 22px rgba(226,103,148,.12), inset 0 1px 4px rgba(255,255,255,.85);
+            z-index: 201;
+        }
+
+        .mobile-menu-toggle svg {
+            width: 23px;
+            height: 23px;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+        }
+
+        .mobile-menu-backdrop {
+            display: none;
+        }
+
         @media (max-width: 800px) {
 
+            .mobile-menu-toggle {
+                display: inline-flex;
+                order: -1;
+            }
+
+            header {
+                gap: 10px;
+            }
+
+            .brand {
+                flex: 1;
+            }
+
+            .mobile-menu-backdrop {
+                position: fixed;
+                inset: 0;
+                z-index: 190;
+                display: block;
+                background: rgba(72, 42, 57, .22);
+                backdrop-filter: blur(3px);
+                -webkit-backdrop-filter: blur(3px);
+                opacity: 0;
+                visibility: hidden;
+                pointer-events: none;
+                transition: opacity .25s ease, visibility .25s ease;
+            }
+
+            aside {
+                position: fixed !important;
+                left: 0 !important;
+                top: 72px !important;
+                right: auto !important;
+                bottom: 0 !important;
+                width: min(290px, 86vw) !important;
+                height: auto !important;
+                padding: 18px 14px 24px !important;
+                border-radius: 0 24px 24px 0 !important;
+                border-left: 0 !important;
+                border-top: 0 !important;
+                display: block !important;
+                transform: translateX(-105%);
+                transition: transform .28s cubic-bezier(.2,.8,.2,1);
+                z-index: 200;
+                overflow-y: auto;
+                box-shadow: 16px 0 40px rgba(121,76,103,.16);
+            }
+
+            body.mobile-nav-open .mobile-menu-backdrop {
+                opacity: 1;
+                visibility: visible;
+                pointer-events: auto;
+            }
+
+            body.mobile-nav-open aside {
+                transform: translateX(0);
+            }
+
+            body.mobile-nav-open {
+                overflow: hidden;
+            }
+
+            aside .nav-btn,
+            aside .nav-btn:hover,
+            aside .nav-btn.active {
+                width: 100%;
+                min-height: 54px;
+                height: auto;
+                margin: 0 0 8px;
+                padding: 9px 12px !important;
+                flex-direction: row;
+                justify-content: flex-start;
+                align-items: center;
+                gap: 12px;
+                text-align: left;
+                font-size: 14px !important;
+                transform: none;
+            }
+
+            aside .nav-icon {
+                width: 38px;
+                height: 38px;
+                flex: 0 0 38px;
+                border-radius: 12px;
+            }
+
+            aside .nav-icon svg {
+                width: 21px;
+                height: 21px;
+            }
+
+            aside .nav-label {
+                display: block !important;
+                max-width: none;
+                overflow: visible;
+                text-overflow: clip;
+                font-size: 14px !important;
+                line-height: 1.2;
+                white-space: nowrap;
+            }
+
             .layout {
-                padding-bottom: 82px;
+                padding-bottom: 0;
+            }
+
+            main {
+                padding-bottom: 30px;
+            }
+
+
             }
 
             main {
@@ -2170,49 +2307,6 @@
                 min-height: 44px;
             }
 
-            aside {
-                left: 8px;
-                right: 8px;
-                bottom: 8px;
-                height: 68px;
-                padding: 6px;
-                border-radius: 24px;
-                grid-template-columns: repeat(5, minmax(0, 1fr));
-            }
-
-            .nav-btn,
-            .nav-btn:hover,
-            .nav-btn.active {
-                transform: none;
-                padding: 5px 2px;
-                height: 56px;
-                margin: 0;
-                gap: 3px;
-                flex-direction: column;
-                justify-content: center;
-                text-align: center;
-                font-size: initial;
-            }
-
-            .nav-btn::before,
-            .nav-btn::after {
-                display: none;
-            }
-
-            .nav-icon {
-                width: 27px;
-                height: 27px;
-                flex-basis: 27px;
-                font-size: 21px;
-                margin: 0;
-            }
-
-            .nav-label {
-                margin: 0;
-                font-size: 10px;
-                font-weight: 700;
-                white-space: nowrap;
-            }
 
             .period-row {
                 grid-template-columns: 1fr 1fr;
@@ -2373,6 +2467,18 @@
 
     <header>
 
+        <button
+            class="mobile-menu-toggle"
+            id="mobile-menu-toggle"
+            type="button"
+            aria-label="Mở menu điều hướng"
+            aria-expanded="false"
+        >
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M4 7H20M4 12H20M4 17H20"></path>
+            </svg>
+        </button>
+
         <div class="brand">
             Đoàn Thảo
         </div>
@@ -2387,6 +2493,11 @@
 
     </header>
 
+    <div
+        class="mobile-menu-backdrop"
+        id="mobile-menu-backdrop"
+        aria-hidden="true"
+    ></div>
 
     <div class="layout">
 
@@ -3811,19 +3922,24 @@ function renderWeatherAdvice(data, startIndex) {
 
     /*
      * Khung giờ ban đêm: 22:00 -> 05:00.
-     * Giữ nguyên lời khuyên thời tiết hiện có, bao gồm cả
-     * cảnh báo mưa đã được code sẵn, rồi nối thêm lời nhắc đi đêm.
+     * Trong khoảng thời gian này, lời khuyên ban đêm được ưu tiên
+     * và hiển thị trực tiếp, không bị cảnh báo mưa/nắng ghi đè.
      */
     const currentHour = new Date().getHours();
     const isNightTime =
         currentHour >= 22 || currentHour < 5;
 
     if (isNightTime) {
-        const nightReminder =
-            "Vợ đi đêm nhớ chú ý cẩn thận nhaaa. Anh yeuuu vợ";
+        title.textContent =
+            "SAU 10H TỐI ANH NHẮC VỢ";
 
         text.textContent =
-            `${text.textContent} ${nightReminder}`;
+            "Vợ có ra ngoài thì nhớ chú ý cẩn thận nha,còn vợ không đi đâu thì xíuu vợ iuu ngụ ngoann ạaa. Anh yeuuu vợ ♡";
+
+        adviceIcon.innerHTML =
+            weatherIcon("night");
+
+        return;
     }
 
     if (rainIndex >= 0) {
@@ -4156,6 +4272,65 @@ function defaultEndTime(period) {
 
 
 /* =========================================================
+   MOBILE HAMBURGER MENU
+========================================================= */
+function setMobileMenu(open) {
+    document.body.classList.toggle("mobile-nav-open", open);
+
+    const toggle =
+        document.getElementById("mobile-menu-toggle");
+
+    const backdrop =
+        document.getElementById("mobile-menu-backdrop");
+
+    if (toggle) {
+        toggle.setAttribute(
+            "aria-expanded",
+            String(open)
+        );
+        toggle.setAttribute(
+            "aria-label",
+            open ? "Đóng menu điều hướng" : "Mở menu điều hướng"
+        );
+    }
+
+    if (backdrop) {
+        backdrop.setAttribute(
+            "aria-hidden",
+            String(!open)
+        );
+    }
+}
+
+document
+    .getElementById("mobile-menu-toggle")
+    ?.addEventListener(
+        "click",
+        () => {
+            setMobileMenu(
+                !document.body.classList.contains("mobile-nav-open")
+            );
+        }
+    );
+
+document
+    .getElementById("mobile-menu-backdrop")
+    ?.addEventListener(
+        "click",
+        () => setMobileMenu(false)
+    );
+
+window.addEventListener(
+    "resize",
+    () => {
+        if (window.innerWidth > 800) {
+            setMobileMenu(false);
+        }
+    }
+);
+
+
+/* =========================================================
    NAVIGATION
 ========================================================= */
 
@@ -4196,6 +4371,8 @@ document
                     );
 
                 renderCurrentPage();
+
+                setMobileMenu(false);
             }
         );
     });
