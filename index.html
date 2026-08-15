@@ -679,465 +679,484 @@
             }
         }
 
+
         /* =========================================================
-           ENHANCED UI/UX EFFECTS
+           LIQUID GLASS + MOBILE OPTIMIZATION
         ========================================================= */
 
-        html { scroll-behavior: smooth; }
-
-        button,
-        .nav-btn,
-        .small-btn,
-        .logout-btn,
-        .auth-tab,
-        .subject-card,
-        .empty-slot,
-        .card-actions button,
-        .close-modal {
-            -webkit-tap-highlight-color: transparent;
+        :root {
+            --glass-bg: rgba(255,255,255,.48);
+            --glass-bg-strong: rgba(255,255,255,.66);
+            --glass-border: rgba(255,255,255,.72);
+            --glass-shadow: 0 18px 55px rgba(121,76,103,.12);
+            --glass-blur: blur(22px) saturate(145%);
         }
 
-        button,
-        .nav-btn,
-        .small-btn,
-        .logout-btn,
-        .auth-tab,
-        .subject-card,
-        .empty-slot,
-        .card-actions button,
-        .close-modal {
-            position: relative;
-            overflow: hidden;
-            transition:
-                transform .18s cubic-bezier(.2,.8,.2,1),
-                box-shadow .22s ease,
-                background-color .22s ease,
-                border-color .22s ease,
-                color .22s ease;
+        html { min-height: 100%; }
+
+        body {
+            background:
+                radial-gradient(circle at 8% 8%, rgba(255,180,211,.48), transparent 28%),
+                radial-gradient(circle at 92% 15%, rgba(214,190,255,.28), transparent 30%),
+                radial-gradient(circle at 50% 100%, rgba(255,226,238,.62), transparent 35%),
+                linear-gradient(135deg, #fff9fc 0%, #fff1f7 48%, #f8f2ff 100%);
+            background-attachment: fixed;
         }
 
-        .ripple {
-            position: absolute;
-            border-radius: 999px;
+        body::before,
+        body::after {
+            content: "";
+            position: fixed;
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
             pointer-events: none;
-            background: rgba(255,255,255,.62);
-            transform: translate(-50%, -50%) scale(0);
-            animation: uiRipple .58s cubic-bezier(.2,.7,.2,1) forwards;
-            z-index: 20;
-        }
-
-        @keyframes uiRipple {
-            to {
-                transform: translate(-50%, -50%) scale(1);
-                opacity: 0;
-            }
-        }
-
-        button:not(:disabled):active,
-        .nav-btn:active,
-        .subject-card:active,
-        .empty-slot:active,
-        .card-actions button:active,
-        .small-btn:active,
-        .logout-btn:active,
-        .auth-tab:active,
-        .close-modal:active {
-            transform: scale(.96);
-        }
-
-        .primary-btn:hover,
-        .small-btn:hover,
-        .logout-btn:hover,
-        .close-modal:hover {
-            box-shadow: 0 10px 25px rgba(226,103,148,.18);
-        }
-
-        .primary-btn:active {
-            transform: scale(.975);
-            box-shadow: 0 4px 12px rgba(246,95,150,.18);
-        }
-
-        .nav-btn {
-            isolation: isolate;
-        }
-
-        .nav-btn::before {
-            content: "";
-            position: absolute;
-            inset: 3px;
-            border-radius: 10px;
-            background: linear-gradient(
-                90deg,
-                rgba(255,119,168,.14),
-                rgba(255,225,236,.72)
-            );
-            transform: scaleX(0);
-            transform-origin: left center;
-            opacity: 0;
-            transition:
-                transform .3s cubic-bezier(.2,.8,.2,1),
-                opacity .2s ease;
             z-index: -1;
+            filter: blur(18px);
+            opacity: .38;
         }
 
-        .nav-btn:hover::before,
-        .nav-btn.active::before {
-            transform: scaleX(1);
-            opacity: 1;
+        body::before {
+            top: 12%;
+            left: -90px;
+            background: rgba(255,119,168,.24);
         }
 
-        .nav-btn.active {
-            box-shadow: 0 7px 18px rgba(226,103,148,.10);
-            transform: translateX(2px);
+        body::after {
+            right: -80px;
+            bottom: 10%;
+            background: rgba(190,160,255,.20);
         }
 
-        .nav-btn.active::after {
-            content: "";
-            position: absolute;
-            left: 5px;
-            top: 50%;
-            width: 3px;
-            height: 22px;
-            border-radius: 10px;
-            background: var(--pink);
-            transform: translateY(-50%);
-        }
-
-        .page {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-            transform-origin: top center;
-            will-change: opacity, transform;
-        }
-
-        .page.page-enter {
-            animation: pageEnter .42s cubic-bezier(.22,.8,.22,1) both;
-        }
-
-        @keyframes pageEnter {
-            from {
-                opacity: 0;
-                transform: translateY(16px) scale(.985);
-                filter: blur(2px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-                filter: blur(0);
-            }
-        }
-
-        .page-title {
-            animation: contentReveal .42s .04s cubic-bezier(.22,.8,.22,1) both;
-        }
-
-        @keyframes contentReveal {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
+        header,
+        aside,
         .card,
         .note-card,
         .settings-section,
+        .empty,
         .schedule-wrapper,
-        .empty {
-            transition:
-                transform .22s cubic-bezier(.2,.8,.2,1),
-                box-shadow .22s ease;
+        .auth-card,
+        .modal-content {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+            -webkit-backdrop-filter: var(--glass-blur);
+            backdrop-filter: var(--glass-blur);
         }
 
-        .card:hover,
-        .note-card:hover,
-        .settings-section:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 15px 35px rgba(226,103,148,.14);
+        header {
+            height: 70px;
+            border-color: rgba(255,255,255,.78);
+            background: rgba(255,255,255,.55);
+            box-shadow: 0 8px 35px rgba(112,73,98,.08);
         }
 
-        .subject-card:hover {
-            transform: translateY(-3px) scale(1.015);
-            box-shadow: 0 10px 20px rgba(80,50,65,.10);
+        .brand {
+            letter-spacing: -.2px;
         }
 
-        .empty-slot:hover {
-            transform: scale(1.015);
-            box-shadow: 0 8px 18px rgba(255,119,168,.10);
+        .brand span {
+            width: 38px;
+            height: 38px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 13px;
+            background: linear-gradient(145deg, rgba(255,255,255,.78), rgba(255,206,224,.48));
+            border: 1px solid rgba(255,255,255,.82);
+            box-shadow: inset 0 1px rgba(255,255,255,.9), 0 8px 20px rgba(226,103,148,.10);
         }
 
-        .card-actions button:hover {
-            transform: translateY(-1px);
-            background: var(--pink-soft);
+        .logout-btn,
+        .small-btn,
+        .auth-tab,
+        .nav-btn,
+        .close-modal {
+            border: 1px solid rgba(255,255,255,.72);
+            box-shadow: inset 0 1px rgba(255,255,255,.65);
         }
 
-        .grid-header { transition: background-color .22s ease; }
-
-        .grid-header:hover { background: #ffeaf2; }
-
-        .modal {
-            opacity: 1;
-            transition: opacity .24s ease, backdrop-filter .24s ease;
+        .logout-btn,
+        .small-btn {
+            background: rgba(255,255,255,.48);
+            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(12px);
         }
 
-        .modal:not(.hidden) { backdrop-filter: blur(6px); }
-
-        .modal.modal-enter { animation: modalOverlayIn .24s ease both; }
-
-        .modal-content { will-change: transform, opacity; }
-
-        .modal.modal-enter .modal-content {
-            animation: modalContentIn .32s cubic-bezier(.2,.8,.2,1) both;
+        .layout {
+            gap: 18px;
+            padding: 18px;
+            min-height: calc(100vh - 70px);
         }
 
-        .modal.modal-leave .modal-content {
-            animation: modalContentOut .18s ease both;
+        aside {
+            width: 220px;
+            flex: 0 0 220px;
+            border-radius: 24px;
+            padding: 14px 11px;
+            position: sticky;
+            top: 88px;
+            height: calc(100vh - 106px);
+            overflow-y: auto;
         }
 
-        @keyframes modalOverlayIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+        .nav-btn {
+            background: rgba(255,255,255,.22);
+            margin-bottom: 7px;
         }
 
-        @keyframes modalContentIn {
-            from {
-                opacity: 0;
-                transform: translateY(18px) scale(.96);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
+        .nav-btn:hover,
+        .nav-btn.active {
+            background: linear-gradient(135deg, rgba(255,255,255,.68), rgba(255,225,236,.62));
+            box-shadow: 0 8px 24px rgba(226,103,148,.11), inset 0 1px rgba(255,255,255,.88);
         }
 
-        @keyframes modalContentOut {
-            from {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-            to {
-                opacity: 0;
-                transform: translateY(10px) scale(.985);
-            }
+        main {
+            padding: 10px 10px 30px;
         }
 
-        .toast {
-            animation:
-                toastIn .28s cubic-bezier(.2,.8,.2,1),
-                toastOut .28s ease 2.72s forwards;
+        .page-title h2 {
+            letter-spacing: -.5px;
         }
 
-        @keyframes toastOut {
-            to {
-                opacity: 0;
-                transform: translateY(8px) scale(.98);
-            }
-        }
-
-        .auth-card {
-            animation: authCardIn .55s cubic-bezier(.2,.8,.2,1) both;
-        }
-
-        @keyframes authCardIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px) scale(.97);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-
-        .logo-heart {
-            animation: heartFloat 3s ease-in-out infinite;
-        }
-
-        @keyframes heartFloat {
-            0%, 100% { transform: translateY(0) rotate(0); }
-            50% { transform: translateY(-4px) rotate(2deg); }
+        .toolbar,
+        .notes-toolbar {
+            padding: 10px;
+            border-radius: 18px;
+            background: rgba(255,255,255,.28);
+            border: 1px solid rgba(255,255,255,.52);
+            -webkit-backdrop-filter: blur(14px);
+            backdrop-filter: blur(14px);
         }
 
         input,
         textarea,
         select {
-            transition:
-                border-color .2s ease,
-                box-shadow .2s ease,
-                transform .18s ease;
+            background: rgba(255,255,255,.60);
+            border-color: rgba(255,197,217,.62);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
         }
 
         input:focus,
         textarea:focus,
         select:focus {
-            transform: translateY(-1px);
+            background: rgba(255,255,255,.78);
+            box-shadow: 0 0 0 4px rgba(255,119,168,.10), 0 8px 22px rgba(226,103,148,.08);
         }
 
-        @media (prefers-reduced-motion: reduce) {
-            *,
-            *::before,
-            *::after {
-                animation-duration: .01ms !important;
-                animation-iteration-count: 1 !important;
-                transition-duration: .01ms !important;
-                scroll-behavior: auto !important;
-            }
+        .schedule-wrapper {
+            background: rgba(255,255,255,.40);
+            border-radius: 22px;
+            border-color: rgba(255,255,255,.78);
+            box-shadow: 0 20px 60px rgba(111,72,97,.10);
+            scrollbar-width: thin;
         }
 
+        .schedule-grid {
+            background: rgba(255,255,255,.16);
+        }
 
-        /* =========================================================
-           PRINT SCHEDULE
-        ========================================================= */
-        @media print {
-            @page {
-                size: A4 landscape;
-                margin: 10mm;
-            }
+        .grid-header {
+            background: rgba(255,239,246,.68);
+            border-color: rgba(255,255,255,.70);
+            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(12px);
+        }
 
+        .period-cell {
+            background: rgba(255,255,255,.28);
+            border-color: rgba(255,255,255,.66);
+        }
+
+        .empty-slot {
+            background: rgba(255,255,255,.28);
+            border-color: rgba(255,183,207,.65);
+        }
+
+        .subject-card {
+            border: 1px solid rgba(255,255,255,.55);
+            box-shadow: inset 0 1px rgba(255,255,255,.48), 0 8px 20px rgba(74,48,62,.08);
+        }
+
+        .card,
+        .note-card,
+        .settings-section,
+        .empty {
+            background: rgba(255,255,255,.52);
+            border-color: rgba(255,255,255,.76);
+        }
+
+        .modal {
+            background: rgba(62,39,52,.24);
+            -webkit-backdrop-filter: blur(10px) saturate(125%);
+            backdrop-filter: blur(10px) saturate(125%);
+        }
+
+        .modal-content {
+            background: rgba(255,255,255,.66);
+            border-radius: 26px;
+        }
+
+        .auth-card {
+            background: rgba(255,255,255,.60);
+            border-radius: 30px;
+        }
+
+        /* ================= MOBILE ================= */
+
+        @media (max-width: 800px) {
             body {
-                background: #fff !important;
-                color: #222 !important;
+                padding-bottom: 78px;
             }
 
-            #auth-screen,
-            header,
-            aside,
-            .toolbar,
-            .notes-toolbar,
-            .page-title p,
-            .nav-btn,
-            #toast-container,
-            .modal,
-            .small-btn,
-            button {
-                display: none !important;
+            header {
+                height: 62px;
+                padding: 0 12px;
             }
 
-            #app,
-            #page-schedule,
-            main,
+            .brand {
+                font-size: 17px;
+                gap: 7px;
+            }
+
+            .brand span {
+                width: 32px;
+                height: 32px;
+                font-size: 19px;
+            }
+
+            .logout-btn {
+                padding: 8px 10px;
+                border-radius: 12px;
+                font-size: 12px;
+            }
+
             .layout {
-                display: block !important;
-                visibility: visible !important;
-                width: 100% !important;
-                max-width: none !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                box-shadow: none !important;
-                background: #fff !important;
+                display: block;
+                padding: 10px 10px 0;
+                min-height: auto;
             }
 
-            #page-schedule {
-                opacity: 1 !important;
-                transform: none !important;
-                filter: none !important;
+            aside {
+                position: fixed;
+                left: 10px;
+                right: 10px;
+                bottom: 10px;
+                top: auto;
+                width: auto;
+                height: 62px;
+                z-index: 400;
+                padding: 6px;
+                border-radius: 22px;
+                display: grid;
+                grid-template-columns: repeat(5, 1fr);
+                gap: 4px;
+                overflow: hidden;
+                box-shadow: 0 14px 40px rgba(80,51,70,.18);
             }
 
-            #page-schedule .page-title {
-                display: block !important;
-                animation: none !important;
-                margin-bottom: 8mm !important;
+            .nav-btn {
+                min-width: 0;
+                height: 50px;
+                padding: 5px 3px;
+                margin: 0;
+                text-align: center;
+                border-radius: 16px;
+                font-size: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
             }
 
-            #page-schedule .page-title h2 {
-                display: block !important;
-                font-size: 20pt !important;
-                text-align: center !important;
-                color: #222 !important;
+            .nav-btn::first-letter {
+                font-size: 21px;
+            }
+
+            .nav-btn.active {
+                transform: none;
+                background: linear-gradient(145deg, rgba(255,255,255,.80), rgba(255,215,230,.62));
+            }
+
+            main {
+                padding: 12px 0 24px;
+            }
+
+            .page-title {
+                margin: 5px 2px 14px;
+            }
+
+            .page-title h2 {
+                font-size: 23px;
+            }
+
+            .page-title p {
+                font-size: 12px;
+            }
+
+            .toolbar,
+            .notes-toolbar {
+                padding: 8px;
+                gap: 7px;
+                margin-bottom: 12px;
+                border-radius: 16px;
+            }
+
+            .toolbar select,
+            .notes-toolbar input {
+                max-width: none;
+                flex: 1 1 100%;
+            }
+
+            .toolbar .small-btn,
+            .notes-toolbar .small-btn {
+                flex: 1 1 auto;
+                min-height: 42px;
+                padding: 9px 10px;
+                border-radius: 13px;
             }
 
             .schedule-wrapper {
-                width: 100% !important;
-                overflow: visible !important;
-                border: 1px solid #aaa !important;
-                box-shadow: none !important;
+                border-radius: 18px;
+                margin: 0;
+                overflow-x: auto;
+                overflow-y: hidden;
+                -webkit-overflow-scrolling: touch;
+                overscroll-behavior-x: contain;
+                scrollbar-width: none;
+            }
+
+            .schedule-wrapper::-webkit-scrollbar {
+                display: none;
             }
 
             .schedule-grid {
-                width: 100% !important;
-                min-width: 0 !important;
-                display: grid !important;
+                min-width: 860px;
+                grid-template-columns: 72px repeat(7, minmax(112px, 1fr));
             }
 
-            .grid-header,
+            .grid-header {
+                padding: 11px 7px;
+                font-size: 12px;
+                position: sticky;
+                top: 0;
+                z-index: 3;
+            }
+
             .period-cell {
-                color: #222 !important;
-                border-color: #aaa !important;
-                break-inside: avoid !important;
+                min-height: 76px;
+                padding: 6px;
+            }
+
+            .period-label {
+                font-size: 11px;
+            }
+
+            .period-label span {
+                font-size: 9px;
+            }
+
+            .empty-slot,
+            .subject-card {
+                min-height: 62px;
             }
 
             .subject-card {
-                box-shadow: none !important;
-                transform: none !important;
-                border: 1px solid #aaa !important;
-                color: #222 !important;
-                break-inside: avoid !important;
+                padding: 8px;
             }
 
-            .subject-card strong,
-            .subject-card small,
-            .period-label,
-            .period-label span {
-                color: #222 !important;
+            .subject-card strong {
+                font-size: 11px;
             }
 
-            .empty-slot {
-                display: none !important;
+            .subject-card small {
+                font-size: 9px;
             }
-        }
 
+            .cards {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
 
-        #print-semester-title {
-            display: none;
-        }
+            .card,
+            .note-card,
+            .settings-section {
+                border-radius: 20px;
+                padding: 16px;
+            }
 
-        .period-row {
-            display: grid;
-            grid-template-columns: 90px minmax(130px, 1fr) minmax(130px, 1fr) auto;
-            gap: 10px;
-            align-items: center;
-        }
+            .note-card {
+                min-height: 160px;
+            }
 
-        @media (max-width: 700px) {
             .period-row {
-                grid-template-columns: 1fr 1fr;
+                grid-template-columns: 48px 1fr 1fr;
+                gap: 7px;
             }
 
-            .period-row strong {
-                grid-column: 1 / -1;
+            .period-row button {
+                grid-column: 2 / 4;
+                min-height: 40px;
             }
 
-            .period-row .delete-period-btn {
-                grid-column: 1 / -1;
-                width: 100%;
+            .modal {
+                align-items: flex-end;
+                padding: 10px;
+            }
+
+            .modal-content {
+                max-height: 88vh;
+                padding: 18px;
+                border-radius: 24px;
+            }
+
+            .modal-footer {
+                position: sticky;
+                bottom: -18px;
+                padding: 12px 0 4px;
+                background: linear-gradient(transparent, rgba(255,255,255,.72) 35%);
+            }
+
+            #toast-container {
+                left: 10px;
+                right: 10px;
+                bottom: 82px;
+            }
+
+            .toast {
+                max-width: none;
+                border-radius: 15px;
             }
         }
 
-        @media print {
-            #print-semester-title {
-                display: block !important;
-                text-align: center !important;
-                font-size: 11pt !important;
-                color: #555 !important;
-                margin-top: 2mm !important;
+        @media (max-width: 420px) {
+            .user-area { gap: 5px; }
+            .brand span { display: none; }
+            .brand { font-size: 16px; }
+
+            .page-title h2 { font-size: 21px; }
+
+            .toolbar .small-btn,
+            .notes-toolbar .small-btn {
+                font-size: 12px;
+                padding-left: 7px;
+                padding-right: 7px;
             }
+
+            .auth-card {
+                padding: 25px 18px;
+                border-radius: 24px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            body::before,
+            body::after { display: none; }
         }
 
     </style>
 </head>
 
-<!--
-    ENHANCED UI/UX VERSION
-    - Smooth page transitions
-    - Ripple + press feedback
-    - Animated active navigation
-    - Modal open/close animation
-    - Card hover effects
-    - Reduced-motion accessibility
--->
 <body>
 
 <!-- =========================================================
@@ -1262,7 +1281,6 @@
                 <div class="page-title">
                     <h2>📅 Thời khóa biểu</h2>
                     <p>Lên kế hoạch cho một tuần thật xinh ♡</p>
-                    <div id="print-semester-title"></div>
                 </div>
 
                 <div class="toolbar">
@@ -1278,14 +1296,6 @@
                         id="add-schedule-btn"
                     >
                         + Thêm môn
-                    </button>
-
-                    <button
-                        class="small-btn"
-                        id="print-schedule-btn"
-                        type="button"
-                    >
-                        🖨️ In lịch học
                     </button>
 
                 </div>
@@ -1405,7 +1415,7 @@
 
                 <div class="page-title">
                     <h2>⚙️ Cài đặt</h2>
-                    <p>Thêm, xóa và tùy chỉnh số tiết học theo nhu cầu của bạn.</p>
+                    <p>Tùy chỉnh thời gian của 12 tiết học.</p>
                 </div>
 
                 <div class="settings-section">
@@ -1981,9 +1991,60 @@ async function loadAllData() {
 ========================================================= */
 
 async function ensurePeriods() {
-    // Không tự động tạo 12 tiết nữa.
-    // Người dùng tự quản lý danh sách tiết trong phần Cài đặt.
-    return;
+
+    if (periods.length >= 12) {
+        return;
+    }
+
+    const existing =
+        new Set(
+            periods.map(
+                p => p.period_number
+            )
+        );
+
+    const rows = [];
+
+    for (
+        let i = 1;
+        i <= 12;
+        i++
+    ) {
+
+        if (!existing.has(i)) {
+
+            rows.push({
+                user_id: currentUser.id,
+                period_number: i,
+                start_time: defaultStartTime(i),
+                end_time: defaultEndTime(i)
+            });
+        }
+    }
+
+    if (!rows.length) {
+        return;
+    }
+
+    const { data, error } =
+        await db
+            .from("periods")
+            .insert(rows)
+            .select();
+
+    if (error) {
+
+        console.error(error);
+        return;
+    }
+
+    periods =
+        [...periods, ...(data || [])]
+            .sort(
+                (a,b) =>
+                    a.period_number -
+                    b.period_number
+            );
 }
 
 
@@ -2023,100 +2084,52 @@ function defaultEndTime(period) {
    NAVIGATION
 ========================================================= */
 
-function switchPage(pageName, clickedButton = null) {
-
-    if (!pageName) {
-        return;
-    }
-
-    const targetPage =
-        document.getElementById("page-" + pageName);
-
-    if (!targetPage) {
-        return;
-    }
-
-    const activePage =
-        document.querySelector(".page:not(.hidden)");
-
-    if (activePage === targetPage) {
-        return;
-    }
-
-    currentPage = pageName;
-
-    document
-        .querySelectorAll(".nav-btn")
-        .forEach(btn => {
-            btn.classList.toggle(
-                "active",
-                btn === clickedButton ||
-                btn.dataset.page === pageName
-            );
-        });
-
-    document
-        .querySelectorAll(".page")
-        .forEach(page => {
-            page.classList.add("hidden");
-            page.classList.remove("page-enter");
-        });
-
-    targetPage.classList.remove("hidden");
-
-    // Force a reflow so every navigation gets a fresh entrance animation.
-    void targetPage.offsetWidth;
-
-    targetPage.classList.add("page-enter");
-
-    renderCurrentPage();
-
-    window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-    });
-
-    setTimeout(() => {
-        targetPage.classList.remove("page-enter");
-    }, 500);
-}
-
 document
     .querySelectorAll(".nav-btn")
     .forEach(button => {
+
         button.addEventListener(
             "click",
             () => {
-                switchPage(
-                    button.dataset.page,
-                    button
-                );
+
+                currentPage =
+                    button.dataset.page;
+
+                document
+                    .querySelectorAll(".nav-btn")
+                    .forEach(btn => {
+                        btn.classList.toggle(
+                            "active",
+                            btn === button
+                        );
+                    });
+
+                document
+                    .querySelectorAll(".page")
+                    .forEach(page => {
+                        page.classList.add(
+                            "hidden"
+                        );
+                    });
+
+                document
+                    .getElementById(
+                        "page-" + currentPage
+                    )
+                    .classList.remove(
+                        "hidden"
+                    );
+
+                renderCurrentPage();
             }
         );
     });
-
-
 
 
 function renderCurrentPage() {
 
     if (!currentUser) {
         return;
-    }
-
-    const visiblePage =
-        document.getElementById(
-            "page-" + currentPage
-        );
-
-    if (visiblePage) {
-        visiblePage.classList.remove("page-enter");
-        void visiblePage.offsetWidth;
-        visiblePage.classList.add("page-enter");
-
-        setTimeout(() => {
-            visiblePage.classList.remove("page-enter");
-        }, 500);
     }
 
     if (currentPage === "schedule") {
@@ -2221,21 +2234,6 @@ function renderSchedule() {
 
     renderSemesterSelect();
 
-    const printTitle =
-        document.getElementById("print-semester-title");
-
-    if (printTitle) {
-        const semester =
-            semesters.find(
-                s => s.id === currentSemesterId
-            );
-
-        printTitle.textContent =
-            semester
-                ? semester.name
-                : "";
-    }
-
     const container =
         document.getElementById(
             "schedule-container"
@@ -2277,17 +2275,18 @@ function renderSchedule() {
         `;
     });
 
-    const visiblePeriods =
-        [...periods].sort(
-            (a, b) =>
-                Number(a.period_number) -
-                Number(b.period_number)
-        );
+    for (
+        let period = 1;
+        period <= 12;
+        period++
+    ) {
 
-    visiblePeriods.forEach(periodInfo => {
-
-        const period =
-            Number(periodInfo.period_number);
+        const periodInfo =
+            periods.find(
+                p =>
+                    p.period_number ===
+                    period
+            );
 
         html += `
             <div class="period-cell period-label">
@@ -2386,15 +2385,6 @@ function renderSchedule() {
                 }
             }
         }
-    });
-
-    if (!visiblePeriods.length) {
-        html += `
-            <div class="period-cell empty-period-message"
-                 style="grid-column: 1 / -1; padding: 24px; text-align:center;">
-                Chưa có tiết học. Vào <strong>Cài đặt</strong> để thêm tiết.
-            </div>
-        `;
     }
 
     html += `
@@ -3814,167 +3804,50 @@ function openFolderModal() {
 function renderPeriodSettings() {
 
     const container =
-        document.getElementById("period-settings");
-
-    const sortedPeriods =
-        [...periods].sort(
-            (a, b) =>
-                Number(a.period_number) -
-                Number(b.period_number)
+        document.getElementById(
+            "period-settings"
         );
 
-    if (!sortedPeriods.length) {
-        container.innerHTML = `
-            <div class="empty" style="margin-bottom:16px;">
-                <div class="emoji">📚</div>
-                <h3>Chưa có tiết học</h3>
-                <p>Nhấn “+ Thêm tiết” để tạo tiết đầu tiên.</p>
-            </div>
-        `;
-        return;
-    }
+    let html = "";
 
-    container.innerHTML =
-        sortedPeriods.map(period => `
-            <div class="period-row"
-                 data-period-id="${escapeHTML(period.id)}">
+    for (
+        let i = 1;
+        i <= 12;
+        i++
+    ) {
+
+        const period =
+            periods.find(
+                p =>
+                    p.period_number === i
+            );
+
+        html += `
+            <div class="period-row">
 
                 <strong>
-                    Tiết ${Number(period.period_number)}
+                    Tiết ${i}
                 </strong>
 
                 <input
                     type="time"
-                    id="period-start-${period.id}"
-                    value="${timeToDisplay(period.start_time)}"
+                    id="period-start-${i}"
+                    value="${timeToDisplay(period?.start_time)}"
                 >
 
                 <input
                     type="time"
-                    id="period-end-${period.id}"
-                    value="${timeToDisplay(period.end_time)}"
+                    id="period-end-${i}"
+                    value="${timeToDisplay(period?.end_time)}"
                 >
 
-                <button
-                    type="button"
-                    class="small-btn danger-btn delete-period-btn"
-                    data-period-id="${escapeHTML(period.id)}"
-                    data-period-number="${Number(period.period_number)}"
-                >
-                    🗑️ Xóa
-                </button>
+                <span></span>
 
             </div>
-        `).join("");
-
-    container
-        .querySelectorAll(".delete-period-btn")
-        .forEach(button => {
-            button.addEventListener("click", () => {
-                deletePeriod(
-                    button.dataset.periodId,
-                    Number(button.dataset.periodNumber)
-                );
-            });
-        });
-}
-
-
-async function addPeriod() {
-
-    try {
-        const maxPeriod =
-            periods.reduce(
-                (max, period) =>
-                    Math.max(
-                        max,
-                        Number(period.period_number) || 0
-                    ),
-                0
-            );
-
-        const nextPeriod =
-            maxPeriod + 1;
-
-        const { data, error } =
-            await db
-                .from("periods")
-                .insert({
-                    user_id: currentUser.id,
-                    period_number: nextPeriod,
-                    start_time: defaultStartTime(nextPeriod),
-                    end_time: defaultEndTime(nextPeriod)
-                })
-                .select()
-                .single();
-
-        if (error) throw error;
-
-        periods.push(data);
-
-        renderPeriodSettings();
-        renderSchedule();
-
-        showToast(`Đã thêm Tiết ${nextPeriod} ♡`);
-
-    } catch (error) {
-        console.error(error);
-        showToast(error.message, true);
-    }
-}
-
-
-async function deletePeriod(periodId, periodNumber) {
-
-    if (!confirm(
-        `Xóa Tiết ${periodNumber}?\n\nCác môn học đang nằm ở tiết này cũng sẽ bị xóa khỏi thời khóa biểu.`
-    )) {
-        return;
+        `;
     }
 
-    try {
-
-        const { error: scheduleError } =
-            await db
-                .from("schedule_entries")
-                .delete()
-                .eq("user_id", currentUser.id)
-                .eq("period_number", periodNumber);
-
-        if (scheduleError)
-            throw scheduleError;
-
-        const { error: periodError } =
-            await db
-                .from("periods")
-                .delete()
-                .eq("id", periodId)
-                .eq("user_id", currentUser.id);
-
-        if (periodError)
-            throw periodError;
-
-        periods =
-            periods.filter(
-                p => p.id !== periodId
-            );
-
-        scheduleEntries =
-            scheduleEntries.filter(
-                e =>
-                    Number(e.period_number) !==
-                    Number(periodNumber)
-            );
-
-        renderPeriodSettings();
-        renderSchedule();
-
-        showToast(`Đã xóa Tiết ${periodNumber}.`);
-
-    } catch (error) {
-        console.error(error);
-        showToast(error.message, true);
-    }
+    container.innerHTML = html;
 }
 
 
@@ -3986,41 +3859,40 @@ document
 
             try {
 
-                const sortedPeriods =
-                    [...periods].sort(
-                        (a, b) =>
-                            Number(a.period_number) -
-                            Number(b.period_number)
-                    );
+                for (
+                    let i = 1;
+                    i <= 12;
+                    i++
+                ) {
 
-                for (const period of sortedPeriods) {
-
-                    const startInput =
+                    const start =
                         document.getElementById(
-                            `period-start-${period.id}`
-                        );
+                            `period-start-${i}`
+                        ).value;
 
-                    const endInput =
+                    const end =
                         document.getElementById(
-                            `period-end-${period.id}`
-                        );
+                            `period-end-${i}`
+                        ).value;
 
                     const { error } =
                         await db
                             .from("periods")
-                            .update({
-                                start_time:
-                                    startInput?.value || null,
-                                end_time:
-                                    endInput?.value || null
-                            })
-                            .eq(
-                                "id",
-                                period.id
-                            )
-                            .eq(
-                                "user_id",
-                                currentUser.id
+                            .upsert(
+                                {
+                                    user_id:
+                                        currentUser.id,
+                                    period_number:
+                                        i,
+                                    start_time:
+                                        start || null,
+                                    end_time:
+                                        end || null
+                                },
+                                {
+                                    onConflict:
+                                        "user_id,period_number"
+                                }
                             );
 
                     if (error)
@@ -4033,7 +3905,7 @@ document
                 renderSchedule();
 
                 showToast(
-                    "Đã lưu thời gian các tiết ♡"
+                    "Đã lưu thời gian 12 tiết ♡"
                 );
 
             } catch (error) {
@@ -4049,66 +3921,6 @@ document
     );
 
 
-const addPeriodButton =
-    document.createElement("button");
-
-addPeriodButton.type = "button";
-addPeriodButton.className =
-    "small-btn pink";
-addPeriodButton.id =
-    "add-period-btn";
-addPeriodButton.textContent =
-    "+ Thêm tiết";
-
-const periodSettingsContainer =
-    document.getElementById("period-settings");
-
-periodSettingsContainer.parentElement.insertBefore(
-    addPeriodButton,
-    periodSettingsContainer
-);
-
-addPeriodButton.addEventListener(
-    "click",
-    addPeriod
-);
-
-
-/* =========================================================
-   PRINT SCHEDULE
-========================================================= */
-
-document
-    .getElementById("print-schedule-btn")
-    .addEventListener(
-        "click",
-        () => {
-
-            if (!currentSemesterId) {
-                showToast(
-                    "Hãy chọn học kỳ trước khi in.",
-                    true
-                );
-                return;
-            }
-
-            if (!periods.length) {
-                showToast(
-                    "Chưa có tiết học để in.",
-                    true
-                );
-                return;
-            }
-
-            // Give the browser a moment to finish rendering the
-            // current schedule before opening the print dialog.
-            requestAnimationFrame(() => {
-                window.print();
-            });
-        }
-    );
-
-
 /* =========================================================
    MODAL SYSTEM
 ========================================================= */
@@ -4119,8 +3931,6 @@ function openModal(
     saveHandler,
     saveText = "Lưu"
 ) {
-    const modal =
-        document.getElementById("modal");
 
     document
         .getElementById("modal-title")
@@ -4134,49 +3944,24 @@ function openModal(
         .getElementById("modal-save")
         .textContent = saveText;
 
-    modal.classList.remove("hidden", "modal-leave", "modal-enter");
-
-    // Force a reflow to restart the opening animation every time.
-    void modal.offsetWidth;
-
-    modal.classList.add("modal-enter");
+    document
+        .getElementById("modal")
+        .classList.remove("hidden");
 
     modalSaveHandler =
         saveHandler;
-
-    setTimeout(() => {
-        const firstInput =
-            modal.querySelector(
-                "input:not([disabled]), textarea, select"
-            );
-
-        if (firstInput) {
-            firstInput.focus();
-        }
-    }, 180);
 }
 
 
 function closeModal() {
-    const modal =
-        document.getElementById("modal");
 
-    if (modal.classList.contains("hidden")) {
-        return;
-    }
+    document
+        .getElementById("modal")
+        .classList.add("hidden");
 
-    modal.classList.remove("modal-enter");
-    modal.classList.add("modal-leave");
-
-    setTimeout(() => {
-        modal.classList.add("hidden");
-        modal.classList.remove("modal-leave");
-        modalSaveHandler = null;
-    }, 180);
+    modalSaveHandler =
+        null;
 }
-
-
-
 
 
 document
@@ -4255,51 +4040,8 @@ document
 
 
 /* =========================================================
-   GLOBAL CLICK / RIPPLE EFFECT
-========================================================= */
-
-document.addEventListener("pointerdown", event => {
-
-    const target =
-        event.target.closest(
-            "button, .subject-card, .empty-slot, .card-actions button"
-        );
-
-    if (!target || target.disabled) {
-        return;
-    }
-
-    const rect =
-        target.getBoundingClientRect();
-
-    const size =
-        Math.max(rect.width, rect.height) * 1.65;
-
-    const ripple =
-        document.createElement("span");
-
-    ripple.className = "ripple";
-
-    ripple.style.width = size + "px";
-    ripple.style.height = size + "px";
-    ripple.style.left =
-        (event.clientX - rect.left) + "px";
-    ripple.style.top =
-        (event.clientY - rect.top) + "px";
-
-    target.appendChild(ripple);
-
-    ripple.addEventListener(
-        "animationend",
-        () => ripple.remove(),
-        { once: true }
-    );
-});
-
-/* =========================================================
    START
 ========================================================= */
-
 
 initializeApp();
 
