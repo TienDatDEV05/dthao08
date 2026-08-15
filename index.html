@@ -3,55 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đoàn Thảo - Schedule & Notes</title>
 
-    <title>Đoàn Thảo - Pink Planner</title>
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
-        /* =========================================================
-           RESET
-        ========================================================= */
-
         * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
         }
 
         :root {
-            --pink: #ff6fae;
-            --pink-dark: #e94d91;
+            --pink: #ff77a8;
+            --pink-dark: #ed4f89;
             --pink-light: #fff0f6;
-            --pink-soft: #ffe0ed;
-            --pink-pale: #fff8fb;
-
-            --purple: #9b7bff;
-            --blue: #71b7ff;
-            --green: #72d6a0;
-            --yellow: #ffd86b;
-            --red: #ff7373;
-
-            --text: #493944;
-            --text-light: #887783;
-
+            --pink-soft: #ffe1ec;
+            --pink-border: #ffc5d9;
             --white: #ffffff;
-            --border: #f2dce6;
-
-            --shadow: 0 10px 30px rgba(228, 95, 151, 0.10);
-            --shadow-hover: 0 15px 35px rgba(228, 95, 151, 0.18);
-
+            --text: #5d4050;
+            --muted: #a78696;
+            --danger: #e85b70;
+            --shadow: 0 10px 30px rgba(226, 103, 148, .12);
             --radius: 18px;
-        }
-
-        html {
-            scroll-behavior: smooth;
         }
 
         body {
             font-family: "Segoe UI", Arial, sans-serif;
-            background:
-                radial-gradient(circle at top left, #ffe7f1 0, transparent 30%),
-                radial-gradient(circle at bottom right, #ffeaf3 0, transparent 30%),
-                var(--pink-pale);
+            background: linear-gradient(135deg, #fff7fa, #fff0f6);
             color: var(--text);
             min-height: 100vh;
         }
@@ -65,270 +45,197 @@
 
         button {
             cursor: pointer;
+            border: none;
         }
-
-        /* =========================================================
-           COMMON
-        ========================================================= */
 
         .hidden {
             display: none !important;
         }
 
-        .btn {
-            border: none;
-            border-radius: 12px;
-            padding: 11px 17px;
-            font-weight: 700;
-            transition: 0.2s ease;
+        /* ================= LOGIN ================= */
+
+        #auth-screen {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background:
+                radial-gradient(circle at top left, #ffd8e8, transparent 35%),
+                radial-gradient(circle at bottom right, #ffc7dc, transparent 35%),
+                #fff7fa;
         }
 
-        .btn:hover {
-            transform: translateY(-2px);
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--pink), var(--pink-dark));
-            color: white;
-            box-shadow: 0 7px 18px rgba(233, 77, 145, 0.22);
-        }
-
-        .btn-secondary {
-            background: var(--pink-light);
-            color: var(--pink-dark);
-        }
-
-        .btn-danger {
-            background: #fff0f0;
-            color: #df5151;
-        }
-
-        .btn-small {
-            padding: 8px 12px;
-            font-size: 13px;
-        }
-
-        .input,
-        .textarea,
-        .select {
+        .auth-card {
             width: 100%;
-            border: 1px solid var(--border);
+            max-width: 430px;
+            background: rgba(255,255,255,.96);
+            padding: 38px;
+            border-radius: 28px;
+            box-shadow: 0 25px 70px rgba(224, 91, 139, .18);
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+
+        .logo-heart {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            margin: 0 auto 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #ff8eb6, #ff5e97);
+            color: white;
+            font-size: 32px;
+            box-shadow: 0 10px 25px rgba(255, 94, 151, .25);
+        }
+
+        .logo h1 {
+            color: var(--pink-dark);
+            font-size: 30px;
+            margin-bottom: 5px;
+        }
+
+        .logo p {
+            color: var(--muted);
+        }
+
+        .auth-tabs {
+            display: flex;
+            background: var(--pink-light);
+            border-radius: 13px;
+            padding: 4px;
+            margin-bottom: 22px;
+        }
+
+        .auth-tab {
+            flex: 1;
+            padding: 11px;
+            border-radius: 10px;
+            background: transparent;
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        .auth-tab.active {
             background: white;
-            color: var(--text);
-            border-radius: 12px;
-            padding: 12px 14px;
-            outline: none;
-            transition: 0.2s;
-        }
-
-        .input:focus,
-        .textarea:focus,
-        .select:focus {
-            border-color: var(--pink);
-            box-shadow: 0 0 0 4px rgba(255, 111, 174, 0.10);
-        }
-
-        .textarea {
-            min-height: 160px;
-            resize: vertical;
-        }
-
-        .label {
-            display: block;
-            font-size: 13px;
-            font-weight: 700;
-            margin-bottom: 7px;
-            color: var(--text);
+            color: var(--pink-dark);
+            box-shadow: 0 4px 12px rgba(0,0,0,.05);
         }
 
         .form-group {
             margin-bottom: 16px;
         }
 
-        .card {
-            background: rgba(255, 255, 255, 0.94);
-            border: 1px solid rgba(242, 220, 230, 0.9);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-        }
-
-        .section-title {
-            font-size: 22px;
-            margin-bottom: 5px;
-        }
-
-        .section-subtitle {
-            color: var(--text-light);
+        .form-group label {
+            display: block;
+            margin-bottom: 7px;
+            font-weight: 600;
             font-size: 14px;
-            margin-bottom: 20px;
         }
 
-        /* =========================================================
-           LOGIN
-        ========================================================= */
-
-        #authScreen {
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 25px;
-        }
-
-        .auth-wrapper {
+        input,
+        textarea,
+        select {
             width: 100%;
-            max-width: 440px;
-        }
-
-        .auth-card {
-            background: rgba(255,255,255,0.95);
-            border: 1px solid var(--border);
-            border-radius: 28px;
-            padding: 35px;
-            box-shadow: 0 20px 60px rgba(226, 82, 142, 0.16);
-        }
-
-        .brand {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .brand-logo {
-            width: 80px;
-            height: 80px;
-            margin: 0 auto 15px;
-            border-radius: 25px;
-            background: linear-gradient(135deg, #ff8fbd, #ed5596);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 38px;
-            box-shadow: 0 12px 25px rgba(233, 77, 145, 0.25);
-        }
-
-        .brand h1 {
-            font-size: 30px;
-            color: var(--pink-dark);
-        }
-
-        .brand p {
-            color: var(--text-light);
-            font-size: 14px;
-            margin-top: 6px;
-        }
-
-        .auth-tabs {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            background: var(--pink-light);
+            border: 1px solid var(--pink-border);
             border-radius: 12px;
-            padding: 4px;
-            margin-bottom: 22px;
-        }
-
-        .auth-tab {
-            border: none;
-            background: transparent;
-            padding: 10px;
-            border-radius: 9px;
-            color: var(--text-light);
-            font-weight: 700;
-        }
-
-        .auth-tab.active {
+            padding: 12px 14px;
             background: white;
-            color: var(--pink-dark);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            color: var(--text);
+            outline: none;
+            transition: .2s;
         }
 
-        .remember {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin: 5px 0 18px;
-            font-size: 13px;
-            color: var(--text-light);
+        input:focus,
+        textarea:focus,
+        select:focus {
+            border-color: var(--pink);
+            box-shadow: 0 0 0 3px rgba(255,119,168,.12);
         }
 
-        .remember input {
-            accent-color: var(--pink);
+        textarea {
+            resize: vertical;
+            min-height: 140px;
+        }
+
+        .primary-btn {
+            width: 100%;
+            padding: 13px;
+            border-radius: 13px;
+            background: linear-gradient(135deg, #ff82ae, #f65f96);
+            color: white;
+            font-weight: 700;
+            box-shadow: 0 8px 18px rgba(246,95,150,.2);
+            transition: .2s;
+        }
+
+        .primary-btn:hover {
+            transform: translateY(-1px);
         }
 
         .auth-message {
-            padding: 11px 13px;
-            border-radius: 10px;
-            font-size: 13px;
-            margin-bottom: 15px;
+            min-height: 22px;
+            margin-top: 14px;
+            text-align: center;
+            color: var(--danger);
+            font-size: 14px;
         }
 
-        .auth-message.error {
-            background: #fff0f0;
-            color: #d64e4e;
-        }
+        /* ================= APP ================= */
 
-        .auth-message.success {
-            background: #edfff5;
-            color: #29955b;
-        }
-
-        /* =========================================================
-           APP LAYOUT
-        ========================================================= */
-
-        #appScreen {
+        #app {
             min-height: 100vh;
         }
 
-        .topbar {
+        header {
             height: 72px;
+            background: rgba(255,255,255,.92);
+            backdrop-filter: blur(15px);
+            border-bottom: 1px solid #ffe1ec;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 25px;
             position: sticky;
             top: 0;
             z-index: 100;
-            background: rgba(255,255,255,0.94);
-            backdrop-filter: blur(15px);
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            padding: 0 24px;
-            justify-content: space-between;
         }
 
-        .top-brand {
+        .brand {
             display: flex;
             align-items: center;
-            gap: 11px;
-            color: var(--pink-dark);
+            gap: 10px;
             font-weight: 800;
-            font-size: 20px;
+            color: var(--pink-dark);
+            font-size: 21px;
         }
 
-        .top-brand span:first-child {
-            width: 38px;
-            height: 38px;
-            border-radius: 12px;
-            background: var(--pink-light);
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        .brand span {
+            font-size: 24px;
         }
 
-        .top-right {
+        .user-area {
             display: flex;
             align-items: center;
             gap: 12px;
         }
 
         .user-email {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .logout-btn {
             background: var(--pink-light);
             color: var(--pink-dark);
-            padding: 8px 12px;
+            padding: 9px 13px;
             border-radius: 10px;
-            font-size: 13px;
-            max-width: 250px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            font-weight: 600;
         }
 
         .layout {
@@ -336,596 +243,439 @@
             min-height: calc(100vh - 72px);
         }
 
-        .sidebar {
-            width: 235px;
-            background: rgba(255,255,255,0.92);
-            border-right: 1px solid var(--border);
-            padding: 22px 14px;
-            flex-shrink: 0;
+        aside {
+            width: 220px;
+            background: rgba(255,255,255,.78);
+            border-right: 1px solid #ffe1ec;
+            padding: 20px 13px;
         }
 
-        .nav-label {
-            color: #b09aa6;
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            padding: 0 12px;
-            margin: 12px 0 8px;
-            font-weight: 800;
-        }
-
-        .nav-item {
+        .nav-btn {
             width: 100%;
-            border: none;
-            background: transparent;
-            color: var(--text-light);
             text-align: left;
-            padding: 12px 14px;
+            padding: 13px 15px;
             border-radius: 12px;
-            margin-bottom: 5px;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            transition: 0.2s;
+            margin-bottom: 7px;
+            background: transparent;
+            color: var(--text);
+            font-weight: 600;
         }
 
-        .nav-item:hover {
-            background: var(--pink-light);
+        .nav-btn:hover,
+        .nav-btn.active {
+            background: var(--pink-soft);
             color: var(--pink-dark);
         }
 
-        .nav-item.active {
-            background: linear-gradient(135deg, #ffe4ef, #fff1f7);
-            color: var(--pink-dark);
-        }
-
-        .main {
+        main {
             flex: 1;
-            min-width: 0;
             padding: 28px;
+            min-width: 0;
         }
 
-        .page {
-            display: none;
-        }
-
-        .page.active {
-            display: block;
-        }
-
-        /* =========================================================
-           DASHBOARD
-        ========================================================= */
-
-        .welcome-box {
-            padding: 26px;
-            margin-bottom: 22px;
-            background:
-                linear-gradient(135deg, rgba(255,224,237,0.9), rgba(255,248,251,0.95));
-            position: relative;
-            overflow: hidden;
-        }
-
-        .welcome-box::after {
-            content: "♡";
-            position: absolute;
-            right: 35px;
-            top: 15px;
-            font-size: 95px;
-            color: rgba(255,111,174,0.10);
-        }
-
-        .welcome-box h2 {
-            color: var(--pink-dark);
-            margin-bottom: 6px;
-        }
-
-        .welcome-box p {
-            color: var(--text-light);
-            font-size: 14px;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 15px;
-            margin-bottom: 22px;
-        }
-
-        .stat-card {
-            padding: 20px;
-        }
-
-        .stat-icon {
-            font-size: 25px;
-            margin-bottom: 12px;
-        }
-
-        .stat-number {
-            font-size: 25px;
-            font-weight: 800;
-            color: var(--pink-dark);
-        }
-
-        .stat-label {
-            color: var(--text-light);
-            font-size: 13px;
-            margin-top: 3px;
-        }
-
-        /* =========================================================
-           SCHEDULE
-        ========================================================= */
-
-        .page-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 15px;
+        .page-title {
             margin-bottom: 20px;
         }
 
-        .header-actions {
-            display: flex;
-            gap: 9px;
-            flex-wrap: wrap;
+        .page-title h2 {
+            font-size: 27px;
+            color: #633e51;
         }
 
-        .semester-select {
-            min-width: 170px;
+        .page-title p {
+            color: var(--muted);
+            margin-top: 5px;
         }
+
+        /* ================= TOOLBAR ================= */
+
+        .toolbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 18px;
+        }
+
+        .toolbar select {
+            max-width: 250px;
+        }
+
+        .small-btn {
+            padding: 10px 14px;
+            border-radius: 11px;
+            background: white;
+            color: var(--pink-dark);
+            border: 1px solid var(--pink-border);
+            font-weight: 600;
+        }
+
+        .small-btn.pink {
+            background: var(--pink);
+            color: white;
+            border-color: var(--pink);
+        }
+
+        .danger-btn {
+            color: var(--danger);
+        }
+
+        /* ================= SCHEDULE ================= */
 
         .schedule-wrapper {
-            overflow-x: auto;
-            padding-bottom: 10px;
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: auto;
         }
 
         .schedule-grid {
             min-width: 1100px;
             display: grid;
-            grid-template-columns: 90px repeat(7, minmax(135px, 1fr));
-            gap: 7px;
+            grid-template-columns: 100px repeat(7, minmax(130px, 1fr));
         }
 
-        .schedule-header {
-            padding: 13px 8px;
-            background: var(--pink-light);
-            color: var(--pink-dark);
-            font-weight: 800;
+        .grid-header {
+            padding: 15px 10px;
             text-align: center;
-            border-radius: 12px;
-            font-size: 13px;
+            font-weight: 700;
+            background: #fff3f7;
+            border-right: 1px solid #ffe3ed;
+            border-bottom: 1px solid #ffe3ed;
+            color: var(--pink-dark);
+        }
+
+        .period-cell {
+            min-height: 85px;
+            padding: 8px;
+            border-right: 1px solid #ffe8ef;
+            border-bottom: 1px solid #ffe8ef;
+            background: #fffafd;
         }
 
         .period-label {
-            background: #fff;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 9px;
-            min-height: 82px;
             display: flex;
             flex-direction: column;
+            align-items: center;
             justify-content: center;
             text-align: center;
-        }
-
-        .period-number {
-            font-weight: 800;
+            font-weight: 700;
             color: var(--pink-dark);
             font-size: 13px;
         }
 
-        .period-time {
-            font-size: 10px;
-            color: var(--text-light);
-            margin-top: 5px;
-        }
-
-        .schedule-slot {
-            min-height: 82px;
-            background: rgba(255,255,255,0.70);
-            border: 1px dashed #ebcbd9;
-            border-radius: 12px;
-            padding: 6px;
-            transition: 0.2s;
-        }
-
-        .schedule-slot:hover {
-            background: #fff7fa;
-            border-color: var(--pink);
+        .period-label span {
+            margin-top: 4px;
+            color: var(--muted);
+            font-weight: 400;
+            font-size: 11px;
         }
 
         .empty-slot {
             width: 100%;
             height: 100%;
             min-height: 68px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #c9aebc;
-            font-size: 21px;
+            border-radius: 10px;
+            border: 1px dashed #ffcddd;
+            background: #fffafd;
+            color: #e6a5ba;
+            transition: .15s;
+        }
+
+        .empty-slot:hover {
+            background: var(--pink-light);
+            border-color: var(--pink);
         }
 
         .subject-card {
             min-height: 68px;
-            padding: 9px;
-            border-radius: 10px;
-            color: #533a45;
-            position: relative;
-            overflow: hidden;
+            border-radius: 12px;
+            padding: 10px;
+            color: #633e51;
             cursor: pointer;
+            position: relative;
+            box-shadow: 0 4px 10px rgba(0,0,0,.05);
         }
 
         .subject-card strong {
             display: block;
-            font-size: 12px;
-            margin-bottom: 5px;
+            font-size: 13px;
+            margin-bottom: 4px;
         }
 
         .subject-card small {
             display: block;
-            font-size: 10px;
-            opacity: 0.75;
-            line-height: 1.4;
+            color: rgba(80,50,65,.65);
+            font-size: 11px;
         }
 
-        /* =========================================================
-           SETTINGS
-        ========================================================= */
+        /* ================= CARDS ================= */
 
-        .settings-grid {
+        .cards {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 18px;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 16px;
         }
 
-        .settings-card {
-            padding: 22px;
+        .card {
+            background: white;
+            border-radius: var(--radius);
+            padding: 19px;
+            box-shadow: var(--shadow);
         }
 
-        .settings-card.full {
-            grid-column: 1 / -1;
+        .card h3 {
+            color: #633e51;
+            margin-bottom: 8px;
         }
 
-        .item-list {
-            display: flex;
-            flex-direction: column;
-            gap: 9px;
-            margin-top: 14px;
-        }
-
-        .list-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-            padding: 12px;
-            background: var(--pink-pale);
-            border-radius: 12px;
-            border: 1px solid var(--border);
-        }
-
-        .list-item-info {
-            min-width: 0;
-        }
-
-        .list-item-title {
-            font-weight: 800;
+        .card p {
+            color: var(--muted);
             font-size: 14px;
+            line-height: 1.5;
         }
 
-        .list-item-sub {
-            color: var(--text-light);
-            font-size: 12px;
-            margin-top: 3px;
-        }
-
-        .list-actions {
+        .card-actions {
             display: flex;
-            gap: 5px;
-            flex-shrink: 0;
+            gap: 7px;
+            margin-top: 15px;
+        }
+
+        .card-actions button {
+            padding: 7px 10px;
+            border-radius: 8px;
+            background: var(--pink-light);
+            color: var(--pink-dark);
+            font-size: 12px;
         }
 
         .color-dot {
-            width: 18px;
-            height: 18px;
+            width: 13px;
+            height: 13px;
             border-radius: 50%;
             display: inline-block;
             vertical-align: middle;
-            margin-right: 7px;
+            margin-right: 5px;
         }
 
-        /* =========================================================
-           NOTES
-        ========================================================= */
+        /* ================= NOTES ================= */
 
         .notes-toolbar {
             display: flex;
             gap: 10px;
-            margin-bottom: 20px;
             flex-wrap: wrap;
+            margin-bottom: 18px;
         }
 
-        .search-box {
-            flex: 1;
-            min-width: 200px;
-        }
-
-        .notes-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
+        .notes-toolbar input {
+            max-width: 350px;
         }
 
         .note-card {
-            min-height: 190px;
-            padding: 19px;
             border-radius: 18px;
+            padding: 18px;
+            min-height: 190px;
+            box-shadow: 0 8px 22px rgba(0,0,0,.06);
             position: relative;
             overflow: hidden;
-            border: 1px solid rgba(255,255,255,0.8);
-            box-shadow: var(--shadow);
-            transition: 0.2s;
         }
 
-        .note-card:hover {
-            transform: translateY(-3px);
-            box-shadow: var(--shadow-hover);
+        .note-card.pinned {
+            outline: 2px solid #ffb1cb;
         }
 
-        .note-card.pinned::before {
-            content: "📌";
+        .pin {
             position: absolute;
-            top: 12px;
             right: 12px;
-            font-size: 15px;
+            top: 12px;
+            color: var(--pink-dark);
         }
 
-        .note-title {
-            font-size: 17px;
-            font-weight: 800;
+        .note-card h3 {
+            margin-bottom: 10px;
             padding-right: 25px;
-            margin-bottom: 9px;
         }
 
-        .note-body {
+        .note-content {
             white-space: pre-wrap;
-            color: #654e59;
-            font-size: 13px;
+            color: #745363;
+            font-size: 14px;
             line-height: 1.55;
-            max-height: 80px;
-            overflow: hidden;
         }
 
-        .note-footer {
-            position: absolute;
-            left: 19px;
-            right: 19px;
-            bottom: 14px;
-            display: flex;
+        .note-time {
+            color: #a78393;
+            font-size: 11px;
+            margin-top: 15px;
+        }
+
+        /* ================= SETTINGS ================= */
+
+        .settings-section {
+            background: white;
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 18px;
+            box-shadow: var(--shadow);
+        }
+
+        .settings-section h3 {
+            margin-bottom: 15px;
+        }
+
+        .period-row {
+            display: grid;
+            grid-template-columns: 70px 1fr 1fr 100px;
+            gap: 10px;
             align-items: center;
-            justify-content: space-between;
-            gap: 8px;
+            margin-bottom: 8px;
         }
 
-        .note-date {
-            color: rgba(75,55,65,0.6);
-            font-size: 10px;
-        }
+        /* ================= MODAL ================= */
 
-        .note-actions {
-            display: flex;
-            gap: 4px;
-        }
-
-        .icon-btn {
-            border: none;
-            background: rgba(255,255,255,0.65);
-            width: 28px;
-            height: 28px;
-            border-radius: 8px;
-            font-size: 12px;
-        }
-
-        /* =========================================================
-           EMPTY STATE
-        ========================================================= */
-
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: var(--text-light);
-        }
-
-        .empty-icon {
-            font-size: 48px;
-            margin-bottom: 12px;
-        }
-
-        .empty-state h3 {
-            color: var(--text);
-            margin-bottom: 6px;
-        }
-
-        /* =========================================================
-           MODAL
-        ========================================================= */
-
-        .modal-overlay {
+        .modal {
             position: fixed;
             inset: 0;
-            z-index: 500;
-            background: rgba(66, 40, 53, 0.35);
-            backdrop-filter: blur(4px);
+            background: rgba(78,45,61,.35);
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
+            z-index: 500;
         }
 
-        .modal {
+        .modal-content {
             width: 100%;
             max-width: 500px;
-            background: white;
-            border-radius: 22px;
-            padding: 24px;
-            box-shadow: 0 25px 80px rgba(65,30,48,0.25);
             max-height: 90vh;
             overflow-y: auto;
-        }
-
-        .modal.large {
-            max-width: 650px;
+            background: white;
+            border-radius: 23px;
+            padding: 25px;
+            box-shadow: 0 25px 70px rgba(0,0,0,.2);
         }
 
         .modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 18px;
         }
 
         .modal-header h3 {
             color: var(--pink-dark);
         }
 
-        .close-btn {
-            width: 32px;
-            height: 32px;
-            border: none;
+        .close-modal {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
             background: var(--pink-light);
             color: var(--pink-dark);
-            border-radius: 9px;
         }
 
         .modal-footer {
             display: flex;
             justify-content: flex-end;
             gap: 8px;
-            margin-top: 20px;
+            margin-top: 18px;
         }
 
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
+        /* ================= TOAST ================= */
+
+        #toast-container {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            z-index: 1000;
         }
 
-        .color-picker {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
+        .toast {
+            background: #633e51;
+            color: white;
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-top: 8px;
+            box-shadow: 0 8px 25px rgba(0,0,0,.15);
+            animation: toastIn .2s ease;
+            max-width: 320px;
+            font-size: 14px;
         }
 
-        .color-option {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            border: 3px solid white;
-            box-shadow: 0 0 0 1px var(--border);
-            cursor: pointer;
+        .toast.error {
+            background: #c9536c;
         }
 
-        .color-option.selected {
-            box-shadow: 0 0 0 3px var(--pink);
-        }
-
-        /* =========================================================
-           MOBILE
-        ========================================================= */
-
-        .mobile-menu {
-            display: none;
-            border: none;
-            background: var(--pink-light);
-            color: var(--pink-dark);
-            width: 38px;
-            height: 38px;
-            border-radius: 10px;
-        }
-
-        @media (max-width: 1000px) {
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
+        @keyframes toastIn {
+            from {
+                transform: translateY(10px);
+                opacity: 0;
             }
-
-            .notes-grid {
-                grid-template-columns: repeat(2, 1fr);
+            to {
+                transform: translateY(0);
+                opacity: 1;
             }
         }
 
-        @media (max-width: 760px) {
-            .mobile-menu {
-                display: block;
+        /* ================= EMPTY ================= */
+
+        .empty {
+            background: white;
+            border-radius: var(--radius);
+            padding: 45px 20px;
+            text-align: center;
+            box-shadow: var(--shadow);
+        }
+
+        .empty .emoji {
+            font-size: 40px;
+            margin-bottom: 10px;
+        }
+
+        .empty h3 {
+            margin-bottom: 6px;
+        }
+
+        .empty p {
+            color: var(--muted);
+        }
+
+        /* ================= RESPONSIVE ================= */
+
+        @media (max-width: 800px) {
+            header {
+                padding: 0 15px;
             }
 
-            .topbar {
-                padding: 0 14px;
-            }
-
-            .top-right .user-email {
+            .user-email {
                 display: none;
             }
 
-            .sidebar {
-                position: fixed;
-                left: -260px;
-                top: 72px;
-                bottom: 0;
-                z-index: 90;
-                transition: 0.25s;
-                box-shadow: 10px 0 30px rgba(0,0,0,0.08);
+            aside {
+                width: 70px;
+                padding: 15px 8px;
             }
 
-            .sidebar.open {
-                left: 0;
+            .nav-btn {
+                text-align: center;
+                padding: 12px 5px;
+                font-size: 0;
             }
 
-            .main {
-                padding: 18px 13px;
+            .nav-btn::first-letter {
+                font-size: 20px;
             }
 
-            .stats-grid {
-                grid-template-columns: 1fr 1fr;
+            main {
+                padding: 18px 12px;
             }
 
-            .settings-grid {
-                grid-template-columns: 1fr;
+            .period-row {
+                grid-template-columns: 55px 1fr 1fr;
             }
 
-            .settings-card.full {
-                grid-column: auto;
-            }
-
-            .notes-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .page-header {
-                flex-direction: column;
-            }
-
-            .form-row {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        @media (max-width: 450px) {
-            .auth-card {
-                padding: 25px 20px;
-            }
-
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .header-actions {
-                width: 100%;
-            }
-
-            .header-actions > * {
-                flex: 1;
+            .period-row button {
+                grid-column: 2 / 4;
             }
         }
     </style>
@@ -933,142 +683,85 @@
 
 <body>
 
-<!-- =============================================================
+<!-- =========================================================
      AUTH SCREEN
-============================================================= -->
+========================================================= -->
 
-<div id="authScreen">
+<section id="auth-screen">
 
-    <div class="auth-wrapper">
+    <div class="auth-card">
 
-        <div class="auth-card">
-
-            <div class="brand">
-                <div class="brand-logo">🌸</div>
-                <h1>Đoàn Thảo</h1>
-                <p>My cute weekly planner ♡</p>
-            </div>
-
-            <div class="auth-tabs">
-                <button class="auth-tab active" id="loginTab">
-                    Đăng nhập
-                </button>
-
-                <button class="auth-tab" id="registerTab">
-                    Đăng ký
-                </button>
-            </div>
-
-            <div id="authMessage" class="hidden"></div>
-
-            <form id="authForm">
-
-                <div class="form-group">
-                    <label class="label">Email</label>
-
-                    <input
-                        type="email"
-                        id="authEmail"
-                        class="input"
-                        placeholder="you@example.com"
-                        required
-                    >
-                </div>
-
-                <div class="form-group">
-                    <label class="label">Mật khẩu</label>
-
-                    <input
-                        type="password"
-                        id="authPassword"
-                        class="input"
-                        placeholder="Nhập mật khẩu"
-                        required
-                    >
-                </div>
-
-                <div id="confirmPasswordGroup" class="form-group hidden">
-
-                    <label class="label">Xác nhận mật khẩu</label>
-
-                    <input
-                        type="password"
-                        id="confirmPassword"
-                        class="input"
-                        placeholder="Nhập lại mật khẩu"
-                    >
-
-                </div>
-
-                <label class="remember" id="rememberGroup">
-
-                    <input
-                        type="checkbox"
-                        id="rememberMe"
-                        checked
-                    >
-
-                    <span>Duy trì đăng nhập trên thiết bị này</span>
-
-                </label>
-
-                <button
-                    type="submit"
-                    class="btn btn-primary"
-                    style="width:100%;"
-                    id="authSubmit"
-                >
-                    Đăng nhập ♡
-                </button>
-
-            </form>
-
+        <div class="logo">
+            <div class="logo-heart">♡</div>
+            <h1>Đoàn Thảo</h1>
+            <p>Schedule & Notes</p>
         </div>
+
+        <div class="auth-tabs">
+            <button class="auth-tab active" id="login-tab">
+                Đăng nhập
+            </button>
+
+            <button class="auth-tab" id="register-tab">
+                Đăng ký
+            </button>
+        </div>
+
+        <form id="auth-form">
+
+            <div class="form-group">
+                <label>Email</label>
+                <input
+                    id="auth-email"
+                    type="email"
+                    placeholder="you@example.com"
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label>Mật khẩu</label>
+                <input
+                    id="auth-password"
+                    type="password"
+                    placeholder="••••••••"
+                    minlength="6"
+                    required
+                >
+            </div>
+
+            <button class="primary-btn" type="submit">
+                <span id="auth-submit-text">Đăng nhập</span>
+            </button>
+
+            <div class="auth-message" id="auth-message"></div>
+
+        </form>
 
     </div>
 
-</div>
+</section>
 
 
-<!-- =============================================================
-     APP
-============================================================= -->
+<!-- =========================================================
+     APPLICATION
+========================================================= -->
 
-<div id="appScreen" class="hidden">
+<section id="app" class="hidden">
 
-    <!-- TOP BAR -->
+    <header>
 
-    <header class="topbar">
-
-        <div class="top-brand">
-
-            <button
-                class="mobile-menu"
-                id="mobileMenuBtn"
-            >
-                ☰
-            </button>
-
-            <span>🌸</span>
-
-            <span>Đoàn Thảo</span>
-
+        <div class="brand">
+            <span>♡</span>
+            Đoàn Thảo
         </div>
 
-        <div class="top-right">
+        <div class="user-area">
+            <span class="user-email" id="user-email"></span>
 
-            <div
-                class="user-email"
-                id="currentUserEmail"
-            ></div>
-
-            <button
-                class="btn btn-secondary btn-small"
-                id="logoutBtn"
-            >
+            <button class="logout-btn" id="logout-btn">
                 Đăng xuất
             </button>
-
         </div>
 
     </header>
@@ -1076,431 +769,979 @@
 
     <div class="layout">
 
-        <!-- SIDEBAR -->
+        <aside>
 
-        <aside class="sidebar" id="sidebar">
-
-            <div class="nav-label">
-                Menu
-            </div>
-
-            <button
-                class="nav-item active"
-                data-page="dashboard"
-            >
-                🏠 Tổng quan
+            <button class="nav-btn active" data-page="schedule">
+                📅 Lịch học
             </button>
 
-            <button
-                class="nav-item"
-                data-page="schedule"
-            >
-                📅 Thời khóa biểu
-            </button>
-
-            <button
-                class="nav-item"
-                data-page="notes"
-            >
+            <button class="nav-btn" data-page="notes">
                 📝 Ghi chú
             </button>
 
-            <div class="nav-label">
-                Quản lý
-            </div>
+            <button class="nav-btn" data-page="subjects">
+                📚 Môn học
+            </button>
 
-            <button
-                class="nav-item"
-                data-page="settings"
-            >
+            <button class="nav-btn" data-page="semesters">
+                🌸 Học kỳ
+            </button>
+
+            <button class="nav-btn" data-page="settings">
                 ⚙️ Cài đặt
             </button>
 
         </aside>
 
 
-        <!-- MAIN -->
-
-        <main class="main">
+        <main>
 
             <!-- =================================================
-                 DASHBOARD
+                 SCHEDULE PAGE
             ================================================= -->
 
-            <section
-                class="page active"
-                id="page-dashboard"
-            >
+            <div id="page-schedule" class="page">
 
-                <div class="welcome-box card">
-
-                    <h2 id="welcomeTitle">
-                        Chào mừng bạn ♡
-                    </h2>
-
-                    <p>
-                        Hãy cùng lên kế hoạch cho một tuần thật xinh nhé!
-                    </p>
-
+                <div class="page-title">
+                    <h2>📅 Thời khóa biểu</h2>
+                    <p>Lên kế hoạch cho một tuần thật xinh ♡</p>
                 </div>
 
+                <div class="toolbar">
 
-                <div class="stats-grid">
-
-                    <div class="stat-card card">
-                        <div class="stat-icon">📚</div>
-                        <div
-                            class="stat-number"
-                            id="statSubjects"
-                        >
-                            0
-                        </div>
-                        <div class="stat-label">
-                            Môn học
-                        </div>
-                    </div>
-
-                    <div class="stat-card card">
-                        <div class="stat-icon">📅</div>
-                        <div
-                            class="stat-number"
-                            id="statEntries"
-                        >
-                            0
-                        </div>
-                        <div class="stat-label">
-                            Lịch học
-                        </div>
-                    </div>
-
-                    <div class="stat-card card">
-                        <div class="stat-icon">🎓</div>
-                        <div
-                            class="stat-number"
-                            id="statSemesters"
-                        >
-                            0
-                        </div>
-                        <div class="stat-label">
-                            Học kỳ
-                        </div>
-                    </div>
-
-                    <div class="stat-card card">
-                        <div class="stat-icon">📝</div>
-                        <div
-                            class="stat-number"
-                            id="statNotes"
-                        >
-                            0
-                        </div>
-                        <div class="stat-label">
-                            Ghi chú
-                        </div>
-                    </div>
-
-                </div>
-
-
-                <div class="card" style="padding:22px;">
-
-                    <h3 style="margin-bottom:8px;">
-                        ✨ Bắt đầu với Đoàn Thảo
-                    </h3>
-
-                    <p
-                        style="
-                        color:var(--text-light);
-                        font-size:14px;
-                        line-height:1.6;
-                        "
-                    >
-                        Bạn có thể bắt đầu bằng cách tạo học kỳ,
-                        thêm môn học và thiết lập thời gian cho 12 tiết học.
-                        Sau đó quay lại phần Thời khóa biểu để sắp xếp lịch.
-                    </p>
-
-                    <div
-                        style="
-                        display:flex;
-                        gap:9px;
-                        flex-wrap:wrap;
-                        margin-top:18px;
-                        "
-                    >
-
-                        <button
-                            class="btn btn-primary"
-                            onclick="openModal('semester')"
-                        >
-                            + Thêm học kỳ
-                        </button>
-
-                        <button
-                            class="btn btn-secondary"
-                            onclick="openModal('subject')"
-                        >
-                            + Thêm môn học
-                        </button>
-
-                        <button
-                            class="btn btn-secondary"
-                            onclick="showPage('schedule')"
-                        >
-                            📅 Xem lịch
-                        </button>
-
-                    </div>
-
-                </div>
-
-            </section>
-
-
-            <!-- =================================================
-                 SCHEDULE
-            ================================================= -->
-
-            <section
-                class="page"
-                id="page-schedule"
-            >
-
-                <div class="page-header">
-
-                    <div>
-                        <h2 class="section-title">
-                            📅 Thời khóa biểu
-                        </h2>
-
-                        <p class="section-subtitle">
-                            Lên lịch học từ thứ 2 đến chủ nhật ♡
-                        </p>
-                    </div>
-
-                    <div class="header-actions">
-
-                        <select
-                            class="select semester-select"
-                            id="scheduleSemester"
-                        ></select>
-
-                    </div>
-
-                </div>
-
-
-                <div class="card" style="padding:12px;">
-
-                    <div class="schedule-wrapper">
-
-                        <div
-                            class="schedule-grid"
-                            id="scheduleGrid"
-                        ></div>
-
-                    </div>
-
-                </div>
-
-            </section>
-
-
-            <!-- =================================================
-                 NOTES
-            ================================================= -->
-
-            <section
-                class="page"
-                id="page-notes"
-            >
-
-                <div class="page-header">
-
-                    <div>
-
-                        <h2 class="section-title">
-                            📝 Ghi chú
-                        </h2>
-
-                        <p class="section-subtitle">
-                            Lưu lại những điều quan trọng của bạn.
-                        </p>
-
-                    </div>
+                    <select id="semester-select">
+                        <option value="">
+                            Chọn học kỳ
+                        </option>
+                    </select>
 
                     <button
-                        class="btn btn-primary"
-                        onclick="openModal('note')"
+                        class="small-btn pink"
+                        id="add-schedule-btn"
                     >
-                        + Ghi chú mới
+                        + Thêm môn
                     </button>
 
                 </div>
 
+                <div id="schedule-container"></div>
+
+            </div>
+
+
+            <!-- =================================================
+                 NOTES PAGE
+            ================================================= -->
+
+            <div id="page-notes" class="page hidden">
+
+                <div class="page-title">
+                    <h2>📝 Ghi chú</h2>
+                    <p>Lưu lại những điều quan trọng của bạn ♡</p>
+                </div>
 
                 <div class="notes-toolbar">
 
                     <input
-                        type="text"
-                        id="noteSearch"
-                        class="input search-box"
-                        placeholder="🔍 Tìm kiếm ghi chú..."
+                        id="note-search"
+                        type="search"
+                        placeholder="🔎 Tìm kiếm ghi chú..."
                     >
 
-                    <select
-                        class="select"
-                        id="noteFolderFilter"
-                        style="max-width:190px;"
-                    >
-                        <option value="all">
-                            📁 Tất cả thư mục
-                        </option>
+                    <select id="note-folder-filter">
+                        <option value="">Tất cả thư mục</option>
                     </select>
+
+                    <button
+                        class="small-btn pink"
+                        id="new-note-btn"
+                    >
+                        + Ghi chú mới
+                    </button>
+
+                    <button
+                        class="small-btn"
+                        id="new-folder-btn"
+                    >
+                        + Thư mục
+                    </button>
 
                 </div>
 
+                <div id="notes-container"></div>
 
-                <div
-                    class="notes-grid"
-                    id="notesGrid"
-                ></div>
-
-            </section>
+            </div>
 
 
             <!-- =================================================
-                 SETTINGS
+                 SUBJECTS PAGE
             ================================================= -->
 
-            <section
-                class="page"
-                id="page-settings"
-            >
+            <div id="page-subjects" class="page hidden">
 
-                <div class="page-header">
+                <div class="page-title">
+                    <h2>📚 Môn học</h2>
+                    <p>Quản lý các môn học của bạn.</p>
+                </div>
 
-                    <div>
-                        <h2 class="section-title">
-                            ⚙️ Cài đặt
-                        </h2>
+                <div class="toolbar">
+                    <button
+                        class="small-btn pink"
+                        id="new-subject-btn"
+                    >
+                        + Thêm môn học
+                    </button>
+                </div>
 
-                        <p class="section-subtitle">
-                            Quản lý học kỳ, môn học và thời gian tiết học.
-                        </p>
-                    </div>
+                <div
+                    class="cards"
+                    id="subjects-container"
+                ></div>
+
+            </div>
+
+
+            <!-- =================================================
+                 SEMESTERS PAGE
+            ================================================= -->
+
+            <div id="page-semesters" class="page hidden">
+
+                <div class="page-title">
+                    <h2>🌸 Học kỳ</h2>
+                    <p>Quản lý các học kỳ của bạn.</p>
+                </div>
+
+                <div class="toolbar">
+
+                    <button
+                        class="small-btn pink"
+                        id="new-semester-btn"
+                    >
+                        + Thêm học kỳ
+                    </button>
 
                 </div>
 
+                <div
+                    class="cards"
+                    id="semesters-container"
+                ></div>
 
-                <div class="settings-grid">
-
-                    <!-- SEMESTERS -->
-
-                    <div class="settings-card card">
-
-                        <h3>🎓 Học kỳ</h3>
-
-                        <p class="section-subtitle">
-                            Tạo và quản lý các học kỳ.
-                        </p>
-
-                        <button
-                            class="btn btn-primary btn-small"
-                            onclick="openModal('semester')"
-                        >
-                            + Thêm học kỳ
-                        </button>
-
-                        <div
-                            class="item-list"
-                            id="semesterList"
-                        ></div>
-
-                    </div>
+            </div>
 
 
-                    <!-- SUBJECTS -->
+            <!-- =================================================
+                 SETTINGS PAGE
+            ================================================= -->
 
-                    <div class="settings-card card">
+            <div id="page-settings" class="page hidden">
 
-                        <h3>📚 Môn học</h3>
+                <div class="page-title">
+                    <h2>⚙️ Cài đặt</h2>
+                    <p>Tùy chỉnh thời gian của 12 tiết học.</p>
+                </div>
 
-                        <p class="section-subtitle">
-                            Tạo môn học và chọn màu.
-                        </p>
+                <div class="settings-section">
 
-                        <button
-                            class="btn btn-primary btn-small"
-                            onclick="openModal('subject')"
-                        >
-                            + Thêm môn học
-                        </button>
+                    <h3>⏰ Thời gian các tiết</h3>
 
-                        <div
-                            class="item-list"
-                            id="subjectList"
-                        ></div>
+                    <div id="period-settings"></div>
 
-                    </div>
-
-
-                    <!-- PERIOD TIMES -->
-
-                    <div class="settings-card card full">
-
-                        <h3>🕐 Thời gian 12 tiết</h3>
-
-                        <p class="section-subtitle">
-                            Thiết lập giờ bắt đầu và kết thúc cho từng tiết.
-                        </p>
-
-                        <div
-                            class="item-list"
-                            id="periodList"
-                        ></div>
-
-                    </div>
+                    <button
+                        class="small-btn pink"
+                        id="save-periods-btn"
+                    >
+                        Lưu thời gian
+                    </button>
 
                 </div>
 
-            </section>
+            </div>
 
         </main>
+
+    </div>
+
+</section>
+
+
+<!-- =========================================================
+     MODAL
+========================================================= -->
+
+<div
+    class="modal hidden"
+    id="modal"
+>
+
+    <div class="modal-content">
+
+        <div class="modal-header">
+
+            <h3 id="modal-title">
+                Thêm mới
+            </h3>
+
+            <button
+                class="close-modal"
+                id="close-modal"
+            >
+                ×
+            </button>
+
+        </div>
+
+        <div id="modal-body"></div>
+
+        <div class="modal-footer">
+
+            <button
+                class="small-btn"
+                id="modal-cancel"
+            >
+                Hủy
+            </button>
+
+            <button
+                class="small-btn pink"
+                id="modal-save"
+            >
+                Lưu
+            </button>
+
+        </div>
 
     </div>
 
 </div>
 
 
-<!-- =============================================================
-     MODAL
-============================================================= -->
-
-<div
-    class="modal-overlay hidden"
-    id="modalOverlay"
->
-
-    <div
-        class="modal"
-        id="modalContent"
-    ></div>
-
-</div>
+<div id="toast-container"></div>
 
 
 <script>
-/* ===============================================================
-   ĐOÀN THẢO - PINK PLANNER
-   Pure HTML / CSS / JavaScript
-   LocalStorage based demo
-================================================================= */
+/* =========================================================
+   SUPABASE CONFIG
+========================================================= */
+
+const SUPABASE_URL =
+    "https://qwvhudppdoauivpdewin.supabase.co";
+
+const SUPABASE_KEY =
+    "sb_publishable_nrxl7NwtMoleoNiJIg3NdQ_UYf5xy2x";
+
+const db = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY,
+    {
+        auth: {
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: true
+        }
+    }
+);
 
 
-/* ===============================================================
-   CONSTANTS
-================================================================= */
+/* =========================================================
+   GLOBAL STATE
+========================================================= */
+
+let currentUser = null;
+
+let semesters = [];
+let subjects = [];
+let periods = [];
+let scheduleEntries = [];
+let notes = [];
+let folders = [];
+
+let currentPage = "schedule";
+let currentSemesterId = null;
+
+let authMode = "login";
+
+let modalSaveHandler = null;
+
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
+function escapeHTML(value) {
+
+    if (value === null || value === undefined) {
+        return "";
+    }
+
+    return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+
+function showToast(message, error = false) {
+
+    const container =
+        document.getElementById("toast-container");
+
+    const toast =
+        document.createElement("div");
+
+    toast.className =
+        "toast" + (error ? " error" : "");
+
+    toast.textContent = message;
+
+    container.appendChild(toast);
+
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+
+
+function formatDate(date) {
+
+    if (!date) {
+        return "";
+    }
+
+    return new Date(date).toLocaleDateString(
+        "vi-VN"
+    );
+}
+
+
+function formatDateTime(date) {
+
+    if (!date) {
+        return "";
+    }
+
+    return new Date(date).toLocaleString(
+        "vi-VN"
+    );
+}
+
+
+function timeToDisplay(time) {
+
+    if (!time) {
+        return "--:--";
+    }
+
+    return String(time).slice(0, 5);
+}
+
+
+function randomColor() {
+
+    const colors = [
+        "#ffd6e7",
+        "#ffc9dd",
+        "#ffe0b8",
+        "#d9f5e5",
+        "#d9eaff",
+        "#e8ddff",
+        "#fff2b8"
+    ];
+
+    return colors[
+        Math.floor(Math.random() * colors.length)
+    ];
+}
+
+
+/* =========================================================
+   AUTH
+========================================================= */
+
+const authForm =
+    document.getElementById("auth-form");
+
+const loginTab =
+    document.getElementById("login-tab");
+
+const registerTab =
+    document.getElementById("register-tab");
+
+const authMessage =
+    document.getElementById("auth-message");
+
+const authSubmitText =
+    document.getElementById("auth-submit-text");
+
+
+function setAuthMode(mode) {
+
+    authMode = mode;
+
+    loginTab.classList.toggle(
+        "active",
+        mode === "login"
+    );
+
+    registerTab.classList.toggle(
+        "active",
+        mode === "register"
+    );
+
+    authSubmitText.textContent =
+        mode === "login"
+            ? "Đăng nhập"
+            : "Tạo tài khoản";
+
+    authMessage.textContent = "";
+}
+
+
+loginTab.addEventListener(
+    "click",
+    () => setAuthMode("login")
+);
+
+
+registerTab.addEventListener(
+    "click",
+    () => setAuthMode("register")
+);
+
+
+authForm.addEventListener(
+    "submit",
+    async event => {
+
+        event.preventDefault();
+
+        const email =
+            document.getElementById("auth-email")
+                .value
+                .trim();
+
+        const password =
+            document.getElementById("auth-password")
+                .value;
+
+        authMessage.textContent =
+            "Đang xử lý...";
+
+        try {
+
+            if (authMode === "login") {
+
+                const { error } =
+                    await db.auth.signInWithPassword({
+                        email,
+                        password
+                    });
+
+                if (error) {
+                    throw error;
+                }
+
+            } else {
+
+                const { data, error } =
+                    await db.auth.signUp({
+                        email,
+                        password
+                    });
+
+                if (error) {
+                    throw error;
+                }
+
+                if (!data.session) {
+
+                    authMessage.style.color =
+                        "#55a37a";
+
+                    authMessage.textContent =
+                        "Đăng ký thành công! Hãy kiểm tra email để xác nhận tài khoản.";
+
+                    return;
+                }
+            }
+
+            authMessage.textContent = "";
+
+        } catch (error) {
+
+            authMessage.style.color =
+                "#e85b70";
+
+            authMessage.textContent =
+                translateAuthError(error.message);
+        }
+    }
+);
+
+
+function translateAuthError(message) {
+
+    const text =
+        String(message).toLowerCase();
+
+    if (text.includes("invalid login")) {
+        return "Email hoặc mật khẩu không đúng.";
+    }
+
+    if (text.includes("already registered")) {
+        return "Email này đã được đăng ký.";
+    }
+
+    if (text.includes("password")) {
+        return "Mật khẩu phải có ít nhất 6 ký tự.";
+    }
+
+    if (text.includes("email")) {
+        return "Email không hợp lệ.";
+    }
+
+    return message;
+}
+
+
+document
+    .getElementById("logout-btn")
+    .addEventListener(
+        "click",
+        async () => {
+
+            const { error } =
+                await db.auth.signOut();
+
+            if (error) {
+                showToast(
+                    error.message,
+                    true
+                );
+            }
+        }
+    );
+
+
+/* =========================================================
+   SESSION
+========================================================= */
+
+async function initializeApp() {
+
+    const {
+        data: {
+            session
+        }
+    } = await db.auth.getSession();
+
+    if (session?.user) {
+
+        await enterApp(session.user);
+
+    } else {
+
+        showAuth();
+    }
+}
+
+
+db.auth.onAuthStateChange(
+    async (event, session) => {
+
+        if (session?.user) {
+
+            await enterApp(session.user);
+
+        } else {
+
+            showAuth();
+        }
+    }
+);
+
+
+function showAuth() {
+
+    document
+        .getElementById("auth-screen")
+        .classList.remove("hidden");
+
+    document
+        .getElementById("app")
+        .classList.add("hidden");
+}
+
+
+async function enterApp(user) {
+
+    currentUser = user;
+
+    document
+        .getElementById("auth-screen")
+        .classList.add("hidden");
+
+    document
+        .getElementById("app")
+        .classList.remove("hidden");
+
+    document
+        .getElementById("user-email")
+        .textContent =
+            user.email || "";
+
+    await loadAllData();
+
+    renderCurrentPage();
+}
+
+
+/* =========================================================
+   DATABASE LOAD
+========================================================= */
+
+async function loadAllData() {
+
+    try {
+
+        const [
+            semestersResult,
+            subjectsResult,
+            periodsResult,
+            scheduleResult,
+            notesResult,
+            foldersResult
+        ] = await Promise.all([
+
+            db
+                .from("semesters")
+                .select("*")
+                .order("created_at", {
+                    ascending: true
+                }),
+
+            db
+                .from("subjects")
+                .select("*")
+                .order("name"),
+
+            db
+                .from("periods")
+                .select("*")
+                .order("period_number"),
+
+            db
+                .from("schedule_entries")
+                .select("*"),
+
+            db
+                .from("notes")
+                .select("*")
+                .order("pinned", {
+                    ascending: false
+                })
+                .order("updated_at", {
+                    ascending: false
+                }),
+
+            db
+                .from("note_folders")
+                .select("*")
+                .order("name")
+        ]);
+
+        if (semestersResult.error)
+            throw semestersResult.error;
+
+        if (subjectsResult.error)
+            throw subjectsResult.error;
+
+        if (periodsResult.error)
+            throw periodsResult.error;
+
+        if (scheduleResult.error)
+            throw scheduleResult.error;
+
+        if (notesResult.error)
+            throw notesResult.error;
+
+        if (foldersResult.error)
+            throw foldersResult.error;
+
+        semesters =
+            semestersResult.data || [];
+
+        subjects =
+            subjectsResult.data || [];
+
+        periods =
+            periodsResult.data || [];
+
+        scheduleEntries =
+            scheduleResult.data || [];
+
+        notes =
+            notesResult.data || [];
+
+        folders =
+            foldersResult.data || [];
+
+        if (!currentSemesterId && semesters.length) {
+
+            currentSemesterId =
+                semesters[0].id;
+        }
+
+        ensurePeriods();
+
+    } catch (error) {
+
+        console.error(error);
+
+        showToast(
+            "Không thể tải dữ liệu: " +
+            error.message,
+            true
+        );
+    }
+}
+
+
+/* =========================================================
+   PERIOD DEFAULTS
+========================================================= */
+
+async function ensurePeriods() {
+
+    if (periods.length >= 12) {
+        return;
+    }
+
+    const existing =
+        new Set(
+            periods.map(
+                p => p.period_number
+            )
+        );
+
+    const rows = [];
+
+    for (
+        let i = 1;
+        i <= 12;
+        i++
+    ) {
+
+        if (!existing.has(i)) {
+
+            rows.push({
+                user_id: currentUser.id,
+                period_number: i,
+                start_time: defaultStartTime(i),
+                end_time: defaultEndTime(i)
+            });
+        }
+    }
+
+    if (!rows.length) {
+        return;
+    }
+
+    const { data, error } =
+        await db
+            .from("periods")
+            .insert(rows)
+            .select();
+
+    if (error) {
+
+        console.error(error);
+        return;
+    }
+
+    periods =
+        [...periods, ...(data || [])]
+            .sort(
+                (a,b) =>
+                    a.period_number -
+                    b.period_number
+            );
+}
+
+
+function defaultStartTime(period) {
+
+    const hour =
+        7 + Math.floor((period - 1) / 2);
+
+    const minute =
+        (period - 1) % 2 === 0
+            ? 0
+            : 45;
+
+    return `${String(hour).padStart(2,"0")}:${String(minute).padStart(2,"0")}:00`;
+}
+
+
+function defaultEndTime(period) {
+
+    const start =
+        new Date(
+            `2000-01-01T${defaultStartTime(period)}`
+        );
+
+    start.setMinutes(
+        start.getMinutes() + 45
+    );
+
+    return (
+        start.toTimeString()
+            .slice(0, 8)
+    );
+}
+
+
+/* =========================================================
+   NAVIGATION
+========================================================= */
+
+document
+    .querySelectorAll(".nav-btn")
+    .forEach(button => {
+
+        button.addEventListener(
+            "click",
+            () => {
+
+                currentPage =
+                    button.dataset.page;
+
+                document
+                    .querySelectorAll(".nav-btn")
+                    .forEach(btn => {
+                        btn.classList.toggle(
+                            "active",
+                            btn === button
+                        );
+                    });
+
+                document
+                    .querySelectorAll(".page")
+                    .forEach(page => {
+                        page.classList.add(
+                            "hidden"
+                        );
+                    });
+
+                document
+                    .getElementById(
+                        "page-" + currentPage
+                    )
+                    .classList.remove(
+                        "hidden"
+                    );
+
+                renderCurrentPage();
+            }
+        );
+    });
+
+
+function renderCurrentPage() {
+
+    if (!currentUser) {
+        return;
+    }
+
+    if (currentPage === "schedule") {
+        renderSchedule();
+    }
+
+    if (currentPage === "notes") {
+        renderNotes();
+        renderFolderFilter();
+    }
+
+    if (currentPage === "subjects") {
+        renderSubjects();
+    }
+
+    if (currentPage === "semesters") {
+        renderSemesters();
+    }
+
+    if (currentPage === "settings") {
+        renderPeriodSettings();
+    }
+}
+
+
+/* =========================================================
+   SEMESTER SELECT
+========================================================= */
+
+document
+    .getElementById("semester-select")
+    .addEventListener(
+        "change",
+        event => {
+
+            currentSemesterId =
+                event.target.value || null;
+
+            renderSchedule();
+        }
+    );
+
+
+function renderSemesterSelect() {
+
+    const select =
+        document.getElementById(
+            "semester-select"
+        );
+
+    select.innerHTML = "";
+
+    if (!semesters.length) {
+
+        select.innerHTML =
+            `<option value="">
+                Chưa có học kỳ
+            </option>`;
+
+        return;
+    }
+
+    semesters.forEach(semester => {
+
+        const option =
+            document.createElement("option");
+
+        option.value =
+            semester.id;
+
+        option.textContent =
+            semester.name;
+
+        if (
+            semester.id ===
+            currentSemesterId
+        ) {
+            option.selected = true;
+        }
+
+        select.appendChild(option);
+    });
+}
+
+
+/* =========================================================
+   SCHEDULE
+========================================================= */
 
 const DAYS = [
     "Thứ 2",
@@ -1512,2410 +1753,502 @@ const DAYS = [
     "Chủ nhật"
 ];
 
-const COLORS = [
-    "#ffd6e7",
-    "#ffc7dd",
-    "#e6d8ff",
-    "#cfe6ff",
-    "#d1f5df",
-    "#fff0bd",
-    "#ffd7d7",
-    "#f8d5ff"
-];
-
-
-/* ===============================================================
-   GLOBAL STATE
-================================================================= */
-
-let authMode = "login";
-
-let currentUser = null;
-
-let selectedSubjectColor = COLORS[0];
-
-let editingNoteId = null;
-
-let editingSubjectId = null;
-
-let editingSemesterId = null;
-
-
-/* ===============================================================
-   STORAGE HELPERS
-================================================================= */
-
-function getUsers() {
-
-    return JSON.parse(
-        localStorage.getItem("doanThaoUsers") || "{}"
-    );
-
-}
-
-
-function saveUsers(users) {
-
-    localStorage.setItem(
-        "doanThaoUsers",
-        JSON.stringify(users)
-    );
-
-}
-
-
-function getUserData() {
-
-    if (!currentUser) return null;
-
-    const key = "doanThaoData_" + currentUser;
-
-    let data = JSON.parse(
-        localStorage.getItem(key) || "null"
-    );
-
-    if (!data) {
-
-        data = createDefaultData();
-
-        localStorage.setItem(
-            key,
-            JSON.stringify(data)
-        );
-
-    }
-
-    return data;
-}
-
-
-function saveUserData(data) {
-
-    if (!currentUser) return;
-
-    const key = "doanThaoData_" + currentUser;
-
-    localStorage.setItem(
-        key,
-        JSON.stringify(data)
-    );
-
-}
-
-
-/* ===============================================================
-   DEFAULT DATA
-================================================================= */
-
-function createDefaultData() {
-
-    const periods = [];
-
-    for (let i = 1; i <= 12; i++) {
-
-        periods.push({
-            id: i,
-            start: "",
-            end: ""
-        });
-
-    }
-
-    return {
-
-        semesters: [
-            {
-                id: generateId(),
-                name: "Học kỳ 1",
-                start: "",
-                end: ""
-            }
-        ],
-
-        subjects: [],
-
-        periods: periods,
-
-        entries: {},
-
-        notes: [],
-
-        folders: [
-            {
-                id: generateId(),
-                name: "Homework"
-            },
-            {
-                id: generateId(),
-                name: "Reminders"
-            }
-        ]
-
-    };
-
-}
-
-
-/* ===============================================================
-   ID GENERATOR
-================================================================= */
-
-function generateId() {
-
-    return Date.now().toString(36) +
-        Math.random().toString(36).substring(2, 8);
-
-}
-
-
-/* ===============================================================
-   AUTH
-================================================================= */
-
-document
-    .getElementById("loginTab")
-    .addEventListener("click", () => {
-
-        authMode = "login";
-
-        updateAuthUI();
-
-    });
-
-
-document
-    .getElementById("registerTab")
-    .addEventListener("click", () => {
-
-        authMode = "register";
-
-        updateAuthUI();
-
-    });
-
-
-function updateAuthUI() {
-
-    const loginTab =
-        document.getElementById("loginTab");
-
-    const registerTab =
-        document.getElementById("registerTab");
-
-    const confirmGroup =
-        document.getElementById("confirmPasswordGroup");
-
-    const rememberGroup =
-        document.getElementById("rememberGroup");
-
-    const submit =
-        document.getElementById("authSubmit");
-
-    if (authMode === "login") {
-
-        loginTab.classList.add("active");
-
-        registerTab.classList.remove("active");
-
-        confirmGroup.classList.add("hidden");
-
-        rememberGroup.classList.remove("hidden");
-
-        submit.textContent = "Đăng nhập ♡";
-
-    } else {
-
-        loginTab.classList.remove("active");
-
-        registerTab.classList.add("active");
-
-        confirmGroup.classList.remove("hidden");
-
-        rememberGroup.classList.add("hidden");
-
-        submit.textContent = "Tạo tài khoản ♡";
-
-    }
-
-    clearAuthMessage();
-
-}
-
-
-document
-    .getElementById("authForm")
-    .addEventListener("submit", function(e) {
-
-        e.preventDefault();
-
-        const email =
-            document.getElementById("authEmail")
-                .value.trim()
-                .toLowerCase();
-
-        const password =
-            document.getElementById("authPassword")
-                .value;
-
-        const users = getUsers();
-
-        if (!email || !password) {
-
-            showAuthMessage(
-                "Vui lòng nhập đầy đủ thông tin.",
-                "error"
-            );
-
-            return;
-
-        }
-
-
-        if (authMode === "register") {
-
-            const confirmPassword =
-                document.getElementById("confirmPassword")
-                    .value;
-
-            if (password.length < 6) {
-
-                showAuthMessage(
-                    "Mật khẩu phải có ít nhất 6 ký tự.",
-                    "error"
-                );
-
-                return;
-
-            }
-
-            if (password !== confirmPassword) {
-
-                showAuthMessage(
-                    "Mật khẩu xác nhận không khớp.",
-                    "error"
-                );
-
-                return;
-
-            }
-
-            if (users[email]) {
-
-                showAuthMessage(
-                    "Email này đã được đăng ký.",
-                    "error"
-                );
-
-                return;
-
-            }
-
-            users[email] = {
-                password: password
-            };
-
-            saveUsers(users);
-
-            localStorage.setItem(
-                "doanThaoRememberedUser",
-                email
-            );
-
-            showAuthMessage(
-                "Tạo tài khoản thành công! Đang đăng nhập...",
-                "success"
-            );
-
-            setTimeout(() => {
-
-                loginUser(email);
-
-            }, 500);
-
-        } else {
-
-            if (!users[email]) {
-
-                showAuthMessage(
-                    "Tài khoản không tồn tại.",
-                    "error"
-                );
-
-                return;
-
-            }
-
-            if (users[email].password !== password) {
-
-                showAuthMessage(
-                    "Mật khẩu không chính xác.",
-                    "error"
-                );
-
-                return;
-
-            }
-
-            const remember =
-                document.getElementById("rememberMe")
-                    .checked;
-
-            if (remember) {
-
-                /*
-                 * Duy trì đăng nhập:
-                 * lưu email tài khoản hiện tại.
-                 */
-                localStorage.setItem(
-                    "doanThaoRememberedUser",
-                    email
-                );
-
-            } else {
-
-                localStorage.removeItem(
-                    "doanThaoRememberedUser"
-                );
-
-            }
-
-            loginUser(email);
-
-        }
-
-    });
-
-
-function loginUser(email) {
-
-    currentUser = email;
-
-    localStorage.setItem(
-        "doanThaoCurrentUser",
-        email
-    );
-
-    document
-        .getElementById("authScreen")
-        .classList.add("hidden");
-
-    document
-        .getElementById("appScreen")
-        .classList.remove("hidden");
-
-    document
-        .getElementById("currentUserEmail")
-        .textContent = email;
-
-    document
-        .getElementById("welcomeTitle")
-        .textContent =
-        "Xin chào, " +
-        email.split("@")[0] +
-        " ♡";
-
-    renderEverything();
-
-}
-
-
-function logout() {
-
-    currentUser = null;
-
-    /*
-     * Xóa phiên đăng nhập hiện tại.
-     *
-     * Nếu người dùng đã tick "Duy trì đăng nhập",
-     * rememberedUser vẫn còn.
-     *
-     * Tuy nhiên khi người dùng chủ động bấm Đăng xuất,
-     * ta xóa luôn rememberedUser để lần sau phải đăng nhập.
-     */
-    localStorage.removeItem(
-        "doanThaoCurrentUser"
-    );
-
-    localStorage.removeItem(
-        "doanThaoRememberedUser"
-    );
-
-    document
-        .getElementById("appScreen")
-        .classList.add("hidden");
-
-    document
-        .getElementById("authScreen")
-        .classList.remove("hidden");
-
-    document
-        .getElementById("authEmail")
-        .value = "";
-
-    document
-        .getElementById("authPassword")
-        .value = "";
-
-}
-
-
-document
-    .getElementById("logoutBtn")
-    .addEventListener("click", logout);
-
-
-/* ===============================================================
-   AUTH MESSAGE
-================================================================= */
-
-function showAuthMessage(message, type) {
-
-    const box =
-        document.getElementById("authMessage");
-
-    box.className =
-        "auth-message " + type;
-
-    box.textContent = message;
-
-}
-
-
-function clearAuthMessage() {
-
-    const box =
-        document.getElementById("authMessage");
-
-    box.className = "hidden";
-
-    box.textContent = "";
-
-}
-
-
-/* ===============================================================
-   AUTO LOGIN
-================================================================= */
-
-function checkAutoLogin() {
-
-    /*
-     * Ưu tiên phiên hiện tại.
-     */
-    const current =
-        localStorage.getItem(
-            "doanThaoCurrentUser"
-        );
-
-    if (current) {
-
-        const users = getUsers();
-
-        if (users[current]) {
-
-            loginUser(current);
-
-            return;
-
-        }
-
-    }
-
-
-    /*
-     * Nếu không có current session,
-     * kiểm tra tài khoản đã chọn "Duy trì đăng nhập".
-     */
-    const remembered =
-        localStorage.getItem(
-            "doanThaoRememberedUser"
-        );
-
-    if (remembered) {
-
-        const users = getUsers();
-
-        if (users[remembered]) {
-
-            loginUser(remembered);
-
-        }
-
-    }
-
-}
-
-
-/* ===============================================================
-   NAVIGATION
-================================================================= */
-
-document
-    .querySelectorAll(".nav-item")
-    .forEach(button => {
-
-        button.addEventListener("click", () => {
-
-            const page =
-                button.dataset.page;
-
-            showPage(page);
-
-            document
-                .getElementById("sidebar")
-                .classList.remove("open");
-
-        });
-
-    });
-
-
-function showPage(page) {
-
-    document
-        .querySelectorAll(".page")
-        .forEach(p => {
-
-            p.classList.remove("active");
-
-        });
-
-    const target =
-        document.getElementById(
-            "page-" + page
-        );
-
-    if (target) {
-
-        target.classList.add("active");
-
-    }
-
-
-    document
-        .querySelectorAll(".nav-item")
-        .forEach(button => {
-
-            button.classList.toggle(
-                "active",
-                button.dataset.page === page
-            );
-
-        });
-
-
-    if (page === "schedule") {
-
-        renderSchedule();
-
-    }
-
-    if (page === "notes") {
-
-        renderNotes();
-
-    }
-
-    if (page === "settings") {
-
-        renderSettings();
-
-    }
-
-}
-
-
-document
-    .getElementById("mobileMenuBtn")
-    .addEventListener("click", () => {
-
-        document
-            .getElementById("sidebar")
-            .classList.toggle("open");
-
-    });
-
-
-/* ===============================================================
-   MODAL
-================================================================= */
-
-function openModal(type, data = null) {
-
-    const overlay =
-        document.getElementById("modalOverlay");
-
-    const content =
-        document.getElementById("modalContent");
-
-    if (type === "semester") {
-
-        editingSemesterId =
-            data ? data.id : null;
-
-        content.innerHTML = `
-
-            <div class="modal-header">
-
-                <h3>
-                    ${data ? "✏️ Sửa học kỳ" : "🎓 Thêm học kỳ"}
-                </h3>
-
-                <button
-                    class="close-btn"
-                    onclick="closeModal()"
-                >
-                    ×
-                </button>
-
-            </div>
-
-            <div class="form-group">
-
-                <label class="label">
-                    Tên học kỳ
-                </label>
-
-                <input
-                    class="input"
-                    id="semesterName"
-                    placeholder="Ví dụ: Học kỳ 1 - 2026"
-                    value="${escapeHTML(data?.name || "")}"
-                >
-
-            </div>
-
-            <div class="form-row">
-
-                <div class="form-group">
-
-                    <label class="label">
-                        Ngày bắt đầu
-                    </label>
-
-                    <input
-                        type="date"
-                        class="input"
-                        id="semesterStart"
-                        value="${data?.start || ""}"
-                    >
-
-                </div>
-
-                <div class="form-group">
-
-                    <label class="label">
-                        Ngày kết thúc
-                    </label>
-
-                    <input
-                        type="date"
-                        class="input"
-                        id="semesterEnd"
-                        value="${data?.end || ""}"
-                    >
-
-                </div>
-
-            </div>
-
-            <div class="modal-footer">
-
-                <button
-                    class="btn btn-secondary"
-                    onclick="closeModal()"
-                >
-                    Hủy
-                </button>
-
-                <button
-                    class="btn btn-primary"
-                    onclick="saveSemester()"
-                >
-                    Lưu ♡
-                </button>
-
-            </div>
-        `;
-
-    }
-
-
-    if (type === "subject") {
-
-        editingSubjectId =
-            data ? data.id : null;
-
-        selectedSubjectColor =
-            data?.color || COLORS[0];
-
-        content.innerHTML = `
-
-            <div class="modal-header">
-
-                <h3>
-                    ${data ? "✏️ Sửa môn học" : "📚 Thêm môn học"}
-                </h3>
-
-                <button
-                    class="close-btn"
-                    onclick="closeModal()"
-                >
-                    ×
-                </button>
-
-            </div>
-
-            <div class="form-group">
-
-                <label class="label">
-                    Tên môn học
-                </label>
-
-                <input
-                    class="input"
-                    id="subjectName"
-                    placeholder="Ví dụ: Toán học"
-                    value="${escapeHTML(data?.name || "")}"
-                >
-
-            </div>
-
-            <div class="form-row">
-
-                <div class="form-group">
-
-                    <label class="label">
-                        Giáo viên
-                    </label>
-
-                    <input
-                        class="input"
-                        id="subjectTeacher"
-                        placeholder="Ví dụ: Cô Lan"
-                        value="${escapeHTML(data?.teacher || "")}"
-                    >
-
-                </div>
-
-                <div class="form-group">
-
-                    <label class="label">
-                        Phòng học
-                    </label>
-
-                    <input
-                        class="input"
-                        id="subjectRoom"
-                        placeholder="Ví dụ: A203"
-                        value="${escapeHTML(data?.room || "")}"
-                    >
-
-                </div>
-
-            </div>
-
-            <div class="form-group">
-
-                <label class="label">
-                    Màu sắc
-                </label>
-
-                <div
-                    class="color-picker"
-                    id="colorPicker"
-                >
-                    ${renderColorOptions()}
-                </div>
-
-            </div>
-
-            <div class="modal-footer">
-
-                <button
-                    class="btn btn-secondary"
-                    onclick="closeModal()"
-                >
-                    Hủy
-                </button>
-
-                <button
-                    class="btn btn-primary"
-                    onclick="saveSubject()"
-                >
-                    Lưu ♡
-                </button>
-
-            </div>
-        `;
-
-    }
-
-
-    if (type === "note") {
-
-        editingNoteId =
-            data ? data.id : null;
-
-        const userData =
-            getUserData();
-
-        const folderOptions =
-            userData.folders.map(folder => `
-
-                <option
-                    value="${folder.id}"
-                    ${data?.folderId === folder.id ? "selected" : ""}
-                >
-                    ${escapeHTML(folder.name)}
-                </option>
-
-            `).join("");
-
-        content.innerHTML = `
-
-            <div class="modal-header">
-
-                <h3>
-                    ${data ? "✏️ Chỉnh sửa ghi chú" : "📝 Ghi chú mới"}
-                </h3>
-
-                <button
-                    class="close-btn"
-                    onclick="closeModal()"
-                >
-                    ×
-                </button>
-
-            </div>
-
-            <div class="form-group">
-
-                <label class="label">
-                    Tiêu đề
-                </label>
-
-                <input
-                    class="input"
-                    id="noteTitle"
-                    placeholder="Tiêu đề ghi chú..."
-                    value="${escapeHTML(data?.title || "")}"
-                >
-
-            </div>
-
-            <div class="form-group">
-
-                <label class="label">
-                    Nội dung
-                </label>
-
-                <textarea
-                    class="textarea"
-                    id="noteBody"
-                    placeholder="Viết điều gì đó..."
-                >${escapeHTML(data?.body || "")}</textarea>
-
-            </div>
-
-            <div class="form-row">
-
-                <div class="form-group">
-
-                    <label class="label">
-                        Thư mục
-                    </label>
-
-                    <select
-                        class="select"
-                        id="noteFolder"
-                    >
-
-                        ${folderOptions}
-
-                    </select>
-
-                </div>
-
-                <div class="form-group">
-
-                    <label class="label">
-                        Màu ghi chú
-                    </label>
-
-                    <input
-                        type="color"
-                        class="input"
-                        id="noteColor"
-                        value="${data?.color || "#ffd6e7"}"
-                        style="height:45px;padding:5px;"
-                    >
-
-                </div>
-
-            </div>
-
-            <div class="modal-footer">
-
-                <button
-                    class="btn btn-secondary"
-                    onclick="closeModal()"
-                >
-                    Hủy
-                </button>
-
-                <button
-                    class="btn btn-primary"
-                    onclick="saveNote()"
-                >
-                    Lưu ♡
-                </button>
-
-            </div>
-        `;
-
-    }
-
-
-    if (type === "schedule") {
-
-        const userData =
-            getUserData();
-
-        const subjects =
-            userData.subjects;
-
-        content.innerHTML = `
-
-            <div class="modal-header">
-
-                <h3>
-                    📅 Chọn môn học
-                </h3>
-
-                <button
-                    class="close-btn"
-                    onclick="closeModal()"
-                >
-                    ×
-                </button>
-
-            </div>
-
-            <div class="form-group">
-
-                <label class="label">
-                    Môn học
-                </label>
-
-                <select
-                    class="select"
-                    id="scheduleSubject"
-                >
-
-                    <option value="">
-                        — Không có môn —
-                    </option>
-
-                    ${subjects.map(subject => `
-
-                        <option value="${subject.id}">
-                            ${escapeHTML(subject.name)}
-                        </option>
-
-                    `).join("")}
-
-                </select>
-
-            </div>
-
-            <div class="modal-footer">
-
-                <button
-                    class="btn btn-danger"
-                    onclick="removeScheduleEntry()"
-                >
-                    Xóa lịch
-                </button>
-
-                <button
-                    class="btn btn-secondary"
-                    onclick="closeModal()"
-                >
-                    Hủy
-                </button>
-
-                <button
-                    class="btn btn-primary"
-                    onclick="saveScheduleEntry()"
-                >
-                    Lưu ♡
-                </button>
-
-            </div>
-        `;
-
-        content.dataset.day =
-            data.day;
-
-        content.dataset.period =
-            data.period;
-
-        const existing =
-            getScheduleEntry(
-                data.day,
-                data.period
-            );
-
-        if (existing) {
-
-            document
-                .getElementById("scheduleSubject")
-                .value = existing.subjectId;
-
-        }
-
-    }
-
-
-    overlay.classList.remove("hidden");
-
-}
-
-
-function closeModal() {
-
-    document
-        .getElementById("modalOverlay")
-        .classList.add("hidden");
-
-    editingNoteId = null;
-
-    editingSubjectId = null;
-
-    editingSemesterId = null;
-
-}
-
-
-document
-    .getElementById("modalOverlay")
-    .addEventListener("click", function(e) {
-
-        if (e.target === this) {
-
-            closeModal();
-
-        }
-
-    });
-
-
-/* ===============================================================
-   SEMESTERS
-================================================================= */
-
-function saveSemester() {
-
-    const name =
-        document
-            .getElementById("semesterName")
-            .value.trim();
-
-    const start =
-        document
-            .getElementById("semesterStart")
-            .value;
-
-    const end =
-        document
-            .getElementById("semesterEnd")
-            .value;
-
-    if (!name) {
-
-        alert("Vui lòng nhập tên học kỳ.");
-
-        return;
-
-    }
-
-    const data =
-        getUserData();
-
-    if (editingSemesterId) {
-
-        const semester =
-            data.semesters.find(
-                s => s.id === editingSemesterId
-            );
-
-        if (semester) {
-
-            semester.name = name;
-            semester.start = start;
-            semester.end = end;
-
-        }
-
-    } else {
-
-        data.semesters.push({
-
-            id: generateId(),
-
-            name,
-
-            start,
-
-            end
-
-        });
-
-    }
-
-    saveUserData(data);
-
-    closeModal();
-
-    renderEverything();
-
-}
-
-
-function deleteSemester(id) {
-
-    const data =
-        getUserData();
-
-    const semester =
-        data.semesters.find(
-            s => s.id === id
-        );
-
-    if (!semester) return;
-
-    if (!confirm(
-        `Bạn có chắc muốn xóa "${semester.name}"?\n\nLịch học thuộc học kỳ này cũng sẽ bị xóa.`
-    )) return;
-
-    data.semesters =
-        data.semesters.filter(
-            s => s.id !== id
-        );
-
-    /*
-     * Xóa toàn bộ schedule của semester.
-     */
-    Object.keys(data.entries).forEach(key => {
-
-        if (
-            data.entries[key].semesterId === id
-        ) {
-
-            delete data.entries[key];
-
-        }
-
-    });
-
-    saveUserData(data);
-
-    renderEverything();
-
-}
-
-
-/* ===============================================================
-   SUBJECTS
-================================================================= */
-
-function renderColorOptions() {
-
-    return COLORS.map(color => `
-
-        <button
-            type="button"
-            class="color-option ${
-                color === selectedSubjectColor
-                    ? "selected"
-                    : ""
-            }"
-            style="background:${color}"
-            data-color="${color}"
-            onclick="selectSubjectColor('${color}')"
-        ></button>
-
-    `).join("");
-
-}
-
-
-function selectSubjectColor(color) {
-
-    selectedSubjectColor = color;
-
-    document
-        .querySelectorAll(".color-option")
-        .forEach(btn => {
-
-            btn.classList.toggle(
-                "selected",
-                btn.dataset.color === color
-            );
-
-        });
-
-}
-
-
-function saveSubject() {
-
-    const name =
-        document
-            .getElementById("subjectName")
-            .value.trim();
-
-    const teacher =
-        document
-            .getElementById("subjectTeacher")
-            .value.trim();
-
-    const room =
-        document
-            .getElementById("subjectRoom")
-            .value.trim();
-
-    if (!name) {
-
-        alert("Vui lòng nhập tên môn học.");
-
-        return;
-
-    }
-
-    const data =
-        getUserData();
-
-    if (editingSubjectId) {
-
-        const subject =
-            data.subjects.find(
-                s => s.id === editingSubjectId
-            );
-
-        if (subject) {
-
-            subject.name = name;
-            subject.teacher = teacher;
-            subject.room = room;
-            subject.color = selectedSubjectColor;
-
-        }
-
-    } else {
-
-        data.subjects.push({
-
-            id: generateId(),
-
-            name,
-
-            teacher,
-
-            room,
-
-            color: selectedSubjectColor
-
-        });
-
-    }
-
-    saveUserData(data);
-
-    closeModal();
-
-    renderEverything();
-
-}
-
-
-function deleteSubject(id) {
-
-    const data =
-        getUserData();
-
-    const subject =
-        data.subjects.find(
-            s => s.id === id
-        );
-
-    if (!subject) return;
-
-    if (!confirm(
-        `Xóa môn "${subject.name}"?\n\nCác lịch học của môn này cũng sẽ bị xóa.`
-    )) return;
-
-    data.subjects =
-        data.subjects.filter(
-            s => s.id !== id
-        );
-
-
-    Object.keys(data.entries).forEach(key => {
-
-        if (
-            data.entries[key].subjectId === id
-        ) {
-
-            delete data.entries[key];
-
-        }
-
-    });
-
-    saveUserData(data);
-
-    renderEverything();
-
-}
-
-
-/* ===============================================================
-   PERIOD TIMES
-================================================================= */
-
-function renderPeriods() {
-
-    const container =
-        document.getElementById("periodList");
-
-    const data =
-        getUserData();
-
-    container.innerHTML =
-        data.periods.map(period => `
-
-            <div class="list-item">
-
-                <div class="list-item-info">
-
-                    <div class="list-item-title">
-                        Tiết ${period.id}
-                    </div>
-
-                    <div class="list-item-sub">
-                        ${
-                            period.start && period.end
-                                ? period.start + " - " + period.end
-                                : "Chưa thiết lập thời gian"
-                        }
-                    </div>
-
-                </div>
-
-                <div
-                    style="
-                    display:flex;
-                    gap:6px;
-                    align-items:center;
-                    "
-                >
-
-                    <input
-                        type="time"
-                        class="input"
-                        style="width:120px;padding:8px;"
-                        value="${period.start}"
-                        onchange="updatePeriod(${period.id}, 'start', this.value)"
-                    >
-
-                    <input
-                        type="time"
-                        class="input"
-                        style="width:120px;padding:8px;"
-                        value="${period.end}"
-                        onchange="updatePeriod(${period.id}, 'end', this.value)"
-                    >
-
-                </div>
-
-            </div>
-
-        `).join("");
-
-}
-
-
-function updatePeriod(id, field, value) {
-
-    const data =
-        getUserData();
-
-    const period =
-        data.periods.find(
-            p => p.id === id
-        );
-
-    if (!period) return;
-
-    period[field] = value;
-
-    saveUserData(data);
-
-    renderPeriods();
-
-    renderSchedule();
-
-}
-
-
-/* ===============================================================
-   SCHEDULE
-================================================================= */
-
-let currentScheduleSemester = null;
-
-
-function getSelectedSemesterId() {
-
-    const select =
-        document.getElementById(
-            "scheduleSemester"
-        );
-
-    if (!select) return null;
-
-    return select.value;
-
-}
-
-
-function getScheduleEntry(day, period) {
-
-    const data =
-        getUserData();
-
-    const semesterId =
-        getSelectedSemesterId();
-
-    if (!semesterId) return null;
-
-    const key =
-        `${semesterId}_${day}_${period}`;
-
-    return data.entries[key] || null;
-
-}
-
-
-function renderSemesterSelect() {
-
-    const select =
-        document.getElementById(
-            "scheduleSemester"
-        );
-
-    const data =
-        getUserData();
-
-    if (!data || data.semesters.length === 0) {
-
-        select.innerHTML = `
-            <option>
-                Chưa có học kỳ
-            </option>
-        `;
-
-        return;
-
-    }
-
-    let current =
-        select.value;
-
-    if (
-        !current ||
-        !data.semesters.some(
-            s => s.id === current
-        )
-    ) {
-
-        current =
-            data.semesters[0].id;
-
-    }
-
-    select.innerHTML =
-        data.semesters.map(s => `
-
-            <option
-                value="${s.id}"
-                ${s.id === current ? "selected" : ""}
-            >
-                ${escapeHTML(s.name)}
-            </option>
-
-        `).join("");
-
-}
-
-
-document
-    .getElementById("scheduleSemester")
-    .addEventListener("change", () => {
-
-        currentScheduleSemester =
-            getSelectedSemesterId();
-
-        renderSchedule();
-
-    });
-
 
 function renderSchedule() {
 
-    const grid =
-        document.getElementById(
-            "scheduleGrid"
-        );
-
-    if (!grid) return;
-
-    const data =
-        getUserData();
-
-    if (!data) return;
-
     renderSemesterSelect();
 
-    if (data.semesters.length === 0) {
+    const container =
+        document.getElementById(
+            "schedule-container"
+        );
 
-        grid.innerHTML = `
+    if (!semesters.length) {
 
-            <div
-                class="empty-state"
-                style="grid-column:1/-1;"
-            >
-
-                <div class="empty-icon">
-                    🎓
-                </div>
-
-                <h3>
-                    Chưa có học kỳ
-                </h3>
-
-                <p>
-                    Hãy tạo học kỳ đầu tiên trong phần Cài đặt.
-                </p>
-
+        container.innerHTML = `
+            <div class="empty">
+                <div class="emoji">🌸</div>
+                <h3>Chưa có học kỳ</h3>
+                <p>Hãy tạo học kỳ đầu tiên của bạn.</p>
             </div>
-
         `;
 
         return;
-
     }
 
-    let html = "";
+    if (!currentSemesterId) {
+        currentSemesterId =
+            semesters[0].id;
+    }
 
-    /*
-     * Header
-     */
+    let html = `
+        <div class="schedule-wrapper">
+            <div class="schedule-grid">
 
-    html += `
-        <div class="schedule-header">
-            ⏰
-        </div>
+                <div class="grid-header">
+                    Tiết
+                </div>
     `;
 
     DAYS.forEach(day => {
 
         html += `
-            <div class="schedule-header">
+            <div class="grid-header">
                 ${day}
             </div>
         `;
-
     });
 
+    for (
+        let period = 1;
+        period <= 12;
+        period++
+    ) {
 
-    /*
-     * 12 periods
-     */
-
-    data.periods.forEach(period => {
+        const periodInfo =
+            periods.find(
+                p =>
+                    p.period_number ===
+                    period
+            );
 
         html += `
-
-            <div class="period-label">
-
-                <div class="period-number">
-                    Tiết ${period.id}
-                </div>
-
-                <div class="period-time">
-                    ${
-                        period.start && period.end
-                            ? `${period.start} - ${period.end}`
-                            : "--:--"
-                    }
-                </div>
-
+            <div class="period-cell period-label">
+                Tiết ${period}
+                <span>
+                    ${timeToDisplay(
+                        periodInfo?.start_time
+                    )}
+                    -
+                    ${timeToDisplay(
+                        periodInfo?.end_time
+                    )}
+                </span>
             </div>
-
         `;
 
-
-        DAYS.forEach((day, dayIndex) => {
-
-            const key =
-                `${getSelectedSemesterId()}_${dayIndex}_${period.id}`;
+        for (
+            let day = 1;
+            day <= 7;
+            day++
+        ) {
 
             const entry =
-                data.entries[key];
+                scheduleEntries.find(
+                    item =>
+                        item.semester_id ===
+                            currentSemesterId &&
+                        item.day_of_week ===
+                            day &&
+                        item.period_number ===
+                            period
+                );
 
-            html += `
-                <div
-                    class="schedule-slot"
-                    onclick="openScheduleModal(${dayIndex}, ${period.id})"
-                >
-            `;
+            if (!entry) {
 
-            if (entry) {
+                html += `
+                    <div class="period-cell">
+                        <button
+                            class="empty-slot"
+                            onclick="openScheduleModal(${day}, ${period})"
+                        >
+                            +
+                        </button>
+                    </div>
+                `;
+
+            } else {
 
                 const subject =
-                    data.subjects.find(
-                        s => s.id === entry.subjectId
+                    subjects.find(
+                        s =>
+                            s.id ===
+                            entry.subject_id
                     );
 
-                if (subject) {
+                if (!subject) {
 
                     html += `
-
-                        <div
-                            class="subject-card"
-                            style="background:${subject.color}"
-                            onclick="event.stopPropagation(); openScheduleModal(${dayIndex}, ${period.id})"
-                        >
-
-                            <strong>
-                                ${escapeHTML(subject.name)}
-                            </strong>
-
-                            ${
-                                subject.teacher
-                                    ? `<small>👩‍🏫 ${escapeHTML(subject.teacher)}</small>`
-                                    : ""
-                            }
-
-                            ${
-                                subject.room
-                                    ? `<small>📍 ${escapeHTML(subject.room)}</small>`
-                                    : ""
-                            }
-
+                        <div class="period-cell">
+                            <button
+                                class="empty-slot"
+                                onclick="openScheduleModal(${day}, ${period})"
+                            >
+                                +
+                            </button>
                         </div>
-
                     `;
 
                 } else {
 
                     html += `
-                        <div class="empty-slot">
-                            +
+                        <div class="period-cell">
+
+                            <div
+                                class="subject-card"
+                                style="background:${escapeHTML(subject.color || "#ffd6e7")}"
+                                onclick="openScheduleModal(${day}, ${period}, '${entry.id}')"
+                            >
+
+                                <strong>
+                                    ${escapeHTML(subject.name)}
+                                </strong>
+
+                                <small>
+                                    ${escapeHTML(subject.teacher || "")}
+                                </small>
+
+                                <small>
+                                    ${escapeHTML(subject.room || "")}
+                                </small>
+
+                            </div>
+
                         </div>
                     `;
-
                 }
+            }
+        }
+    }
+
+    html += `
+            </div>
+        </div>
+    `;
+
+    container.innerHTML = html;
+}
+
+
+/* =========================================================
+   SCHEDULE MODAL
+========================================================= */
+
+window.openScheduleModal =
+async function(
+    day,
+    period,
+    entryId = null
+) {
+
+    if (!currentSemesterId) {
+
+        showToast(
+            "Hãy tạo hoặc chọn học kỳ trước.",
+            true
+        );
+
+        return;
+    }
+
+    const existing =
+        entryId
+            ? scheduleEntries.find(
+                e => e.id === entryId
+            )
+            : null;
+
+    openModal(
+        existing
+            ? "Chỉnh sửa tiết học"
+            : "Thêm tiết học",
+        `
+            <div class="form-group">
+                <label>Ngày</label>
+                <input
+                    value="${DAYS[day - 1]}"
+                    disabled
+                >
+            </div>
+
+            <div class="form-group">
+                <label>Tiết</label>
+                <input
+                    value="Tiết ${period}"
+                    disabled
+                >
+            </div>
+
+            <div class="form-group">
+                <label>Môn học</label>
+
+                <select id="modal-subject">
+
+                    <option value="">
+                        -- Chọn môn --
+                    </option>
+
+                    ${subjects.map(s => `
+                        <option
+                            value="${s.id}"
+                            ${existing?.subject_id === s.id ? "selected" : ""}
+                        >
+                            ${escapeHTML(s.name)}
+                        </option>
+                    `).join("")}
+
+                </select>
+            </div>
+        `,
+        async () => {
+
+            const subjectId =
+                document.getElementById(
+                    "modal-subject"
+                ).value;
+
+            if (!subjectId) {
+
+                showToast(
+                    "Hãy chọn môn học.",
+                    true
+                );
+
+                return false;
+            }
+
+            if (existing) {
+
+                const { error } =
+                    await db
+                        .from("schedule_entries")
+                        .update({
+                            subject_id:
+                                subjectId
+                        })
+                        .eq(
+                            "id",
+                            existing.id
+                        );
+
+                if (error)
+                    throw error;
 
             } else {
 
-                html += `
-                    <div class="empty-slot">
-                        +
-                    </div>
-                `;
+                const { error } =
+                    await db
+                        .from("schedule_entries")
+                        .insert({
+                            user_id:
+                                currentUser.id,
+                            semester_id:
+                                currentSemesterId,
+                            subject_id:
+                                subjectId,
+                            day_of_week:
+                                day,
+                            period_number:
+                                period
+                        });
 
+                if (error)
+                    throw error;
             }
 
-            html += `</div>`;
+            await loadAllData();
+            renderSchedule();
 
-        });
+            showToast(
+                "Đã lưu lịch học ♡"
+            );
 
-    });
-
-    grid.innerHTML = html;
-
-}
-
-
-function openScheduleModal(day, period) {
-
-    openModal(
-        "schedule",
-        {
-            day,
-            period
-        }
+            return true;
+        },
+        existing
+            ? "Lưu thay đổi"
+            : "Thêm"
     );
 
-}
+    if (existing) {
 
-
-function saveScheduleEntry() {
-
-    const content =
-        document.getElementById(
-            "modalContent"
-        );
-
-    const day =
-        Number(content.dataset.day);
-
-    const period =
-        Number(content.dataset.period);
-
-    const subjectId =
-        document
-            .getElementById("scheduleSubject")
-            .value;
-
-    const semesterId =
-        getSelectedSemesterId();
-
-    if (!semesterId) {
-
-        alert("Vui lòng tạo học kỳ trước.");
-
-        return;
-
-    }
-
-    const data =
-        getUserData();
-
-    const key =
-        `${semesterId}_${day}_${period}`;
-
-    if (!subjectId) {
-
-        delete data.entries[key];
-
-    } else {
-
-        data.entries[key] = {
-
-            semesterId,
-
-            day,
-
-            period,
-
-            subjectId
-
-        };
-
-    }
-
-    saveUserData(data);
-
-    closeModal();
-
-    renderEverything();
-
-}
-
-
-function removeScheduleEntry() {
-
-    const content =
-        document.getElementById(
-            "modalContent"
-        );
-
-    const day =
-        Number(content.dataset.day);
-
-    const period =
-        Number(content.dataset.period);
-
-    const semesterId =
-        getSelectedSemesterId();
-
-    const data =
-        getUserData();
-
-    const key =
-        `${semesterId}_${day}_${period}`;
-
-    delete data.entries[key];
-
-    saveUserData(data);
-
-    closeModal();
-
-    renderEverything();
-
-}
-
-
-/* ===============================================================
-   NOTES
-================================================================= */
-
-function saveNote() {
-
-    const title =
-        document
-            .getElementById("noteTitle")
-            .value.trim();
-
-    const body =
-        document
-            .getElementById("noteBody")
-            .value;
-
-    const folderId =
-        document
-            .getElementById("noteFolder")
-            .value;
-
-    const color =
-        document
-            .getElementById("noteColor")
-            .value;
-
-    if (!title) {
-
-        alert("Vui lòng nhập tiêu đề.");
-
-        return;
-
-    }
-
-    const data =
-        getUserData();
-
-    const now =
-        new Date().toISOString();
-
-    if (editingNoteId) {
-
-        const note =
-            data.notes.find(
-                n => n.id === editingNoteId
+        const footer =
+            document.querySelector(
+                "#modal .modal-footer"
             );
 
-        if (note) {
+        const deleteButton =
+            document.createElement("button");
 
-            note.title = title;
-            note.body = body;
-            note.folderId = folderId;
-            note.color = color;
-            note.updatedAt = now;
+        deleteButton.className =
+            "small-btn danger-btn";
 
-        }
+        deleteButton.textContent =
+            "Xóa";
 
-    } else {
+        deleteButton.onclick =
+            async () => {
 
-        data.notes.push({
+                if (
+                    !confirm(
+                        "Bạn có chắc muốn xóa tiết học này?"
+                    )
+                ) {
+                    return;
+                }
 
-            id: generateId(),
+                try {
 
-            title,
+                    const { error } =
+                        await db
+                            .from(
+                                "schedule_entries"
+                            )
+                            .delete()
+                            .eq(
+                                "id",
+                                existing.id
+                            );
 
-            body,
+                    if (error)
+                        throw error;
 
-            folderId,
+                    closeModal();
 
-            color,
+                    await loadAllData();
 
-            pinned: false,
+                    renderSchedule();
 
-            createdAt: now,
+                    showToast(
+                        "Đã xóa tiết học."
+                    );
 
-            updatedAt: now
+                } catch (error) {
 
-        });
+                    showToast(
+                        error.message,
+                        true
+                    );
+                }
+            };
 
+        footer.insertBefore(
+            deleteButton,
+            footer.firstChild
+        );
     }
+};
 
-    saveUserData(data);
 
-    closeModal();
+/* =========================================================
+   SUBJECTS
+========================================================= */
 
-    renderNotes();
+document
+    .getElementById("new-subject-btn")
+    .addEventListener(
+        "click",
+        () => openSubjectModal()
+    );
 
-    updateStats();
 
-}
+document
+    .getElementById("add-schedule-btn")
+    .addEventListener(
+        "click",
+        () => {
 
+            if (!subjects.length) {
 
-function deleteNote(id) {
-
-    const data =
-        getUserData();
-
-    const note =
-        data.notes.find(
-            n => n.id === id
-        );
-
-    if (!note) return;
-
-    if (!confirm(
-        `Bạn có chắc muốn xóa ghi chú "${note.title}"?`
-    )) return;
-
-    data.notes =
-        data.notes.filter(
-            n => n.id !== id
-        );
-
-    saveUserData(data);
-
-    renderNotes();
-
-    updateStats();
-
-}
-
-
-function togglePinNote(id) {
-
-    const data =
-        getUserData();
-
-    const note =
-        data.notes.find(
-            n => n.id === id
-        );
-
-    if (!note) return;
-
-    note.pinned =
-        !note.pinned;
-
-    note.updatedAt =
-        new Date().toISOString();
-
-    saveUserData(data);
-
-    renderNotes();
-
-}
-
-
-function renderFolderFilter() {
-
-    const select =
-        document.getElementById(
-            "noteFolderFilter"
-        );
-
-    const data =
-        getUserData();
-
-    const current =
-        select.value || "all";
-
-    select.innerHTML = `
-
-        <option value="all">
-            📁 Tất cả thư mục
-        </option>
-
-        ${data.folders.map(folder => `
-
-            <option
-                value="${folder.id}"
-            >
-                📁 ${escapeHTML(folder.name)}
-            </option>
-
-        `).join("")}
-
-    `;
-
-    select.value =
-        current;
-
-}
-
-
-function renderNotes() {
-
-    const grid =
-        document.getElementById(
-            "notesGrid"
-        );
-
-    if (!grid) return;
-
-    const data =
-        getUserData();
-
-    renderFolderFilter();
-
-    const search =
-        document
-            .getElementById("noteSearch")
-            .value
-            .trim()
-            .toLowerCase();
-
-    const folder =
-        document
-            .getElementById("noteFolderFilter")
-            .value;
-
-
-    let notes =
-        [...data.notes];
-
-
-    if (folder !== "all") {
-
-        notes =
-            notes.filter(
-                note =>
-                    note.folderId === folder
-            );
-
-    }
-
-
-    if (search) {
-
-        notes =
-            notes.filter(note =>
-
-                note.title
-                    .toLowerCase()
-                    .includes(search)
-
-                ||
-
-                note.body
-                    .toLowerCase()
-                    .includes(search)
-
-            );
-
-    }
-
-
-    /*
-     * Ghim lên đầu.
-     */
-    notes.sort((a,b) => {
-
-        if (a.pinned !== b.pinned) {
-
-            return b.pinned - a.pinned;
-
-        }
-
-        return new Date(b.updatedAt) -
-            new Date(a.updatedAt);
-
-    });
-
-
-    if (notes.length === 0) {
-
-        grid.innerHTML = `
-
-            <div
-                class="empty-state"
-                style="grid-column:1/-1;"
-            >
-
-                <div class="empty-icon">
-                    📝
-                </div>
-
-                <h3>
-                    Chưa có ghi chú
-                </h3>
-
-                <p>
-                    Hãy tạo một ghi chú đầu tiên nhé ♡
-                </p>
-
-            </div>
-
-        `;
-
-        return;
-
-    }
-
-
-    grid.innerHTML =
-        notes.map(note => {
-
-            const folder =
-                data.folders.find(
-                    f => f.id === note.folderId
+                showToast(
+                    "Hãy tạo môn học trước.",
+                    true
                 );
 
-            return `
+                currentPage =
+                    "subjects";
 
-                <div
-                    class="note-card ${
-                        note.pinned ? "pinned" : ""
-                    }"
-                    style="background:${note.color}"
-                >
+                document
+                    .querySelector(
+                        '[data-page="subjects"]'
+                    )
+                    .click();
 
-                    <div class="note-title">
-                        ${escapeHTML(note.title)}
-                    </div>
+                return;
+            }
 
-                    <div class="note-body">
-                        ${escapeHTML(note.body)}
-                    </div>
+            if (!semesters.length) {
 
-                    <div class="note-footer">
+                showToast(
+                    "Hãy tạo học kỳ trước.",
+                    true
+                );
 
-                        <div>
+                currentPage =
+                    "semesters";
 
-                            <div class="note-date">
-                                ${
-                                    folder
-                                        ? "📁 " + escapeHTML(folder.name)
-                                        : ""
-                                }
-                            </div>
+                document
+                    .querySelector(
+                        '[data-page="semesters"]'
+                    )
+                    .click();
 
-                            <div class="note-date">
-                                ${formatDate(note.updatedAt)}
-                            </div>
+                return;
+            }
 
-                        </div>
-
-                        <div class="note-actions">
-
-                            <button
-                                class="icon-btn"
-                                title="Ghim"
-                                onclick="togglePinNote('${note.id}')"
-                            >
-                                ${note.pinned ? "📌" : "📍"}
-                            </button>
-
-                            <button
-                                class="icon-btn"
-                                title="Sửa"
-                                onclick='editNote(${JSON.stringify(note)})'
-                            >
-                                ✏️
-                            </button>
-
-                            <button
-                                class="icon-btn"
-                                title="Xóa"
-                                onclick="deleteNote('${note.id}')"
-                            >
-                                🗑️
-                            </button>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-            `;
-
-        }).join("");
-
-}
-
-
-function editNote(note) {
-
-    openModal(
-        "note",
-        note
+            showToast(
+                "Hãy chọn một ô trong thời khóa biểu để thêm môn."
+            );
+        }
     );
-
-}
-
-
-document
-    .getElementById("noteSearch")
-    .addEventListener("input", renderNotes);
-
-
-document
-    .getElementById("noteFolderFilter")
-    .addEventListener("change", renderNotes);
-
-
-/* ===============================================================
-   SETTINGS RENDER
-================================================================= */
-
-function renderSemesters() {
-
-    const container =
-        document.getElementById(
-            "semesterList"
-        );
-
-    const data =
-        getUserData();
-
-    if (data.semesters.length === 0) {
-
-        container.innerHTML = `
-            <div class="list-item">
-                Chưa có học kỳ.
-            </div>
-        `;
-
-        return;
-
-    }
-
-    container.innerHTML =
-        data.semesters.map(semester => `
-
-            <div class="list-item">
-
-                <div class="list-item-info">
-
-                    <div class="list-item-title">
-                        🎓 ${escapeHTML(semester.name)}
-                    </div>
-
-                    <div class="list-item-sub">
-
-                        ${
-                            semester.start &&
-                            semester.end
-
-                                ? `${semester.start} → ${semester.end}`
-
-                                : "Chưa đặt ngày"
-
-                        }
-
-                    </div>
-
-                </div>
-
-                <div class="list-actions">
-
-                    <button
-                        class="btn btn-secondary btn-small"
-                        onclick='editSemester(${JSON.stringify(semester)})'
-                    >
-                        ✏️
-                    </button>
-
-                    <button
-                        class="btn btn-danger btn-small"
-                        onclick="deleteSemester('${semester.id}')"
-                    >
-                        🗑️
-                    </button>
-
-                </div>
-
-            </div>
-
-        `).join("");
-
-}
-
-
-function editSemester(semester) {
-
-    openModal(
-        "semester",
-        semester
-    );
-
-}
 
 
 function renderSubjects() {
 
     const container =
         document.getElementById(
-            "subjectList"
+            "subjects-container"
         );
 
-    const data =
-        getUserData();
-
-    if (data.subjects.length === 0) {
+    if (!subjects.length) {
 
         container.innerHTML = `
-            <div class="list-item">
-                Chưa có môn học.
+            <div class="empty">
+                <div class="emoji">📚</div>
+                <h3>Chưa có môn học</h3>
+                <p>Hãy thêm môn học đầu tiên nhé!</p>
             </div>
         `;
 
         return;
-
     }
 
     container.innerHTML =
-        data.subjects.map(subject => `
+        subjects.map(subject => `
 
-            <div class="list-item">
+            <div class="card">
 
-                <div class="list-item-info">
+                <h3>
+                    <span
+                        class="color-dot"
+                        style="background:${escapeHTML(subject.color)}"
+                    ></span>
 
-                    <div class="list-item-title">
+                    ${escapeHTML(subject.name)}
+                </h3>
 
-                        <span
-                            class="color-dot"
-                            style="background:${subject.color}"
-                        ></span>
+                <p>
+                    👩‍🏫
+                    ${escapeHTML(subject.teacher || "Chưa cập nhật")}
+                </p>
 
-                        ${escapeHTML(subject.name)}
+                <p>
+                    🏫
+                    ${escapeHTML(subject.room || "Chưa cập nhật")}
+                </p>
 
-                    </div>
-
-                    <div class="list-item-sub">
-
-                        ${
-                            subject.teacher
-                                ? "👩‍🏫 " + escapeHTML(subject.teacher)
-                                : ""
-                        }
-
-                        ${
-                            subject.room
-                                ? " · 📍 " + escapeHTML(subject.room)
-                                : ""
-                        }
-
-                    </div>
-
-                </div>
-
-                <div class="list-actions">
+                <div class="card-actions">
 
                     <button
-                        class="btn btn-secondary btn-small"
-                        onclick='editSubject(${JSON.stringify(subject)})'
+                        onclick="openSubjectModal('${subject.id}')"
                     >
-                        ✏️
+                        Sửa
                     </button>
 
                     <button
-                        class="btn btn-danger btn-small"
                         onclick="deleteSubject('${subject.id}')"
                     >
-                        🗑️
+                        Xóa
                     </button>
 
                 </div>
@@ -3923,139 +2256,1318 @@ function renderSubjects() {
             </div>
 
         `).join("");
-
 }
 
 
-function editSubject(subject) {
+function openSubjectModal(subjectId = null) {
+
+    const subject =
+        subjectId
+            ? subjects.find(
+                s => s.id === subjectId
+            )
+            : null;
 
     openModal(
-        "subject",
         subject
+            ? "Sửa môn học"
+            : "Thêm môn học",
+
+        `
+            <div class="form-group">
+                <label>Tên môn học</label>
+
+                <input
+                    id="subject-name"
+                    value="${escapeHTML(subject?.name || "")}"
+                    placeholder="Ví dụ: Toán"
+                >
+            </div>
+
+            <div class="form-group">
+                <label>Giáo viên</label>
+
+                <input
+                    id="subject-teacher"
+                    value="${escapeHTML(subject?.teacher || "")}"
+                    placeholder="Tên giáo viên"
+                >
+            </div>
+
+            <div class="form-group">
+                <label>Phòng học</label>
+
+                <input
+                    id="subject-room"
+                    value="${escapeHTML(subject?.room || "")}"
+                    placeholder="Ví dụ: A101"
+                >
+            </div>
+
+            <div class="form-group">
+                <label>Màu</label>
+
+                <input
+                    id="subject-color"
+                    type="color"
+                    value="${subject?.color || "#ffd6e7"}"
+                >
+            </div>
+        `,
+
+        async () => {
+
+            const name =
+                document.getElementById(
+                    "subject-name"
+                ).value.trim();
+
+            const teacher =
+                document.getElementById(
+                    "subject-teacher"
+                ).value.trim();
+
+            const room =
+                document.getElementById(
+                    "subject-room"
+                ).value.trim();
+
+            const color =
+                document.getElementById(
+                    "subject-color"
+                ).value;
+
+            if (!name) {
+
+                showToast(
+                    "Hãy nhập tên môn học.",
+                    true
+                );
+
+                return false;
+            }
+
+            if (subject) {
+
+                const { error } =
+                    await db
+                        .from("subjects")
+                        .update({
+                            name,
+                            teacher,
+                            room,
+                            color
+                        })
+                        .eq(
+                            "id",
+                            subject.id
+                        );
+
+                if (error)
+                    throw error;
+
+            } else {
+
+                const { error } =
+                    await db
+                        .from("subjects")
+                        .insert({
+                            user_id:
+                                currentUser.id,
+                            name,
+                            teacher,
+                            room,
+                            color
+                        });
+
+                if (error)
+                    throw error;
+            }
+
+            await loadAllData();
+
+            renderSubjects();
+
+            showToast(
+                "Đã lưu môn học ♡"
+            );
+
+            return true;
+        }
+    );
+}
+
+
+window.deleteSubject =
+async function(id) {
+
+    if (
+        !confirm(
+            "Xóa môn học này? Các tiết học sử dụng môn này cũng có thể bị xóa."
+        )
+    ) {
+        return;
+    }
+
+    try {
+
+        const { error } =
+            await db
+                .from("subjects")
+                .delete()
+                .eq("id", id);
+
+        if (error)
+            throw error;
+
+        await loadAllData();
+
+        renderSubjects();
+        renderSchedule();
+
+        showToast(
+            "Đã xóa môn học."
+        );
+
+    } catch (error) {
+
+        showToast(
+            error.message,
+            true
+        );
+    }
+};
+
+
+/* =========================================================
+   SEMESTERS
+========================================================= */
+
+document
+    .getElementById("new-semester-btn")
+    .addEventListener(
+        "click",
+        () => openSemesterModal()
     );
 
+
+function renderSemesters() {
+
+    const container =
+        document.getElementById(
+            "semesters-container"
+        );
+
+    if (!semesters.length) {
+
+        container.innerHTML = `
+            <div class="empty">
+                <div class="emoji">🌸</div>
+                <h3>Chưa có học kỳ</h3>
+                <p>Tạo học kỳ để bắt đầu lập lịch.</p>
+            </div>
+        `;
+
+        return;
+    }
+
+    container.innerHTML =
+        semesters.map(semester => `
+
+            <div class="card">
+
+                <h3>
+                    🌸
+                    ${escapeHTML(semester.name)}
+                </h3>
+
+                <p>
+                    ${formatDate(semester.start_date)}
+                    →
+                    ${formatDate(semester.end_date)}
+                </p>
+
+                <div class="card-actions">
+
+                    <button
+                        onclick="openSemesterModal('${semester.id}')"
+                    >
+                        Sửa
+                    </button>
+
+                    <button
+                        onclick="copySemester('${semester.id}')"
+                    >
+                        Nhân bản
+                    </button>
+
+                    <button
+                        onclick="deleteSemester('${semester.id}')"
+                    >
+                        Xóa
+                    </button>
+
+                </div>
+
+            </div>
+
+        `).join("");
 }
 
 
-function renderSettings() {
+function openSemesterModal(semesterId = null) {
 
-    renderSemesters();
+    const semester =
+        semesterId
+            ? semesters.find(
+                s => s.id === semesterId
+            )
+            : null;
 
-    renderSubjects();
+    openModal(
+        semester
+            ? "Sửa học kỳ"
+            : "Thêm học kỳ",
 
-    renderPeriods();
+        `
+            <div class="form-group">
+                <label>Tên học kỳ</label>
 
+                <input
+                    id="semester-name"
+                    value="${escapeHTML(semester?.name || "")}"
+                    placeholder="Ví dụ: HK1 2026-2027"
+                >
+            </div>
+
+            <div class="form-group">
+                <label>Ngày bắt đầu</label>
+
+                <input
+                    id="semester-start"
+                    type="date"
+                    value="${semester?.start_date || ""}"
+                >
+            </div>
+
+            <div class="form-group">
+                <label>Ngày kết thúc</label>
+
+                <input
+                    id="semester-end"
+                    type="date"
+                    value="${semester?.end_date || ""}"
+                >
+            </div>
+        `,
+
+        async () => {
+
+            const name =
+                document.getElementById(
+                    "semester-name"
+                ).value.trim();
+
+            const start =
+                document.getElementById(
+                    "semester-start"
+                ).value || null;
+
+            const end =
+                document.getElementById(
+                    "semester-end"
+                ).value || null;
+
+            if (!name) {
+
+                showToast(
+                    "Hãy nhập tên học kỳ.",
+                    true
+                );
+
+                return false;
+            }
+
+            if (semester) {
+
+                const { error } =
+                    await db
+                        .from("semesters")
+                        .update({
+                            name,
+                            start_date: start,
+                            end_date: end
+                        })
+                        .eq(
+                            "id",
+                            semester.id
+                        );
+
+                if (error)
+                    throw error;
+
+            } else {
+
+                const { data, error } =
+                    await db
+                        .from("semesters")
+                        .insert({
+                            user_id:
+                                currentUser.id,
+                            name,
+                            start_date: start,
+                            end_date: end
+                        })
+                        .select()
+                        .single();
+
+                if (error)
+                    throw error;
+
+                currentSemesterId =
+                    data.id;
+            }
+
+            await loadAllData();
+
+            renderSemesters();
+            renderSchedule();
+
+            showToast(
+                "Đã lưu học kỳ ♡"
+            );
+
+            return true;
+        }
+    );
 }
 
 
-/* ===============================================================
-   STATISTICS
-================================================================= */
+window.deleteSemester =
+async function(id) {
 
-function updateStats() {
+    if (
+        !confirm(
+            "Xóa học kỳ này và toàn bộ lịch học trong học kỳ?"
+        )
+    ) {
+        return;
+    }
 
-    const data =
-        getUserData();
+    try {
 
-    if (!data) return;
+        const { error } =
+            await db
+                .from("semesters")
+                .delete()
+                .eq("id", id);
 
-    document
-        .getElementById("statSubjects")
-        .textContent =
-        data.subjects.length;
+        if (error)
+            throw error;
 
-    document
-        .getElementById("statSemesters")
-        .textContent =
-        data.semesters.length;
+        if (currentSemesterId === id) {
 
-    document
-        .getElementById("statNotes")
-        .textContent =
-        data.notes.length;
+            currentSemesterId =
+                null;
+        }
 
-    document
-        .getElementById("statEntries")
-        .textContent =
-        Object.keys(data.entries)
-            .filter(key => {
+        await loadAllData();
 
-                return data.entries[key]
-                    .semesterId;
+        renderSemesters();
+        renderSchedule();
 
-            }).length;
+        showToast(
+            "Đã xóa học kỳ."
+        );
 
+    } catch (error) {
+
+        showToast(
+            error.message,
+            true
+        );
+    }
+};
+
+
+window.copySemester =
+async function(id) {
+
+    const source =
+        semesters.find(
+            s => s.id === id
+        );
+
+    if (!source) {
+        return;
+    }
+
+    const newName =
+        prompt(
+            "Tên học kỳ mới:",
+            source.name + " - Bản sao"
+        );
+
+    if (!newName) {
+        return;
+    }
+
+    try {
+
+        const {
+            data: newSemester,
+            error: semesterError
+        } = await db
+            .from("semesters")
+            .insert({
+                user_id:
+                    currentUser.id,
+                name: newName,
+                start_date:
+                    source.start_date,
+                end_date:
+                    source.end_date
+            })
+            .select()
+            .single();
+
+        if (semesterError)
+            throw semesterError;
+
+        const sourceEntries =
+            scheduleEntries.filter(
+                e =>
+                    e.semester_id === id
+            );
+
+        if (sourceEntries.length) {
+
+            const rows =
+                sourceEntries.map(
+                    e => ({
+                        user_id:
+                            currentUser.id,
+                        semester_id:
+                            newSemester.id,
+                        subject_id:
+                            e.subject_id,
+                        day_of_week:
+                            e.day_of_week,
+                        period_number:
+                            e.period_number
+                    })
+                );
+
+            const { error } =
+                await db
+                    .from(
+                        "schedule_entries"
+                    )
+                    .insert(rows);
+
+            if (error)
+                throw error;
+        }
+
+        currentSemesterId =
+            newSemester.id;
+
+        await loadAllData();
+
+        renderSemesters();
+        renderSchedule();
+
+        showToast(
+            "Đã nhân bản học kỳ ♡"
+        );
+
+    } catch (error) {
+
+        showToast(
+            error.message,
+            true
+        );
+    }
+};
+
+
+/* =========================================================
+   NOTES
+========================================================= */
+
+document
+    .getElementById("new-note-btn")
+    .addEventListener(
+        "click",
+        () => openNoteModal()
+    );
+
+
+document
+    .getElementById("new-folder-btn")
+    .addEventListener(
+        "click",
+        () => openFolderModal()
+    );
+
+
+document
+    .getElementById("note-search")
+    .addEventListener(
+        "input",
+        () => renderNotes()
+    );
+
+
+document
+    .getElementById("note-folder-filter")
+    .addEventListener(
+        "change",
+        () => renderNotes()
+    );
+
+
+function renderFolderFilter() {
+
+    const select =
+        document.getElementById(
+            "note-folder-filter"
+        );
+
+    const current =
+        select.value;
+
+    select.innerHTML =
+        `<option value="">
+            Tất cả thư mục
+        </option>`;
+
+    folders.forEach(folder => {
+
+        select.innerHTML += `
+            <option
+                value="${folder.id}"
+            >
+                ${escapeHTML(folder.name)}
+            </option>
+        `;
+    });
+
+    select.value = current;
 }
 
 
-/* ===============================================================
-   RENDER EVERYTHING
-================================================================= */
+function renderNotes() {
 
-function renderEverything() {
+    const container =
+        document.getElementById(
+            "notes-container"
+        );
 
-    renderSemesterSelect();
+    const search =
+        document.getElementById(
+            "note-search"
+        ).value
+        .trim()
+        .toLowerCase();
 
-    renderSchedule();
+    const folder =
+        document.getElementById(
+            "note-folder-filter"
+        ).value;
 
-    renderNotes();
+    let filtered =
+        notes.filter(note => {
 
-    renderSettings();
+            const matchesSearch =
+                !search ||
+                note.title
+                    .toLowerCase()
+                    .includes(search) ||
+                note.content
+                    .toLowerCase()
+                    .includes(search);
 
-    updateStats();
+            const matchesFolder =
+                !folder ||
+                note.folder_id === folder;
 
-}
+            return (
+                matchesSearch &&
+                matchesFolder
+            );
+        });
 
+    filtered.sort(
+        (a,b) => {
 
-/* ===============================================================
-   HELPERS
-================================================================= */
+            if (
+                a.pinned !==
+                b.pinned
+            ) {
+                return b.pinned - a.pinned;
+            }
 
-function formatDate(dateString) {
-
-    if (!dateString) return "";
-
-    const date =
-        new Date(dateString);
-
-    return date.toLocaleString(
-        "vi-VN",
-        {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit"
+            return new Date(
+                b.updated_at
+            ) - new Date(
+                a.updated_at
+            );
         }
     );
 
-}
+    if (!filtered.length) {
 
+        container.innerHTML = `
+            <div class="empty">
+                <div class="emoji">📝</div>
+                <h3>Chưa có ghi chú</h3>
+                <p>Hãy tạo ghi chú đầu tiên nhé!</p>
+            </div>
+        `;
 
-function escapeHTML(value) {
-
-    if (value === undefined ||
-        value === null) {
-
-        return "";
-
+        return;
     }
 
-    return String(value)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+    container.innerHTML = `
+        <div class="cards">
 
+            ${filtered.map(note => {
+
+                const folder =
+                    folders.find(
+                        f =>
+                            f.id ===
+                            note.folder_id
+                    );
+
+                return `
+                    <div
+                        class="note-card ${note.pinned ? "pinned" : ""}"
+                        style="background:${escapeHTML(note.color || "#ffd6e7")}"
+                    >
+
+                        ${
+                            note.pinned
+                            ? `<div class="pin">📌</div>`
+                            : ""
+                        }
+
+                        <h3>
+                            ${escapeHTML(
+                                note.title ||
+                                "Không có tiêu đề"
+                            )}
+                        </h3>
+
+                        <div class="note-content">
+                            ${escapeHTML(
+                                note.content
+                            )}
+                        </div>
+
+                        ${
+                            folder
+                            ? `
+                                <div
+                                    class="note-time"
+                                >
+                                    📁
+                                    ${escapeHTML(folder.name)}
+                                </div>
+                            `
+                            : ""
+                        }
+
+                        <div class="note-time">
+                            Chỉnh sửa:
+                            ${formatDateTime(
+                                note.updated_at
+                            )}
+                        </div>
+
+                        <div class="card-actions">
+
+                            <button
+                                onclick="openNoteModal('${note.id}')"
+                            >
+                                Sửa
+                            </button>
+
+                            <button
+                                onclick="togglePin('${note.id}')"
+                            >
+                                ${note.pinned ? "Bỏ ghim" : "Ghim"}
+                            </button>
+
+                            <button
+                                onclick="deleteNote('${note.id}')"
+                            >
+                                Xóa
+                            </button>
+
+                        </div>
+
+                    </div>
+                `;
+            }).join("")}
+
+        </div>
+    `;
 }
 
 
-/* ===============================================================
-   INITIALIZE
-================================================================= */
+function openNoteModal(noteId = null) {
 
-checkAutoLogin();
+    const note =
+        noteId
+            ? notes.find(
+                n => n.id === noteId
+            )
+            : null;
+
+    openModal(
+        note
+            ? "Sửa ghi chú"
+            : "Ghi chú mới",
+
+        `
+            <div class="form-group">
+                <label>Tiêu đề</label>
+
+                <input
+                    id="note-title"
+                    value="${escapeHTML(note?.title || "")}"
+                    placeholder="Tiêu đề ghi chú"
+                >
+            </div>
+
+            <div class="form-group">
+                <label>Nội dung</label>
+
+                <textarea
+                    id="note-content"
+                    placeholder="Viết điều bạn muốn ghi lại..."
+                >${escapeHTML(note?.content || "")}</textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Thư mục</label>
+
+                <select id="note-folder">
+
+                    <option value="">
+                        Không có thư mục
+                    </option>
+
+                    ${folders.map(folder => `
+                        <option
+                            value="${folder.id}"
+                            ${note?.folder_id === folder.id ? "selected" : ""}
+                        >
+                            ${escapeHTML(folder.name)}
+                        </option>
+                    `).join("")}
+
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Màu ghi chú</label>
+
+                <input
+                    id="note-color"
+                    type="color"
+                    value="${note?.color || "#ffd6e7"}"
+                >
+            </div>
+        `,
+
+        async () => {
+
+            const title =
+                document.getElementById(
+                    "note-title"
+                ).value.trim();
+
+            const content =
+                document.getElementById(
+                    "note-content"
+                ).value;
+
+            const folderId =
+                document.getElementById(
+                    "note-folder"
+                ).value || null;
+
+            const color =
+                document.getElementById(
+                    "note-color"
+                ).value;
+
+            if (!title && !content) {
+
+                showToast(
+                    "Ghi chú không được để trống.",
+                    true
+                );
+
+                return false;
+            }
+
+            if (note) {
+
+                const { error } =
+                    await db
+                        .from("notes")
+                        .update({
+                            title,
+                            content,
+                            folder_id:
+                                folderId,
+                            color,
+                            updated_at:
+                                new Date()
+                                    .toISOString()
+                        })
+                        .eq(
+                            "id",
+                            note.id
+                        );
+
+                if (error)
+                    throw error;
+
+            } else {
+
+                const { error } =
+                    await db
+                        .from("notes")
+                        .insert({
+                            user_id:
+                                currentUser.id,
+                            title,
+                            content,
+                            folder_id:
+                                folderId,
+                            color
+                        });
+
+                if (error)
+                    throw error;
+            }
+
+            await loadAllData();
+
+            renderNotes();
+            renderFolderFilter();
+
+            showToast(
+                "Đã lưu ghi chú ♡"
+            );
+
+            return true;
+        }
+    );
+}
+
+
+window.togglePin =
+async function(id) {
+
+    const note =
+        notes.find(
+            n => n.id === id
+        );
+
+    if (!note) {
+        return;
+    }
+
+    try {
+
+        const { error } =
+            await db
+                .from("notes")
+                .update({
+                    pinned:
+                        !note.pinned,
+                    updated_at:
+                        new Date()
+                            .toISOString()
+                })
+                .eq(
+                    "id",
+                    id
+                );
+
+        if (error)
+            throw error;
+
+        await loadAllData();
+
+        renderNotes();
+
+    } catch (error) {
+
+        showToast(
+            error.message,
+            true
+        );
+    }
+};
+
+
+window.deleteNote =
+async function(id) {
+
+    if (
+        !confirm(
+            "Bạn có chắc muốn xóa ghi chú này?"
+        )
+    ) {
+        return;
+    }
+
+    try {
+
+        const { error } =
+            await db
+                .from("notes")
+                .delete()
+                .eq("id", id);
+
+        if (error)
+            throw error;
+
+        await loadAllData();
+
+        renderNotes();
+
+        showToast(
+            "Đã xóa ghi chú."
+        );
+
+    } catch (error) {
+
+        showToast(
+            error.message,
+            true
+        );
+    }
+};
+
+
+/* =========================================================
+   FOLDERS
+========================================================= */
+
+function openFolderModal() {
+
+    openModal(
+        "Tạo thư mục",
+
+        `
+            <div class="form-group">
+                <label>Tên thư mục</label>
+
+                <input
+                    id="folder-name"
+                    placeholder="Ví dụ: Bài tập"
+                >
+            </div>
+        `,
+
+        async () => {
+
+            const name =
+                document.getElementById(
+                    "folder-name"
+                ).value.trim();
+
+            if (!name) {
+
+                showToast(
+                    "Hãy nhập tên thư mục.",
+                    true
+                );
+
+                return false;
+            }
+
+            const { error } =
+                await db
+                    .from("note_folders")
+                    .insert({
+                        user_id:
+                            currentUser.id,
+                        name
+                    });
+
+            if (error)
+                throw error;
+
+            await loadAllData();
+
+            renderFolderFilter();
+
+            showToast(
+                "Đã tạo thư mục."
+            );
+
+            return true;
+        }
+    );
+}
+
+
+/* =========================================================
+   PERIOD SETTINGS
+========================================================= */
+
+function renderPeriodSettings() {
+
+    const container =
+        document.getElementById(
+            "period-settings"
+        );
+
+    let html = "";
+
+    for (
+        let i = 1;
+        i <= 12;
+        i++
+    ) {
+
+        const period =
+            periods.find(
+                p =>
+                    p.period_number === i
+            );
+
+        html += `
+            <div class="period-row">
+
+                <strong>
+                    Tiết ${i}
+                </strong>
+
+                <input
+                    type="time"
+                    id="period-start-${i}"
+                    value="${timeToDisplay(period?.start_time)}"
+                >
+
+                <input
+                    type="time"
+                    id="period-end-${i}"
+                    value="${timeToDisplay(period?.end_time)}"
+                >
+
+                <span></span>
+
+            </div>
+        `;
+    }
+
+    container.innerHTML = html;
+}
+
+
+document
+    .getElementById("save-periods-btn")
+    .addEventListener(
+        "click",
+        async () => {
+
+            try {
+
+                for (
+                    let i = 1;
+                    i <= 12;
+                    i++
+                ) {
+
+                    const start =
+                        document.getElementById(
+                            `period-start-${i}`
+                        ).value;
+
+                    const end =
+                        document.getElementById(
+                            `period-end-${i}`
+                        ).value;
+
+                    const { error } =
+                        await db
+                            .from("periods")
+                            .upsert(
+                                {
+                                    user_id:
+                                        currentUser.id,
+                                    period_number:
+                                        i,
+                                    start_time:
+                                        start || null,
+                                    end_time:
+                                        end || null
+                                },
+                                {
+                                    onConflict:
+                                        "user_id,period_number"
+                                }
+                            );
+
+                    if (error)
+                        throw error;
+                }
+
+                await loadAllData();
+
+                renderPeriodSettings();
+                renderSchedule();
+
+                showToast(
+                    "Đã lưu thời gian 12 tiết ♡"
+                );
+
+            } catch (error) {
+
+                console.error(error);
+
+                showToast(
+                    error.message,
+                    true
+                );
+            }
+        }
+    );
+
+
+/* =========================================================
+   MODAL SYSTEM
+========================================================= */
+
+function openModal(
+    title,
+    body,
+    saveHandler,
+    saveText = "Lưu"
+) {
+
+    document
+        .getElementById("modal-title")
+        .textContent = title;
+
+    document
+        .getElementById("modal-body")
+        .innerHTML = body;
+
+    document
+        .getElementById("modal-save")
+        .textContent = saveText;
+
+    document
+        .getElementById("modal")
+        .classList.remove("hidden");
+
+    modalSaveHandler =
+        saveHandler;
+}
+
+
+function closeModal() {
+
+    document
+        .getElementById("modal")
+        .classList.add("hidden");
+
+    modalSaveHandler =
+        null;
+}
+
+
+document
+    .getElementById("close-modal")
+    .addEventListener(
+        "click",
+        closeModal
+    );
+
+
+document
+    .getElementById("modal-cancel")
+    .addEventListener(
+        "click",
+        closeModal
+    );
+
+
+document
+    .getElementById("modal-save")
+    .addEventListener(
+        "click",
+        async () => {
+
+            if (!modalSaveHandler) {
+                return;
+            }
+
+            const button =
+                document.getElementById(
+                    "modal-save"
+                );
+
+            button.disabled = true;
+
+            try {
+
+                const result =
+                    await modalSaveHandler();
+
+                if (result !== false) {
+                    closeModal();
+                }
+
+            } catch (error) {
+
+                console.error(error);
+
+                showToast(
+                    error.message,
+                    true
+                );
+
+            } finally {
+
+                button.disabled = false;
+            }
+        }
+    );
+
+
+document
+    .getElementById("modal")
+    .addEventListener(
+        "click",
+        event => {
+
+            if (
+                event.target.id ===
+                "modal"
+            ) {
+                closeModal();
+            }
+        }
+    );
+
+
+/* =========================================================
+   START
+========================================================= */
+
+initializeApp();
 
 </script>
 
