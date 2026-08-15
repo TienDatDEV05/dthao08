@@ -17,6 +17,7 @@
 
     <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
     <style>
         * {
@@ -1194,6 +1195,186 @@
         }
 
 
+
+        /* =========================================================
+           CUTE CURSOR + INTERACTION POLISH
+        ========================================================= */
+
+        @media (pointer: fine) {
+            body,
+            body * {
+                cursor: none !important;
+            }
+
+            #cute-cursor {
+                position: fixed;
+                left: 0;
+                top: 0;
+                width: 22px;
+                height: 22px;
+                pointer-events: none;
+                z-index: 99999;
+                transform: translate3d(-50%, -50%, 0);
+                opacity: 0;
+                transition:
+                    width .16s ease,
+                    height .16s ease,
+                    opacity .18s ease;
+            }
+
+            #cute-cursor::before {
+                content: "♡";
+                position: absolute;
+                inset: 0;
+                display: grid;
+                place-items: center;
+                color: #ed4f89;
+                font-size: 21px;
+                font-weight: 800;
+                line-height: 1;
+                text-shadow:
+                    0 2px 8px rgba(237,79,137,.28),
+                    0 0 12px rgba(255,255,255,.9);
+            }
+
+            #cute-cursor::after {
+                content: "";
+                position: absolute;
+                inset: -4px;
+                border: 1px solid rgba(255,119,168,.28);
+                border-radius: 50%;
+                transform: scale(.72);
+                opacity: .55;
+                transition: transform .18s ease;
+            }
+
+            #cute-cursor.cursor-hover {
+                width: 30px;
+                height: 30px;
+            }
+
+            #cute-cursor.cursor-hover::before {
+                content: "♥";
+                font-size: 20px;
+            }
+
+            #cute-cursor.cursor-hover::after {
+                transform: scale(1);
+                opacity: .85;
+            }
+
+            #cute-cursor.cursor-down {
+                width: 18px;
+                height: 18px;
+            }
+        }
+
+        /* Interactive items gently rise when hovered. */
+        @media (pointer: fine) {
+            .nav-btn:hover,
+            .small-btn:hover,
+            .primary-btn:hover,
+            .auth-tab:hover,
+            .logout-btn:hover,
+            .close-modal:hover,
+            .card:hover,
+            .note-card:hover,
+            .settings-section:hover,
+            .subject-card:hover,
+            .empty-slot:hover,
+            .schedule-cell:hover,
+            .period-row:hover {
+                transform: translateY(-3px);
+            }
+
+            .nav-btn:active,
+            .small-btn:active,
+            .primary-btn:active,
+            .auth-tab:active,
+            .logout-btn:active,
+            .close-modal:active {
+                transform: translateY(0) scale(.97);
+            }
+        }
+
+        .remember-login {
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            width: fit-content;
+            margin: 2px 0 14px;
+            color: var(--text);
+            font-size: 13px;
+            font-weight: 600;
+            user-select: none;
+            cursor: pointer;
+        }
+
+        .remember-login input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .remember-check {
+            width: 20px;
+            height: 20px;
+            border-radius: 7px;
+            display: inline-grid;
+            place-items: center;
+            background: rgba(255,255,255,.58);
+            border: 1px solid rgba(255,119,168,.35);
+            box-shadow:
+                inset 0 1px 2px rgba(255,255,255,.8),
+                0 4px 12px rgba(226,103,148,.08);
+            transition:
+                transform .2s ease,
+                background .2s ease,
+                box-shadow .2s ease;
+        }
+
+        .remember-login input:checked + .remember-check {
+            background: linear-gradient(145deg, #ff8fb7, #ed5b92);
+            box-shadow: 0 5px 14px rgba(237,79,137,.22);
+        }
+
+        .remember-login input:checked + .remember-check::after {
+            content: "✓";
+            color: white;
+            font-size: 13px;
+            font-weight: 900;
+        }
+
+        .remember-login:hover .remember-check {
+            transform: translateY(-1px) scale(1.04);
+        }
+
+        .excel-schedule-btn {
+            background: linear-gradient(
+                145deg,
+                rgba(218,250,231,.82),
+                rgba(185,238,208,.72)
+            ) !important;
+            border-color: rgba(79,177,112,.28) !important;
+            color: #2f7b4a !important;
+        }
+
+        .excel-schedule-btn:hover {
+            box-shadow: 0 10px 24px rgba(67,160,99,.16);
+        }
+
+        @media (max-width: 700px) {
+            .remember-login {
+                min-height: 42px;
+                font-size: 13px;
+            }
+
+            .excel-schedule-btn,
+            .print-schedule-btn {
+                min-height: 42px;
+            }
+        }
+
         /* =========================================================
            PERIOD MANAGEMENT + PRINT
         ========================================================= */
@@ -1522,6 +1703,7 @@
 
 <!-- =========================================================
      AUTH SCREEN
+     - Duy trì đăng nhập bằng localStorage/sessionStorage
 ========================================================= -->
 
 <section id="auth-screen">
@@ -1570,6 +1752,15 @@
                     required
                 >
             </div>
+
+            <label class="remember-login">
+                <input
+                    id="remember-login"
+                    type="checkbox"
+                >
+                <span class="remember-check"></span>
+                <span>Duy trì đăng nhập</span>
+            </label>
 
             <button class="primary-btn" type="submit">
                 <span id="auth-submit-text">Đăng nhập</span>
@@ -1649,7 +1840,7 @@
 
                 <div class="page-title">
                     <h2>📅 Thời khóa biểu</h2>
-                    <p>Xem lịch ở dâyy nha vợ iuu ♡</p>
+                    <p>Lên kế hoạch cho một tuần thật xinh ♡</p>
                 </div>
 
                 <div class="toolbar">
@@ -1676,6 +1867,14 @@
                         🖨️ In lịch học
                     </button>
 
+                    <button
+                        class="small-btn excel-schedule-btn"
+                        id="export-excel-btn"
+                        type="button"
+                    >
+                        📊 Xuất Excel
+                    </button>
+
                 </div>
 
                 <div id="schedule-container"></div>
@@ -1691,7 +1890,7 @@
 
                 <div class="page-title">
                     <h2>📝 Ghi chú</h2>
-                    <p>Vợ note lại những quan trọng ở đây nha ♡</p>
+                    <p>Lưu lại những điều quan trọng của bạn ♡</p>
                 </div>
 
                 <div class="notes-toolbar">
@@ -1735,7 +1934,7 @@
 
                 <div class="page-title">
                     <h2>📚 Môn học</h2>
-                    <p>Mục này để thêm môn học nèee.</p>
+                    <p>Quản lý các môn học của bạn.</p>
                 </div>
 
                 <div class="toolbar">
@@ -1763,7 +1962,7 @@
 
                 <div class="page-title">
                     <h2>🌸 Học kỳ</h2>
-                    <p>Thêm học kỳ đầu tiên nhaaa vợ.</p>
+                    <p>Quản lý các học kỳ của bạn.</p>
                 </div>
 
                 <div class="toolbar">
@@ -1793,7 +1992,7 @@
 
                 <div class="page-title">
                     <h2>⚙️ Cài đặt</h2>
-                    <p>Thêm, xóa và tùy chỉnh thời gian từng tiết học ở đây nhaa vợ.</p>
+                    <p>Thêm, xóa và tùy chỉnh thời gian từng tiết học.</p>
                 </div>
 
                 <div class="settings-section">
@@ -1898,6 +2097,48 @@ const SUPABASE_URL =
 const SUPABASE_KEY =
     "sb_publishable_nrxl7NwtMoleoNiJIg3NdQ_UYf5xy2x";
 
+const REMEMBER_LOGIN_KEY =
+    "doan_thao_remember_login";
+
+function shouldRememberLogin() {
+    return localStorage.getItem(
+        REMEMBER_LOGIN_KEY
+    ) !== "false";
+}
+
+/*
+ * Supabase sẽ dùng localStorage khi "Duy trì đăng nhập"
+ * được bật và sessionStorage khi tắt.
+ */
+const authStorage = {
+    getItem(key) {
+        const storage =
+            shouldRememberLogin()
+                ? localStorage
+                : sessionStorage;
+
+        return storage.getItem(key);
+    },
+
+    setItem(key, value) {
+        const useLocal =
+            shouldRememberLogin();
+
+        if (useLocal) {
+            localStorage.setItem(key, value);
+            sessionStorage.removeItem(key);
+        } else {
+            sessionStorage.setItem(key, value);
+            localStorage.removeItem(key);
+        }
+    },
+
+    removeItem(key) {
+        localStorage.removeItem(key);
+        sessionStorage.removeItem(key);
+    }
+};
+
 const db = window.supabase.createClient(
     SUPABASE_URL,
     SUPABASE_KEY,
@@ -1905,7 +2146,8 @@ const db = window.supabase.createClient(
         auth: {
             persistSession: true,
             autoRefreshToken: true,
-            detectSessionInUrl: true
+            detectSessionInUrl: true,
+            storage: authStorage
         }
     }
 );
@@ -2042,6 +2284,48 @@ const authMessage =
 
 const authSubmitText =
     document.getElementById("auth-submit-text");
+
+const rememberLoginCheckbox =
+    document.getElementById("remember-login");
+
+if (rememberLoginCheckbox) {
+    rememberLoginCheckbox.checked =
+        shouldRememberLogin();
+
+    rememberLoginCheckbox.addEventListener(
+        "change",
+        async () => {
+
+            const remember =
+                rememberLoginCheckbox.checked;
+
+            localStorage.setItem(
+                REMEMBER_LOGIN_KEY,
+                String(remember)
+            );
+
+            /*
+             * Di chuyển session hiện tại sang đúng loại
+             * storage ngay khi người dùng đổi lựa chọn.
+             */
+            const {
+                data: {
+                    session
+                }
+            } = await db.auth.getSession();
+
+            if (session) {
+                await db.auth.setSession(session);
+            }
+
+            showToast(
+                remember
+                    ? "Đã bật duy trì đăng nhập ♡"
+                    : "Đã tắt duy trì đăng nhập."
+            );
+        }
+    );
+}
 
 
 function setAuthMode(mode) {
@@ -4510,6 +4794,205 @@ document
     );
 
 
+
+/* =========================================================
+   EXPORT SCHEDULE TO EXCEL
+========================================================= */
+
+window.exportScheduleToExcel =
+async function() {
+
+    if (!currentSemesterId) {
+        showToast(
+            "Hãy chọn học kỳ trước khi xuất Excel.",
+            true
+        );
+        return;
+    }
+
+    if (!window.XLSX) {
+        showToast(
+            "Thư viện Excel chưa tải xong. Hãy thử lại.",
+            true
+        );
+        return;
+    }
+
+    const semester =
+        semesters.find(
+            item => item.id === currentSemesterId
+        );
+
+    const sortedPeriods =
+        [...periods].sort(
+            (a, b) =>
+                Number(a.period_number) -
+                Number(b.period_number)
+        );
+
+    const rows = [
+        [
+            "Thời khóa biểu",
+            semester?.name || "Học kỳ"
+        ],
+        [
+            "Xuất ngày",
+            new Date().toLocaleDateString("vi-VN")
+        ],
+        []
+    ];
+
+    rows.push([
+        "Tiết",
+        "Thời gian",
+        ...DAYS
+    ]);
+
+    sortedPeriods.forEach(periodInfo => {
+
+        const period =
+            Number(periodInfo.period_number);
+
+        const row = [
+            `Tiết ${period}`,
+            `${timeToDisplay(periodInfo.start_time)} - ${timeToDisplay(periodInfo.end_time)}`
+        ];
+
+        for (let day = 1; day <= 7; day++) {
+
+            const entry =
+                scheduleEntries.find(
+                    item =>
+                        item.semester_id === currentSemesterId &&
+                        item.day_of_week === day &&
+                        Number(item.period_number) === period
+                );
+
+            const subject =
+                entry
+                    ? subjects.find(
+                        item =>
+                            item.id === entry.subject_id
+                    )
+                    : null;
+
+            if (!subject) {
+                row.push("");
+                continue;
+            }
+
+            const details = [
+                subject.name,
+                subject.teacher
+                    ? `GV: ${subject.teacher}`
+                    : "",
+                subject.room
+                    ? `Phòng: ${subject.room}`
+                    : ""
+            ].filter(Boolean);
+
+            row.push(details.join("\n"));
+        }
+
+        rows.push(row);
+    });
+
+    const worksheet =
+        XLSX.utils.aoa_to_sheet(rows);
+
+    worksheet["!cols"] = [
+        { wch: 12 },
+        { wch: 20 },
+        ...DAYS.map(() => ({ wch: 28 }))
+    ];
+
+    worksheet["!rows"] =
+        rows.map((_, index) => ({
+            hpt:
+                index < 3
+                    ? 22
+                    : 42
+        }));
+
+    /*
+     * Freeze phần tiêu đề để khi file dài vẫn dễ theo dõi.
+     */
+    worksheet["!freeze"] = {
+        xSplit: 2,
+        ySplit: 4
+    };
+
+    const workbook =
+        XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(
+        workbook,
+        worksheet,
+        "Thời khóa biểu"
+    );
+
+    /*
+     * Thêm sheet thông tin môn học để file Excel
+     * có thể dùng như một bản lưu đầy đủ.
+     */
+    const subjectRows = [
+        ["Môn học", "Giáo viên", "Phòng", "Màu"]
+    ];
+
+    subjects.forEach(subject => {
+        subjectRows.push([
+            subject.name || "",
+            subject.teacher || "",
+            subject.room || "",
+            subject.color || ""
+        ]);
+    });
+
+    const subjectSheet =
+        XLSX.utils.aoa_to_sheet(subjectRows);
+
+    subjectSheet["!cols"] = [
+        { wch: 28 },
+        { wch: 28 },
+        { wch: 16 },
+        { wch: 14 }
+    ];
+
+    XLSX.utils.book_append_sheet(
+        workbook,
+        subjectSheet,
+        "Môn học"
+    );
+
+    const safeSemesterName =
+        String(
+            semester?.name || "hoc-ky"
+        )
+            .replace(/[\\/:*?"<>|]+/g, "-")
+            .trim();
+
+    const filename =
+        `thoi-khoa-bieu-${safeSemesterName}.xlsx`;
+
+    XLSX.writeFile(
+        workbook,
+        filename
+    );
+
+    showToast(
+        `Đã xuất ${filename} ♡`
+    );
+};
+
+
+document
+    .getElementById("export-excel-btn")
+    .addEventListener(
+        "click",
+        () => exportScheduleToExcel()
+    );
+
+
 /* =========================================================
    PRINT SCHEDULE
 ========================================================= */
@@ -4793,6 +5276,100 @@ document
             }
         }
     );
+
+
+
+/* =========================================================
+   CUTE CUSTOM CURSOR
+========================================================= */
+
+(function initCuteCursor() {
+
+    if (!window.matchMedia(
+        "(pointer: fine)"
+    ).matches) {
+        return;
+    }
+
+    const cursor =
+        document.createElement("div");
+
+    cursor.id = "cute-cursor";
+
+    document.body.appendChild(cursor);
+
+    let mouseX = -100;
+    let mouseY = -100;
+    let currentX = -100;
+    let currentY = -100;
+
+    document.addEventListener(
+        "pointermove",
+        event => {
+
+            mouseX = event.clientX;
+            mouseY = event.clientY;
+
+            cursor.style.opacity = "1";
+
+            const interactive =
+                event.target.closest(
+                    "button, a, input, textarea, select, " +
+                    ".nav-btn, .subject-card, .note-card, " +
+                    ".card, .settings-section, .period-row, " +
+                    ".empty-slot, .schedule-cell, label"
+                );
+
+            cursor.classList.toggle(
+                "cursor-hover",
+                Boolean(interactive)
+            );
+        },
+        { passive: true }
+    );
+
+    document.addEventListener(
+        "pointerdown",
+        () => {
+            cursor.classList.add("cursor-down");
+        },
+        { passive: true }
+    );
+
+    document.addEventListener(
+        "pointerup",
+        () => {
+            cursor.classList.remove("cursor-down");
+        },
+        { passive: true }
+    );
+
+    document.addEventListener(
+        "mouseleave",
+        () => {
+            cursor.style.opacity = "0";
+        }
+    );
+
+    function animateCursor() {
+
+        currentX +=
+            (mouseX - currentX) * 0.24;
+
+        currentY +=
+            (mouseY - currentY) * 0.24;
+
+        cursor.style.transform =
+            `translate3d(${currentX}px, ${currentY}px, 0) translate(-50%, -50%)`;
+
+        requestAnimationFrame(
+            animateCursor
+        );
+    }
+
+    animateCursor();
+
+})();
 
 
 /* =========================================================
