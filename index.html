@@ -2372,6 +2372,68 @@
             }
         }
 
+    
+        /* =========================================================
+           ĐOÀN THẢO — ELEGANT BRAND + MOBILE DRAWER
+        ========================================================= */
+        .brand-elegant {
+            display:flex; align-items:center; gap:9px; position:relative;
+            min-width:190px; padding:4px 0 5px;
+        }
+        .brand-mark { font-family: Georgia, serif; font-size:20px; color:#e26794; line-height:1; }
+        .brand-name { font-family: Georgia, 'Times New Roman', serif; font-size:23px; line-height:1; letter-spacing:-.02em; color:#633e51; }
+        .brand-name strong { font-weight:700; }
+        .brand-name em { font-weight:400; font-style:italic; color:#b94f79; }
+        .brand-subtitle { position:absolute; left:29px; bottom:-5px; font-size:7px; letter-spacing:.24em; text-transform:uppercase; color:#a77b8e; font-weight:700; }
+
+        .logo-elegant { position:relative; }
+        .logo-elegant .auth-brand-symbol { font-family:Georgia,serif; color:#e26794; font-size:25px; margin-bottom:2px; }
+        .logo-elegant h1 { font-family:Georgia,'Times New Roman',serif; font-size:40px; letter-spacing:-.03em; margin:0; color:#633e51; }
+        .logo-elegant h1 strong { font-weight:700; }
+        .logo-elegant h1 em { font-weight:400; font-style:italic; color:#b94f79; }
+        .logo-elegant .logo-image { width:64px; height:64px; object-fit:contain; border-radius:20px; margin-bottom:7px; }
+        .auth-brand-line { display:block; width:56px; height:1px; margin:10px auto 7px; background:linear-gradient(90deg,transparent,#e26794,transparent); }
+        .logo-elegant p { font-size:9px; letter-spacing:.28em; color:#a0647c; font-weight:700; margin:0; }
+        .logo-elegant small { display:block; margin:9px auto 0; max-width:260px; font-size:11px; line-height:1.55; color:#987688; }
+
+        .mobile-menu-toggle { display:none; width:42px; height:42px; border:1px solid rgba(255,255,255,.75); border-radius:13px; background:rgba(255,255,255,.55); color:#633e51; align-items:center; justify-content:center; box-shadow:0 8px 22px rgba(121,76,103,.12); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); }
+        .mobile-menu-toggle svg { width:22px; height:22px; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; }
+        .mobile-nav-backdrop { display:none; position:fixed; inset:0; background:rgba(54,28,42,.22); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px); z-index:9990; opacity:0; transition:opacity .25s ease; }
+        .mobile-nav-drawer { display:none; position:fixed; top:0; left:0; bottom:0; width:min(82vw,330px); padding:20px 15px; background:rgba(255,249,252,.88); border-right:1px solid rgba(255,255,255,.8); box-shadow:20px 0 55px rgba(91,52,72,.18); backdrop-filter:blur(25px) saturate(145%); -webkit-backdrop-filter:blur(25px) saturate(145%); transform:translateX(-105%); transition:transform .3s cubic-bezier(.2,.8,.2,1); z-index:9991; overflow:auto; }
+        .mobile-nav-drawer.open { transform:translateX(0); }
+        .mobile-nav-backdrop.open { opacity:1; }
+        .mobile-nav-head { display:flex; align-items:center; justify-content:space-between; padding:5px 5px 18px; border-bottom:1px solid rgba(226,103,148,.12); margin-bottom:13px; }
+        .mobile-nav-title { font-family:Georgia,'Times New Roman',serif; font-size:25px; color:#633e51; }
+        .mobile-nav-title span { color:#e26794; font-size:20px; }
+        .mobile-nav-title strong { font-weight:700; }
+        .mobile-nav-title em { font-weight:400; font-style:italic; color:#b94f79; }
+        .mobile-nav-subtitle { margin:4px 0 0 25px; font-size:8px; letter-spacing:.23em; text-transform:uppercase; color:#a77b8e; font-weight:700; }
+        .mobile-nav-close { width:38px; height:38px; border-radius:12px; border:1px solid rgba(226,103,148,.16); background:rgba(255,255,255,.65); color:#8e5570; display:grid; place-items:center; }
+        .mobile-nav-close svg { width:19px; height:19px; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; }
+        .mobile-nav-list { display:flex; flex-direction:column; gap:6px; }
+        .mobile-nav-list .nav-btn { width:100%; margin:0; padding:12px 13px !important; flex-direction:row !important; justify-content:flex-start !important; gap:12px !important; font-size:14px !important; text-align:left; border-radius:15px; }
+        .mobile-nav-list .nav-icon { width:36px; height:36px; flex-basis:36px; border-radius:11px; }
+        .mobile-nav-list .nav-icon svg { width:20px; height:20px; }
+        .mobile-nav-list .nav-label { display:block !important; font-size:14px !important; max-width:none; overflow:visible; }
+        .mobile-nav-list .nav-btn.active { box-shadow:0 8px 22px rgba(226,103,148,.12); }
+
+        @media (max-width:800px) {
+            .mobile-menu-toggle { display:inline-flex; order:-2; flex:0 0 42px; }
+            .brand-elegant { min-width:0; flex:1; }
+            .brand-elegant .brand-mark { font-size:18px; }
+            .brand-elegant .brand-name { font-size:20px; }
+            .brand-elegant .brand-subtitle { left:27px; font-size:6px; bottom:-4px; }
+            .mobile-nav-backdrop, .mobile-nav-drawer { display:block; }
+            #app > header { position:sticky; top:0; z-index:1000; }
+            #app > .layout > aside { display:none; }
+            .logo-elegant h1 { font-size:35px; }
+        }
+
+        @media (max-width:420px) {
+            .brand-elegant .brand-name { font-size:18px; }
+            .mobile-menu-toggle { width:40px; height:40px; flex-basis:40px; }
+            .mobile-nav-drawer { width:min(86vw,320px); }
+        }
     </style>
 </head>
 
@@ -2394,14 +2456,17 @@
 
     <div class="auth-card">
 
-        <div class="logo">
+        <div class="logo logo-elegant">
+            <div class="auth-brand-symbol" aria-hidden="true">♡</div>
             <img
                 class="logo-image"
                 src="assets/logo.png"
                 alt="Logo Đoàn Thảo"
             >
-            <h1>Đoàn Thảo</h1>
-            <p>Schedule & Notes</p>
+            <h1><strong>Đoàn</strong> <em>Thảo</em></h1>
+            <span class="auth-brand-line"></span>
+            <p>PERSONAL SPACE</p>
+            <small>Một góc nhỏ dành riêng cho những điều thân thương.</small>
         </div>
 
         <div class="auth-tabs">
@@ -2479,8 +2544,10 @@
             </svg>
         </button>
 
-        <div class="brand">
-            Đoàn Thảo
+        <div class="brand brand-elegant" aria-label="Đoàn Thảo">
+            <span class="brand-mark" aria-hidden="true">♡</span>
+            <span class="brand-name"><strong>Đoàn</strong> <em>Thảo</em></span>
+            <span class="brand-subtitle">personal space</span>
         </div>
 
         <div class="user-area">
@@ -3931,10 +3998,10 @@ function renderWeatherAdvice(data, startIndex) {
 
     if (isNightTime) {
         title.textContent =
-            "SAU 10H TỐI ANH NHẮC VỢ";
+            "Lời nhắc ban đêm";
 
         text.textContent =
-            "Vợ có ra ngoài thì nhớ chú ý cẩn thận nha,còn vợ không đi đâu thì xíuu vợ iuu ngụ ngoann ạaa. Anh yeuuu vợ ♡";
+            "Vợ đi đêm nhớ chú ý cẩn thận nhaaa. Anh yeuuu vợ ♡";
 
         adviceIcon.innerHTML =
             weatherIcon("night");
@@ -6713,6 +6780,52 @@ document
     );
 
 
+
+
+/* =========================================================
+   MOBILE NAVIGATION DRAWER
+========================================================= */
+(function setupMobileNavigation(){
+    const toggle = document.getElementById('mobile-menu-toggle');
+    const drawer = document.getElementById('mobile-nav-drawer');
+    const backdrop = document.getElementById('mobile-nav-backdrop');
+    const closeBtn = document.getElementById('mobile-nav-close');
+    const list = document.getElementById('mobile-nav-list');
+    const desktopNav = document.querySelector('#app > .layout > aside');
+    if (!toggle || !drawer || !backdrop || !closeBtn || !list || !desktopNav) return;
+
+    function syncNav(){
+        list.innerHTML = '';
+        desktopNav.querySelectorAll('.nav-btn').forEach(btn => {
+            const clone = btn.cloneNode(true);
+            clone.addEventListener('click', () => {
+                btn.click();
+                closeMenu();
+            });
+            list.appendChild(clone);
+        });
+    }
+    function openMenu(){
+        syncNav();
+        drawer.classList.add('open');
+        backdrop.classList.add('open');
+        drawer.setAttribute('aria-hidden','false');
+        toggle.setAttribute('aria-expanded','true');
+        document.body.classList.add('mobile-nav-open');
+    }
+    function closeMenu(){
+        drawer.classList.remove('open');
+        backdrop.classList.remove('open');
+        drawer.setAttribute('aria-hidden','true');
+        toggle.setAttribute('aria-expanded','false');
+        document.body.classList.remove('mobile-nav-open');
+    }
+    toggle.addEventListener('click', openMenu);
+    closeBtn.addEventListener('click', closeMenu);
+    backdrop.addEventListener('click', closeMenu);
+    document.addEventListener('keydown', e => { if(e.key === 'Escape') closeMenu(); });
+    window.addEventListener('resize', () => { if(window.innerWidth > 800) closeMenu(); });
+})();
 
 /* =========================================================
    START
