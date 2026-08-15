@@ -17,9 +17,7 @@
 
     <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-
-    <style>
+<style>
         * {
             box-sizing: border-box;
             margin: 0;
@@ -133,6 +131,316 @@
         @keyframes logoFloat {
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-3px); }
+        }
+
+
+        /* =========================================================
+           ENHANCED LIQUID GLASS HOVER
+        ========================================================= */
+
+        @media (pointer: fine) {
+
+            /* Base transition for interactive elements */
+            .nav-btn,
+            .small-btn,
+            .primary-btn,
+            .auth-tab,
+            .logout-btn,
+            .close-modal,
+            .card,
+            .note-card,
+            .settings-section,
+            .subject-card,
+            .empty-slot,
+            .schedule-cell,
+            .period-row,
+            .folder-item,
+            .icon-btn,
+            .action-btn,
+            .add-btn,
+            .delete-btn,
+            .edit-btn {
+                transition:
+                    transform .24s cubic-bezier(.2,.8,.2,1),
+                    box-shadow .24s ease,
+                    background .24s ease,
+                    border-color .24s ease,
+                    color .24s ease,
+                    filter .24s ease;
+            }
+
+            /* Navigation */
+            .nav-btn:hover {
+                transform:
+                    translateY(-6px)
+                    scale(1.035);
+                background:
+                    linear-gradient(
+                        135deg,
+                        rgba(255,255,255,.78),
+                        rgba(255,157,194,.28)
+                    ) !important;
+                border-color:
+                    rgba(255,119,168,.52) !important;
+                color:
+                    #df477f !important;
+                box-shadow:
+                    0 14px 30px rgba(226,103,148,.20),
+                    0 4px 10px rgba(255,255,255,.48) inset;
+                filter: saturate(1.08);
+            }
+
+            .nav-btn:hover .nav-icon,
+            .nav-btn:hover i,
+            .nav-btn:hover svg {
+                transform: scale(1.14);
+                filter: drop-shadow(
+                    0 4px 7px rgba(226,103,148,.22)
+                );
+            }
+
+            /* Buttons */
+            .small-btn:hover,
+            .primary-btn:hover,
+            .add-btn:hover,
+            .action-btn:hover {
+                transform:
+                    translateY(-5px)
+                    scale(1.025);
+                background:
+                    linear-gradient(
+                        135deg,
+                        rgba(255,255,255,.86),
+                        rgba(255,151,190,.30)
+                    ) !important;
+                border-color:
+                    rgba(255,105,155,.50) !important;
+                color:
+                    #d94179 !important;
+                box-shadow:
+                    0 12px 26px rgba(226,103,148,.20),
+                    0 2px 8px rgba(255,255,255,.72) inset;
+            }
+
+            .primary-btn:hover {
+                background:
+                    linear-gradient(
+                        135deg,
+                        #ff93ba,
+                        #ef6198
+                    ) !important;
+                color: #fff !important;
+                border-color:
+                    rgba(255,255,255,.72) !important;
+                box-shadow:
+                    0 15px 30px rgba(237,79,137,.30),
+                    0 2px 8px rgba(255,255,255,.42) inset;
+            }
+
+            /* Cards */
+            .card:hover,
+            .note-card:hover,
+            .settings-section:hover,
+            .subject-card:hover {
+                transform:
+                    translateY(-8px)
+                    scale(1.012);
+                border-color:
+                    rgba(255,119,168,.42) !important;
+                background:
+                    linear-gradient(
+                        145deg,
+                        rgba(255,255,255,.76),
+                        rgba(255,226,238,.38)
+                    ) !important;
+                box-shadow:
+                    0 20px 42px rgba(226,103,148,.16),
+                    0 3px 12px rgba(255,255,255,.72) inset;
+            }
+
+            /* Schedule cells */
+            .schedule-cell:hover,
+            .empty-slot:hover {
+                transform:
+                    translateY(-5px)
+                    scale(1.018);
+                background:
+                    linear-gradient(
+                        145deg,
+                        rgba(255,255,255,.84),
+                        rgba(255,177,207,.28)
+                    ) !important;
+                border-color:
+                    rgba(255,105,155,.50) !important;
+                box-shadow:
+                    0 13px 28px rgba(226,103,148,.17),
+                    inset 0 2px 8px rgba(255,255,255,.72);
+                color: #d8447b;
+            }
+
+            /* Period rows */
+            .period-row:hover {
+                transform:
+                    translateX(4px)
+                    translateY(-2px);
+                background:
+                    linear-gradient(
+                        90deg,
+                        rgba(255,255,255,.72),
+                        rgba(255,184,210,.24)
+                    ) !important;
+                border-color:
+                    rgba(255,119,168,.36) !important;
+                box-shadow:
+                    0 10px 24px rgba(226,103,148,.12);
+            }
+
+            /* Modal controls */
+            .close-modal:hover,
+            .logout-btn:hover,
+            .delete-btn:hover,
+            .edit-btn:hover,
+            .icon-btn:hover {
+                transform:
+                    translateY(-4px)
+                    scale(1.06);
+                background:
+                    rgba(255,154,191,.26) !important;
+                color:
+                    #d83f77 !important;
+                border-color:
+                    rgba(255,105,155,.48) !important;
+                box-shadow:
+                    0 10px 22px rgba(226,103,148,.17);
+            }
+
+            /* Form controls */
+            input:not([type="checkbox"]):hover,
+            textarea:hover,
+            select:hover {
+                transform: translateY(-2px);
+                border-color:
+                    rgba(255,105,155,.48) !important;
+                background:
+                    rgba(255,255,255,.76) !important;
+                box-shadow:
+                    0 9px 20px rgba(226,103,148,.10),
+                    inset 0 1px 5px rgba(255,255,255,.80);
+            }
+
+            input:not([type="checkbox"]):focus,
+            textarea:focus,
+            select:focus {
+                transform:
+                    translateY(-2px)
+                    scale(1.008);
+                border-color:
+                    rgba(237,79,137,.65) !important;
+                box-shadow:
+                    0 0 0 4px rgba(255,119,168,.12),
+                    0 12px 26px rgba(226,103,148,.12),
+                    inset 0 1px 6px rgba(255,255,255,.86);
+            }
+
+            /* Auth tabs */
+            .auth-tab:hover {
+                transform: translateY(-4px);
+                color: #df477f !important;
+                background:
+                    rgba(255,159,194,.22) !important;
+                box-shadow:
+                    0 10px 22px rgba(226,103,148,.12);
+            }
+
+            /* Hover sheen */
+            .nav-btn,
+            .small-btn,
+            .primary-btn,
+            .card,
+            .note-card,
+            .subject-card,
+            .schedule-cell,
+            .empty-slot {
+                position: relative;
+                overflow: hidden;
+            }
+
+            .nav-btn::after,
+            .small-btn::after,
+            .primary-btn::after,
+            .card::after,
+            .note-card::after,
+            .subject-card::after,
+            .schedule-cell::after,
+            .empty-slot::after {
+                content: "";
+                position: absolute;
+                top: -120%;
+                left: -35%;
+                width: 28%;
+                height: 340%;
+                background:
+                    linear-gradient(
+                        90deg,
+                        transparent,
+                        rgba(255,255,255,.62),
+                        transparent
+                    );
+                transform: rotate(18deg);
+                opacity: 0;
+                pointer-events: none;
+                transition:
+                    left .55s ease,
+                    opacity .2s ease;
+            }
+
+            .nav-btn:hover::after,
+            .small-btn:hover::after,
+            .primary-btn:hover::after,
+            .card:hover::after,
+            .note-card:hover::after,
+            .subject-card:hover::after,
+            .schedule-cell:hover::after,
+            .empty-slot:hover::after {
+                left: 125%;
+                opacity: .72;
+            }
+
+            /* Press feedback */
+            .nav-btn:active,
+            .small-btn:active,
+            .primary-btn:active,
+            .auth-tab:active,
+            .logout-btn:active,
+            .close-modal:active,
+            .card:active,
+            .note-card:active,
+            .subject-card:active,
+            .schedule-cell:active,
+            .empty-slot:active {
+                transform:
+                    translateY(-1px)
+                    scale(.975);
+                transition-duration: .08s;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .nav-btn,
+            .small-btn,
+            .primary-btn,
+            .auth-tab,
+            .logout-btn,
+            .close-modal,
+            .card,
+            .note-card,
+            .settings-section,
+            .subject-card,
+            .empty-slot,
+            .schedule-cell,
+            .period-row {
+                transition: none !important;
+            }
         }
 
         @media (max-width: 700px) {
@@ -1189,193 +1497,9 @@
             }
         }
 
-        @media (prefers-reduced-motion: reduce) {
-            body::before,
-            body::after { display: none; }
-        }
 
 
-
-        /* =========================================================
-           CUTE CURSOR + INTERACTION POLISH
-        ========================================================= */
-
-        @media (pointer: fine) {
-            body,
-            body * {
-                cursor: none !important;
-            }
-
-            #cute-cursor {
-                position: fixed;
-                left: 0;
-                top: 0;
-                width: 22px;
-                height: 22px;
-                pointer-events: none;
-                z-index: 99999;
-                transform: translate3d(-50%, -50%, 0);
-                opacity: 0;
-                transition:
-                    width .16s ease,
-                    height .16s ease,
-                    opacity .18s ease;
-            }
-
-            #cute-cursor::before {
-                content: "♡";
-                position: absolute;
-                inset: 0;
-                display: grid;
-                place-items: center;
-                color: #ed4f89;
-                font-size: 21px;
-                font-weight: 800;
-                line-height: 1;
-                text-shadow:
-                    0 2px 8px rgba(237,79,137,.28),
-                    0 0 12px rgba(255,255,255,.9);
-            }
-
-            #cute-cursor::after {
-                content: "";
-                position: absolute;
-                inset: -4px;
-                border: 1px solid rgba(255,119,168,.28);
-                border-radius: 50%;
-                transform: scale(.72);
-                opacity: .55;
-                transition: transform .18s ease;
-            }
-
-            #cute-cursor.cursor-hover {
-                width: 30px;
-                height: 30px;
-            }
-
-            #cute-cursor.cursor-hover::before {
-                content: "♥";
-                font-size: 20px;
-            }
-
-            #cute-cursor.cursor-hover::after {
-                transform: scale(1);
-                opacity: .85;
-            }
-
-            #cute-cursor.cursor-down {
-                width: 18px;
-                height: 18px;
-            }
-        }
-
-        /* Interactive items gently rise when hovered. */
-        @media (pointer: fine) {
-            .nav-btn:hover,
-            .small-btn:hover,
-            .primary-btn:hover,
-            .auth-tab:hover,
-            .logout-btn:hover,
-            .close-modal:hover,
-            .card:hover,
-            .note-card:hover,
-            .settings-section:hover,
-            .subject-card:hover,
-            .empty-slot:hover,
-            .schedule-cell:hover,
-            .period-row:hover {
-                transform: translateY(-3px);
-            }
-
-            .nav-btn:active,
-            .small-btn:active,
-            .primary-btn:active,
-            .auth-tab:active,
-            .logout-btn:active,
-            .close-modal:active {
-                transform: translateY(0) scale(.97);
-            }
-        }
-
-        .remember-login {
-            display: inline-flex;
-            align-items: center;
-            gap: 9px;
-            width: fit-content;
-            margin: 2px 0 14px;
-            color: var(--text);
-            font-size: 13px;
-            font-weight: 600;
-            user-select: none;
-            cursor: pointer;
-        }
-
-        .remember-login input {
-            position: absolute;
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .remember-check {
-            width: 20px;
-            height: 20px;
-            border-radius: 7px;
-            display: inline-grid;
-            place-items: center;
-            background: rgba(255,255,255,.58);
-            border: 1px solid rgba(255,119,168,.35);
-            box-shadow:
-                inset 0 1px 2px rgba(255,255,255,.8),
-                0 4px 12px rgba(226,103,148,.08);
-            transition:
-                transform .2s ease,
-                background .2s ease,
-                box-shadow .2s ease;
-        }
-
-        .remember-login input:checked + .remember-check {
-            background: linear-gradient(145deg, #ff8fb7, #ed5b92);
-            box-shadow: 0 5px 14px rgba(237,79,137,.22);
-        }
-
-        .remember-login input:checked + .remember-check::after {
-            content: "✓";
-            color: white;
-            font-size: 13px;
-            font-weight: 900;
-        }
-
-        .remember-login:hover .remember-check {
-            transform: translateY(-1px) scale(1.04);
-        }
-
-        .excel-schedule-btn {
-            background: linear-gradient(
-                145deg,
-                rgba(218,250,231,.82),
-                rgba(185,238,208,.72)
-            ) !important;
-            border-color: rgba(79,177,112,.28) !important;
-            color: #2f7b4a !important;
-        }
-
-        .excel-schedule-btn:hover {
-            box-shadow: 0 10px 24px rgba(67,160,99,.16);
-        }
-
-        @media (max-width: 700px) {
-            .remember-login {
-                min-height: 42px;
-                font-size: 13px;
-            }
-
-            .excel-schedule-btn,
-            .print-schedule-btn {
-                min-height: 42px;
-            }
-        }
-
-        /* =========================================================
+                /* =========================================================
            PERIOD MANAGEMENT + PRINT
         ========================================================= */
 
@@ -1865,14 +1989,6 @@
                         type="button"
                     >
                         🖨️ In lịch học
-                    </button>
-
-                    <button
-                        class="small-btn excel-schedule-btn"
-                        id="export-excel-btn"
-                        type="button"
-                    >
-                        📊 Xuất Excel
                     </button>
 
                 </div>
@@ -4796,204 +4912,6 @@ document
 
 
 /* =========================================================
-   EXPORT SCHEDULE TO EXCEL
-========================================================= */
-
-window.exportScheduleToExcel =
-async function() {
-
-    if (!currentSemesterId) {
-        showToast(
-            "Hãy chọn học kỳ trước khi xuất Excel.",
-            true
-        );
-        return;
-    }
-
-    if (!window.XLSX) {
-        showToast(
-            "Thư viện Excel chưa tải xong. Hãy thử lại.",
-            true
-        );
-        return;
-    }
-
-    const semester =
-        semesters.find(
-            item => item.id === currentSemesterId
-        );
-
-    const sortedPeriods =
-        [...periods].sort(
-            (a, b) =>
-                Number(a.period_number) -
-                Number(b.period_number)
-        );
-
-    const rows = [
-        [
-            "Thời khóa biểu",
-            semester?.name || "Học kỳ"
-        ],
-        [
-            "Xuất ngày",
-            new Date().toLocaleDateString("vi-VN")
-        ],
-        []
-    ];
-
-    rows.push([
-        "Tiết",
-        "Thời gian",
-        ...DAYS
-    ]);
-
-    sortedPeriods.forEach(periodInfo => {
-
-        const period =
-            Number(periodInfo.period_number);
-
-        const row = [
-            `Tiết ${period}`,
-            `${timeToDisplay(periodInfo.start_time)} - ${timeToDisplay(periodInfo.end_time)}`
-        ];
-
-        for (let day = 1; day <= 7; day++) {
-
-            const entry =
-                scheduleEntries.find(
-                    item =>
-                        item.semester_id === currentSemesterId &&
-                        item.day_of_week === day &&
-                        Number(item.period_number) === period
-                );
-
-            const subject =
-                entry
-                    ? subjects.find(
-                        item =>
-                            item.id === entry.subject_id
-                    )
-                    : null;
-
-            if (!subject) {
-                row.push("");
-                continue;
-            }
-
-            const details = [
-                subject.name,
-                subject.teacher
-                    ? `GV: ${subject.teacher}`
-                    : "",
-                subject.room
-                    ? `Phòng: ${subject.room}`
-                    : ""
-            ].filter(Boolean);
-
-            row.push(details.join("\n"));
-        }
-
-        rows.push(row);
-    });
-
-    const worksheet =
-        XLSX.utils.aoa_to_sheet(rows);
-
-    worksheet["!cols"] = [
-        { wch: 12 },
-        { wch: 20 },
-        ...DAYS.map(() => ({ wch: 28 }))
-    ];
-
-    worksheet["!rows"] =
-        rows.map((_, index) => ({
-            hpt:
-                index < 3
-                    ? 22
-                    : 42
-        }));
-
-    /*
-     * Freeze phần tiêu đề để khi file dài vẫn dễ theo dõi.
-     */
-    worksheet["!freeze"] = {
-        xSplit: 2,
-        ySplit: 4
-    };
-
-    const workbook =
-        XLSX.utils.book_new();
-
-    XLSX.utils.book_append_sheet(
-        workbook,
-        worksheet,
-        "Thời khóa biểu"
-    );
-
-    /*
-     * Thêm sheet thông tin môn học để file Excel
-     * có thể dùng như một bản lưu đầy đủ.
-     */
-    const subjectRows = [
-        ["Môn học", "Giáo viên", "Phòng", "Màu"]
-    ];
-
-    subjects.forEach(subject => {
-        subjectRows.push([
-            subject.name || "",
-            subject.teacher || "",
-            subject.room || "",
-            subject.color || ""
-        ]);
-    });
-
-    const subjectSheet =
-        XLSX.utils.aoa_to_sheet(subjectRows);
-
-    subjectSheet["!cols"] = [
-        { wch: 28 },
-        { wch: 28 },
-        { wch: 16 },
-        { wch: 14 }
-    ];
-
-    XLSX.utils.book_append_sheet(
-        workbook,
-        subjectSheet,
-        "Môn học"
-    );
-
-    const safeSemesterName =
-        String(
-            semester?.name || "hoc-ky"
-        )
-            .replace(/[\\/:*?"<>|]+/g, "-")
-            .trim();
-
-    const filename =
-        `thoi-khoa-bieu-${safeSemesterName}.xlsx`;
-
-    XLSX.writeFile(
-        workbook,
-        filename
-    );
-
-    showToast(
-        `Đã xuất ${filename} ♡`
-    );
-};
-
-
-document
-    .getElementById("export-excel-btn")
-    .addEventListener(
-        "click",
-        () => exportScheduleToExcel()
-    );
-
-
-/* =========================================================
    PRINT SCHEDULE
 ========================================================= */
 
@@ -5277,99 +5195,6 @@ document
         }
     );
 
-
-
-/* =========================================================
-   CUTE CUSTOM CURSOR
-========================================================= */
-
-(function initCuteCursor() {
-
-    if (!window.matchMedia(
-        "(pointer: fine)"
-    ).matches) {
-        return;
-    }
-
-    const cursor =
-        document.createElement("div");
-
-    cursor.id = "cute-cursor";
-
-    document.body.appendChild(cursor);
-
-    let mouseX = -100;
-    let mouseY = -100;
-    let currentX = -100;
-    let currentY = -100;
-
-    document.addEventListener(
-        "pointermove",
-        event => {
-
-            mouseX = event.clientX;
-            mouseY = event.clientY;
-
-            cursor.style.opacity = "1";
-
-            const interactive =
-                event.target.closest(
-                    "button, a, input, textarea, select, " +
-                    ".nav-btn, .subject-card, .note-card, " +
-                    ".card, .settings-section, .period-row, " +
-                    ".empty-slot, .schedule-cell, label"
-                );
-
-            cursor.classList.toggle(
-                "cursor-hover",
-                Boolean(interactive)
-            );
-        },
-        { passive: true }
-    );
-
-    document.addEventListener(
-        "pointerdown",
-        () => {
-            cursor.classList.add("cursor-down");
-        },
-        { passive: true }
-    );
-
-    document.addEventListener(
-        "pointerup",
-        () => {
-            cursor.classList.remove("cursor-down");
-        },
-        { passive: true }
-    );
-
-    document.addEventListener(
-        "mouseleave",
-        () => {
-            cursor.style.opacity = "0";
-        }
-    );
-
-    function animateCursor() {
-
-        currentX +=
-            (mouseX - currentX) * 0.24;
-
-        currentY +=
-            (mouseY - currentY) * 0.24;
-
-        cursor.style.transform =
-            `translate3d(${currentX}px, ${currentY}px, 0) translate(-50%, -50%)`;
-
-        requestAnimationFrame(
-            animateCursor
-        );
-    }
-
-    animateCursor();
-
-})();
 
 
 /* =========================================================
