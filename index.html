@@ -678,9 +678,327 @@
                 grid-column: 2 / 4;
             }
         }
+
+        /* =========================================================
+           ENHANCED UI/UX EFFECTS
+        ========================================================= */
+
+        html { scroll-behavior: smooth; }
+
+        button,
+        .nav-btn,
+        .small-btn,
+        .logout-btn,
+        .auth-tab,
+        .subject-card,
+        .empty-slot,
+        .card-actions button,
+        .close-modal {
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        button,
+        .nav-btn,
+        .small-btn,
+        .logout-btn,
+        .auth-tab,
+        .subject-card,
+        .empty-slot,
+        .card-actions button,
+        .close-modal {
+            position: relative;
+            overflow: hidden;
+            transition:
+                transform .18s cubic-bezier(.2,.8,.2,1),
+                box-shadow .22s ease,
+                background-color .22s ease,
+                border-color .22s ease,
+                color .22s ease;
+        }
+
+        .ripple {
+            position: absolute;
+            border-radius: 999px;
+            pointer-events: none;
+            background: rgba(255,255,255,.62);
+            transform: translate(-50%, -50%) scale(0);
+            animation: uiRipple .58s cubic-bezier(.2,.7,.2,1) forwards;
+            z-index: 20;
+        }
+
+        @keyframes uiRipple {
+            to {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 0;
+            }
+        }
+
+        button:not(:disabled):active,
+        .nav-btn:active,
+        .subject-card:active,
+        .empty-slot:active,
+        .card-actions button:active,
+        .small-btn:active,
+        .logout-btn:active,
+        .auth-tab:active,
+        .close-modal:active {
+            transform: scale(.96);
+        }
+
+        .primary-btn:hover,
+        .small-btn:hover,
+        .logout-btn:hover,
+        .close-modal:hover {
+            box-shadow: 0 10px 25px rgba(226,103,148,.18);
+        }
+
+        .primary-btn:active {
+            transform: scale(.975);
+            box-shadow: 0 4px 12px rgba(246,95,150,.18);
+        }
+
+        .nav-btn {
+            isolation: isolate;
+        }
+
+        .nav-btn::before {
+            content: "";
+            position: absolute;
+            inset: 3px;
+            border-radius: 10px;
+            background: linear-gradient(
+                90deg,
+                rgba(255,119,168,.14),
+                rgba(255,225,236,.72)
+            );
+            transform: scaleX(0);
+            transform-origin: left center;
+            opacity: 0;
+            transition:
+                transform .3s cubic-bezier(.2,.8,.2,1),
+                opacity .2s ease;
+            z-index: -1;
+        }
+
+        .nav-btn:hover::before,
+        .nav-btn.active::before {
+            transform: scaleX(1);
+            opacity: 1;
+        }
+
+        .nav-btn.active {
+            box-shadow: 0 7px 18px rgba(226,103,148,.10);
+            transform: translateX(2px);
+        }
+
+        .nav-btn.active::after {
+            content: "";
+            position: absolute;
+            left: 5px;
+            top: 50%;
+            width: 3px;
+            height: 22px;
+            border-radius: 10px;
+            background: var(--pink);
+            transform: translateY(-50%);
+        }
+
+        .page {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            transform-origin: top center;
+            will-change: opacity, transform;
+        }
+
+        .page.page-enter {
+            animation: pageEnter .42s cubic-bezier(.22,.8,.22,1) both;
+        }
+
+        @keyframes pageEnter {
+            from {
+                opacity: 0;
+                transform: translateY(16px) scale(.985);
+                filter: blur(2px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+                filter: blur(0);
+            }
+        }
+
+        .page-title {
+            animation: contentReveal .42s .04s cubic-bezier(.22,.8,.22,1) both;
+        }
+
+        @keyframes contentReveal {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card,
+        .note-card,
+        .settings-section,
+        .schedule-wrapper,
+        .empty {
+            transition:
+                transform .22s cubic-bezier(.2,.8,.2,1),
+                box-shadow .22s ease;
+        }
+
+        .card:hover,
+        .note-card:hover,
+        .settings-section:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(226,103,148,.14);
+        }
+
+        .subject-card:hover {
+            transform: translateY(-3px) scale(1.015);
+            box-shadow: 0 10px 20px rgba(80,50,65,.10);
+        }
+
+        .empty-slot:hover {
+            transform: scale(1.015);
+            box-shadow: 0 8px 18px rgba(255,119,168,.10);
+        }
+
+        .card-actions button:hover {
+            transform: translateY(-1px);
+            background: var(--pink-soft);
+        }
+
+        .grid-header { transition: background-color .22s ease; }
+
+        .grid-header:hover { background: #ffeaf2; }
+
+        .modal {
+            opacity: 1;
+            transition: opacity .24s ease, backdrop-filter .24s ease;
+        }
+
+        .modal:not(.hidden) { backdrop-filter: blur(6px); }
+
+        .modal.modal-enter { animation: modalOverlayIn .24s ease both; }
+
+        .modal-content { will-change: transform, opacity; }
+
+        .modal.modal-enter .modal-content {
+            animation: modalContentIn .32s cubic-bezier(.2,.8,.2,1) both;
+        }
+
+        .modal.modal-leave .modal-content {
+            animation: modalContentOut .18s ease both;
+        }
+
+        @keyframes modalOverlayIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes modalContentIn {
+            from {
+                opacity: 0;
+                transform: translateY(18px) scale(.96);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes modalContentOut {
+            from {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            to {
+                opacity: 0;
+                transform: translateY(10px) scale(.985);
+            }
+        }
+
+        .toast {
+            animation:
+                toastIn .28s cubic-bezier(.2,.8,.2,1),
+                toastOut .28s ease 2.72s forwards;
+        }
+
+        @keyframes toastOut {
+            to {
+                opacity: 0;
+                transform: translateY(8px) scale(.98);
+            }
+        }
+
+        .auth-card {
+            animation: authCardIn .55s cubic-bezier(.2,.8,.2,1) both;
+        }
+
+        @keyframes authCardIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(.97);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .logo-heart {
+            animation: heartFloat 3s ease-in-out infinite;
+        }
+
+        @keyframes heartFloat {
+            0%, 100% { transform: translateY(0) rotate(0); }
+            50% { transform: translateY(-4px) rotate(2deg); }
+        }
+
+        input,
+        textarea,
+        select {
+            transition:
+                border-color .2s ease,
+                box-shadow .2s ease,
+                transform .18s ease;
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            transform: translateY(-1px);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: .01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: .01ms !important;
+                scroll-behavior: auto !important;
+            }
+        }
+
     </style>
 </head>
 
+<!--
+    ENHANCED UI/UX VERSION
+    - Smooth page transitions
+    - Ripple + press feedback
+    - Animated active navigation
+    - Modal open/close animation
+    - Card hover effects
+    - Reduced-motion accessibility
+-->
 <body>
 
 <!-- =========================================================
@@ -1608,52 +1926,100 @@ function defaultEndTime(period) {
    NAVIGATION
 ========================================================= */
 
+function switchPage(pageName, clickedButton = null) {
+
+    if (!pageName) {
+        return;
+    }
+
+    const targetPage =
+        document.getElementById("page-" + pageName);
+
+    if (!targetPage) {
+        return;
+    }
+
+    const activePage =
+        document.querySelector(".page:not(.hidden)");
+
+    if (activePage === targetPage) {
+        return;
+    }
+
+    currentPage = pageName;
+
+    document
+        .querySelectorAll(".nav-btn")
+        .forEach(btn => {
+            btn.classList.toggle(
+                "active",
+                btn === clickedButton ||
+                btn.dataset.page === pageName
+            );
+        });
+
+    document
+        .querySelectorAll(".page")
+        .forEach(page => {
+            page.classList.add("hidden");
+            page.classList.remove("page-enter");
+        });
+
+    targetPage.classList.remove("hidden");
+
+    // Force a reflow so every navigation gets a fresh entrance animation.
+    void targetPage.offsetWidth;
+
+    targetPage.classList.add("page-enter");
+
+    renderCurrentPage();
+
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
+
+    setTimeout(() => {
+        targetPage.classList.remove("page-enter");
+    }, 500);
+}
+
 document
     .querySelectorAll(".nav-btn")
     .forEach(button => {
-
         button.addEventListener(
             "click",
             () => {
-
-                currentPage =
-                    button.dataset.page;
-
-                document
-                    .querySelectorAll(".nav-btn")
-                    .forEach(btn => {
-                        btn.classList.toggle(
-                            "active",
-                            btn === button
-                        );
-                    });
-
-                document
-                    .querySelectorAll(".page")
-                    .forEach(page => {
-                        page.classList.add(
-                            "hidden"
-                        );
-                    });
-
-                document
-                    .getElementById(
-                        "page-" + currentPage
-                    )
-                    .classList.remove(
-                        "hidden"
-                    );
-
-                renderCurrentPage();
+                switchPage(
+                    button.dataset.page,
+                    button
+                );
             }
         );
     });
+
+
 
 
 function renderCurrentPage() {
 
     if (!currentUser) {
         return;
+    }
+
+    const visiblePage =
+        document.getElementById(
+            "page-" + currentPage
+        );
+
+    if (visiblePage) {
+        visiblePage.classList.remove("page-enter");
+        void visiblePage.offsetWidth;
+        visiblePage.classList.add("page-enter");
+
+        setTimeout(() => {
+            visiblePage.classList.remove("page-enter");
+        }, 500);
     }
 
     if (currentPage === "schedule") {
@@ -3455,6 +3821,8 @@ function openModal(
     saveHandler,
     saveText = "Lưu"
 ) {
+    const modal =
+        document.getElementById("modal");
 
     document
         .getElementById("modal-title")
@@ -3468,24 +3836,49 @@ function openModal(
         .getElementById("modal-save")
         .textContent = saveText;
 
-    document
-        .getElementById("modal")
-        .classList.remove("hidden");
+    modal.classList.remove("hidden", "modal-leave", "modal-enter");
+
+    // Force a reflow to restart the opening animation every time.
+    void modal.offsetWidth;
+
+    modal.classList.add("modal-enter");
 
     modalSaveHandler =
         saveHandler;
+
+    setTimeout(() => {
+        const firstInput =
+            modal.querySelector(
+                "input:not([disabled]), textarea, select"
+            );
+
+        if (firstInput) {
+            firstInput.focus();
+        }
+    }, 180);
 }
 
 
 function closeModal() {
+    const modal =
+        document.getElementById("modal");
 
-    document
-        .getElementById("modal")
-        .classList.add("hidden");
+    if (modal.classList.contains("hidden")) {
+        return;
+    }
 
-    modalSaveHandler =
-        null;
+    modal.classList.remove("modal-enter");
+    modal.classList.add("modal-leave");
+
+    setTimeout(() => {
+        modal.classList.add("hidden");
+        modal.classList.remove("modal-leave");
+        modalSaveHandler = null;
+    }, 180);
 }
+
+
+
 
 
 document
@@ -3564,8 +3957,51 @@ document
 
 
 /* =========================================================
+   GLOBAL CLICK / RIPPLE EFFECT
+========================================================= */
+
+document.addEventListener("pointerdown", event => {
+
+    const target =
+        event.target.closest(
+            "button, .subject-card, .empty-slot, .card-actions button"
+        );
+
+    if (!target || target.disabled) {
+        return;
+    }
+
+    const rect =
+        target.getBoundingClientRect();
+
+    const size =
+        Math.max(rect.width, rect.height) * 1.65;
+
+    const ripple =
+        document.createElement("span");
+
+    ripple.className = "ripple";
+
+    ripple.style.width = size + "px";
+    ripple.style.height = size + "px";
+    ripple.style.left =
+        (event.clientX - rect.left) + "px";
+    ripple.style.top =
+        (event.clientY - rect.top) + "px";
+
+    target.appendChild(ripple);
+
+    ripple.addEventListener(
+        "animationend",
+        () => ripple.remove(),
+        { once: true }
+    );
+});
+
+/* =========================================================
    START
 ========================================================= */
+
 
 initializeApp();
 
