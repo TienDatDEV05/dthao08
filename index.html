@@ -17,6 +17,323 @@
 
     <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+/* =========================================================
+   CHATBOT — ANH
+   Frontend-first implementation.
+   Set CHAT_API_URL to your secure backend/Edge Function when ready.
+   Never put an AI provider secret key in this HTML file.
+========================================================= */
+const CHAT_API_URL = "https://qwvhudppdoauivpdewin.supabase.co/functions/v1/smart-responder"; // Điền URL Edge Function nếu muốn dùng fetch trực tiếp; để trống sẽ thử db.functions.invoke("chat") rồi fallback local.
+const CHAT_LOCAL_PREFIX = "doan_thao_chat_";
+let chatConversationId = null;
+let chatInitializedFor = null;
+let chatMessages = [];
+let chatSending = false;
+
+function chatStorageKey(){
+    return CHAT_LOCAL_PREFIX + (currentUser?.id || "guest");
+}
+function loadChatStore(){
+    try{return JSON.parse(localStorage.getItem(chatStorageKey()) || '{"conversations":[]}');}
+    catch(e){return {conversations:[]};}
+}
+function saveChatStore(store){
+    localStorage.setItem(chatStorageKey(), JSON.stringify(store));
+}
+function makeChatId(prefix="chat"){
+    return prefix+"_"+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+}
+function chatEscape(value){
+    return String(value ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
+}
+function chatIcon(){return `<svg viewBox="0 0 24 24"><path d="M5 5.5C5 4.4 5.9 3.5 7 3.5H17C18.1 3.5 19 4.4 19 5.5V14C19 15.1 18.1 16 17 16H11L7 20V16H7C5.9 16 5 15.1 5 14V5.5Z"/><path d="M8.5 8.5H15.5M8.5 11.5H13"/></svg>`;}
+function chatFormatTime(ts){return new Date(ts).toLocaleTimeString("vi-VN",{hour:"2-digit",minute:"2-digit"});}
+function getChatConversation(){
+    const store=loadChatStore();
+    let conv=store.conversations.find(c=>c.id===chatConversationId);
+    if(!conv){
+        conv={id:makeChatId(),title:"Cuộc trò chuyện mới",createdAt:Date.now(),updatedAt:Date.now(),messages:[]};
+        store.conversations.unshift(conv); chatConversationId=conv.id; saveChatStore(store);
+    }
+    return conv;
+}
+async function syncChatToSupabase(){
+    if(!currentUser || !chatConversationId) return;
+    try {
+        const conv = getChatConversation();
+        const { error: convError } = await db.from("chat_conversations").upsert({
+            id: conv.id, user_id: currentUser.id, title: conv.title, updated_at: new Date(conv.updatedAt).toISOString()
+        }, { onConflict: "id" });
+        if(convError) return;
+        const rows = chatMessages.slice(-100).map(m => ({
+            id: m.id, conversation_id: chatConversationId, user_id: currentUser.id, role: m.role, content: m.content, created_at: new Date(m.createdAt).toISOString()
+        }));
+        if(rows.length) await db.from("chat_messages").upsert(rows, { onConflict: "id" });
+    } catch (e) {
+        console.debug("Chat history Supabase sync skipped:", e.message);
+    }
+}
+
+function persistChat(){
+    const store=loadChatStore();
+    const conv=store.conversations.find(c=>c.id===chatConversationId);
+    if(!conv)return;
+    conv.messages=chatMessages.slice(-100);
+    conv.updatedAt=Date.now();
+    const firstUser=conv.messages.find(m=>m.role==="user");
+    if(firstUser && conv.title==="Cuộc trò chuyện mới") conv.title=firstUser.content.slice(0,42)+(firstUser.content.length>42?"…":"");
+    saveChatStore(store); renderChatHistory(); syncChatToSupabase();
+}
+function renderChatHistory(){
+    const el=document.getElementById("chat-history-list"); if(!el)return;
+    const store=loadChatStore();
+    const items=(store.conversations||[]).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+    el.innerHTML=items.length?items.map(c=>`<div class="chat-history-row ${c.id===chatConversationId?'active':''}">
+        <button class="chat-history-item" type="button" data-chat-conversation="${chatEscape(c.id)}">
+            <strong>${chatEscape(c.title)}</strong>
+            <small>${new Date(c.updatedAt||Date.now()).toLocaleDateString("vi-VN")} · ${(c.messages||[]).length} tin nhắn</small>
+        </button>
+        <button class="chat-history-delete" type="button" data-delete-chat="${chatEscape(c.id)}" aria-label="Xóa cuộc trò chuyện" title="Xóa cuộc trò chuyện">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7H19"/><path d="M9 7V5H15V7"/><path d="M8 10V18"/><path d="M12 10V18"/><path d="M16 10V18"/><path d="M7 7L8 20H16L17 7"/></svg>
+        </button>
+    </div>`).join(""):"<div style=\"color:var(--muted);font-size:12px;padding:10px\">Chưa có cuộc trò chuyện nào.</div>";
+    el.querySelectorAll("[data-chat-conversation]").forEach(btn=>btn.addEventListener("click",()=>{openChatConversation(btn.dataset.chatConversation);closeChatDrawer();}));
+    el.querySelectorAll("[data-delete-chat]").forEach(btn=>btn.addEventListener("click",e=>{e.stopPropagation();deleteChatConversation(btn.dataset.deleteChat);}));
+}
+
+async function deleteChatConversation(id){
+    if(!id)return;
+    const store=loadChatStore();
+    const conv=(store.conversations||[]).find(c=>c.id===id);
+    if(!conv)return;
+    if(!confirm(`Xóa cuộc trò chuyện "${conv.title||"Cuộc trò chuyện"}"?\n\nToàn bộ tin nhắn sẽ được xóa khỏi Supabase và thiết bị.`))return;
+    try{
+        if(currentUser){
+            const {error:msgError}=await db.from("chat_messages").delete().eq("conversation_id",id).eq("user_id",currentUser.id);
+            if(msgError)throw msgError;
+            const {error:convError}=await db.from("chat_conversations").delete().eq("id",id).eq("user_id",currentUser.id);
+            if(convError)throw convError;
+        }
+        store.conversations=(store.conversations||[]).filter(c=>c.id!==id);
+        if(chatConversationId===id){
+            chatConversationId=null;chatMessages=[];
+            if(store.conversations.length){
+                store.conversations.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+                chatConversationId=store.conversations[0].id;
+                chatMessages=Array.isArray(store.conversations[0].messages)?store.conversations[0].messages:[];
+            }else{
+                chatConversationId=makeChatId();
+                store.conversations.unshift({id:chatConversationId,title:"Cuộc trò chuyện mới",createdAt:Date.now(),updatedAt:Date.now(),messages:[]});
+            }
+        }
+        saveChatStore(store);renderChatMessages();renderChatHistory();
+        showToast("Đã xóa cuộc trò chuyện.");
+    }catch(e){
+        console.error("Delete chat error:",e);
+        showToast(e?.message||"Không thể xóa cuộc trò chuyện.",true);
+    }
+}
+
+async function deleteAllChatHistory(){
+    if(!currentUser){showToast("Vợ cần đăng nhập để xóa lịch sử trên Supabase.",true);return;}
+    if(!confirm("XÓA TOÀN BỘ LỊCH SỬ CHAT?\n\nTất cả cuộc trò chuyện và tin nhắn của vợ sẽ bị xóa khỏi Supabase và thiết bị.\n\nHành động này không thể hoàn tác."))return;
+    try{
+        const {data,error}=await db.from("chat_conversations").select("id").eq("user_id",currentUser.id);
+        if(error)throw error;
+        const ids=(data||[]).map(x=>x.id);
+        if(ids.length){
+            const {error:msgError}=await db.from("chat_messages").delete().eq("user_id",currentUser.id).in("conversation_id",ids);
+            if(msgError)throw msgError;
+            const {error:convError}=await db.from("chat_conversations").delete().eq("user_id",currentUser.id).in("id",ids);
+            if(convError)throw convError;
+        }
+        localStorage.removeItem(chatStorageKey());
+        chatConversationId=makeChatId();chatMessages=[];
+        const fresh={conversations:[{id:chatConversationId,title:"Cuộc trò chuyện mới",createdAt:Date.now(),updatedAt:Date.now(),messages:[]}]};
+        saveChatStore(fresh);renderChatMessages();renderChatHistory();showToast("Đã xóa toàn bộ lịch sử chat.");
+    }catch(e){
+        console.error("Delete all chat error:",e);
+        showToast(e?.message||"Không thể xóa toàn bộ lịch sử chat.",true);
+    }
+}
+
+async function cleanupOldChatHistory(days=30){
+    const cutoff=Date.now()-days*24*60*60*1000;
+    // Dọn localStorage trước để thiết bị không giữ lịch sử cũ.
+    try{
+        const store=loadChatStore();
+        const oldIds=(store.conversations||[]).filter(c=>(c.updatedAt||c.createdAt||0)<cutoff).map(c=>c.id);
+        if(oldIds.length){
+            store.conversations=store.conversations.filter(c=>!oldIds.includes(c.id));
+            if(oldIds.includes(chatConversationId))chatConversationId=null;
+            saveChatStore(store);
+        }
+    }catch(e){console.debug("Local chat cleanup skipped:",e.message);}
+
+    // Dọn Supabase: chỉ xóa dữ liệu của user hiện tại.
+    if(!currentUser)return;
+    try{
+        const {data,error}=await db.from("chat_conversations").select("id").eq("user_id",currentUser.id).lt("updated_at",new Date(cutoff).toISOString());
+        if(error||!data?.length)return;
+        const ids=data.map(x=>x.id);
+        const {error:msgError}=await db.from("chat_messages").delete().eq("user_id",currentUser.id).in("conversation_id",ids);
+        if(msgError)throw msgError;
+        const {error:convError}=await db.from("chat_conversations").delete().eq("user_id",currentUser.id).in("id",ids);
+        if(convError)throw convError;
+        console.debug(`Chat cleanup: đã xóa ${ids.length} cuộc trò chuyện cũ hơn ${days} ngày.`);
+    }catch(e){console.debug("Supabase chat cleanup skipped:",e.message);}
+}
+
+function renderChatMessages(){
+    const empty=document.getElementById("chat-empty"), list=document.getElementById("chat-msg-list"), body=document.getElementById("chat-body"); if(!empty||!list)return;
+    empty.style.display=chatMessages.length?"none":"flex";
+    list.innerHTML=chatMessages.map(m=>{
+        const role=m.role==="user"?"user":"assistant";
+        const avatar=role==="assistant"?`<div class="chat-msg-avatar">${chatIcon()}</div>`:"";
+        return `<div class="chat-msg ${role}">${avatar}<div><div class="chat-bubble">${chatEscape(m.content)}</div><div class="chat-meta">${role==="assistant"?"Anh":"Vợ"} · ${chatFormatTime(m.createdAt)}</div></div></div>`;
+    }).join("");
+    requestAnimationFrame(()=>{body.scrollTop=body.scrollHeight;});
+}
+function addChatMessage(role,content){
+    chatMessages.push({id:makeChatId("msg"),role,content:String(content),createdAt:Date.now()});
+    renderChatMessages(); persistChat();
+}
+function setChatTyping(show){
+    const list=document.getElementById("chat-msg-list"); if(!list)return;
+    const old=document.getElementById("chat-typing-row"); if(old)old.remove();
+    if(show){
+        const row=document.createElement("div"); row.id="chat-typing-row";row.className="chat-msg assistant";row.innerHTML=`<div class="chat-msg-avatar">${chatIcon()}</div><div><div class="chat-typing"><i></i><i></i><i></i></div><div class="chat-meta">Anh đang nghĩ…</div></div>`;list.appendChild(row);const body=document.getElementById("chat-body");body.scrollTop=body.scrollHeight;
+    }
+}
+function chatAppContext(){
+    const appPeriods=Array.isArray(periods)?periods:[];
+    return {page:currentPage,periods:appPeriods.map((p,i)=>({period:i+1,start:p.start_time||p.start||"",end:p.end_time||p.end||""}))};
+}
+function localChatReply(input){
+    const q=input.toLowerCase();
+    const ctx=chatAppContext();
+    if(q.includes("lịch")||q.includes("tiết")){
+        if(!ctx.periods.length)return "Anh chưa thấy dữ liệu khung giờ tiết học trong phiên này. Vợ có thể vào Cài đặt để kiểm tra khung giờ trước nhé.";
+        const lines=ctx.periods.map(p=>`Tiết ${p.period}: ${p.start||"--:--"} → ${p.end||"--:--"}`).join("\n");
+        return `Được rồi vợ, anh đang thấy ${ctx.periods.length} khung giờ học trong dữ liệu hiện tại:\n\n${lines}\n\nNếu vợ muốn anh xem một ngày cụ thể hoặc làm việc trực tiếp với thời khóa biểu, mình cần kết nối chatbot với backend AI và dữ liệu lịch học của web.`;
+    }
+    if(q.includes("chào")||q.includes("hello")||q.includes("anh ơi")) return "Anh đây, vợ. Cứ nói điều vợ đang cần, anh sẽ giúp trong khả năng của mình nhé.";
+    if(q.includes("cài đặt")) return "Vợ có thể vào Cài đặt để chỉnh khung giờ các tiết. Nếu kết nối backend AI, anh cũng có thể hướng dẫn hoặc đề xuất thay đổi trước khi vợ xác nhận lưu.";
+    return "Anh đã nhận được câu hỏi của vợ. Giao diện này đã sẵn sàng để kết nối với AI backend; hiện tại anh đang ở chế độ dự phòng nên chưa thể trả lời mọi chủ đề như một AI đầy đủ. Khi có Edge Function/API an toàn, vợ chỉ cần hỏi anh bình thường là được.";
+}
+async function askChatBackend(input){
+    const payload={conversationId:chatConversationId,userId:currentUser?.id,messages:chatMessages.slice(-30),context:chatAppContext(),message:input};
+    if(CHAT_API_URL){
+        const response=await fetch(CHAT_API_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+        if(!response.ok) throw new Error("Chat backend error");
+        const data=await response.json();
+        return data.reply || data.message || data.answer || "Anh chưa nhận được nội dung trả lời từ máy chủ.";
+    }
+    if(typeof db!=="undefined" && db?.functions?.invoke){
+        const {data,error}=await db.functions.invoke("smart-responder",{body:payload});
+        if(!error && data){
+            return data.reply || data.message || data.answer || "Anh chưa nhận được nội dung trả lời từ máy chủ.";
+        }
+        if(error) console.debug("Edge Function chat unavailable, using local fallback:",error.message);
+    }
+    return localChatReply(input);
+}
+async function sendChatMessage(text){
+    const value=String(text||"").trim(); if(!value||chatSending)return;
+    chatSending=true; document.getElementById("chat-send").disabled=true;
+    addChatMessage("user",value); setChatTyping(true);
+    try{const reply=await askChatBackend(value);setChatTyping(false);addChatMessage("assistant",reply);}
+    catch(err){setChatTyping(false);addChatMessage("assistant","Anh gặp lỗi khi kết nối máy chủ. Vợ kiểm tra kết nối mạng hoặc thử lại sau nhé.");console.error(err);}
+    finally{chatSending=false;updateChatSendState();}
+}
+function updateChatSendState(){const input=document.getElementById("chat-input"),send=document.getElementById("chat-send");if(input&&send)send.disabled=chatSending||!input.value.trim();}
+function openChatConversation(id){
+    const store=loadChatStore(); const conv=store.conversations.find(c=>c.id===id); if(!conv)return;
+    chatConversationId=conv.id;chatMessages=Array.isArray(conv.messages)?conv.messages:[];renderChatMessages();renderChatHistory();
+    loadChatFromSupabase();
+}
+async function loadChatFromSupabase(){
+    if(!currentUser) return;
+    try{
+        const {data,error}=await db.from("chat_conversations").select("id,title,created_at,updated_at").eq("user_id",currentUser.id).order("updated_at",{ascending:false}).limit(30);
+        if(error || !data?.length) return;
+        const store=loadChatStore();
+        for(const c of data){
+            let conv=store.conversations.find(x=>x.id===c.id);
+            if(!conv){conv={id:c.id,title:c.title||"Cuộc trò chuyện",createdAt:new Date(c.created_at).getTime(),updatedAt:new Date(c.updated_at).getTime(),messages:[]};store.conversations.push(conv);}
+            const {data:msgs}=await db.from("chat_messages").select("id,role,content,created_at").eq("conversation_id",c.id).order("created_at",{ascending:true}).limit(100);
+            if(msgs?.length) conv.messages=msgs.map(m=>({id:m.id,role:m.role,content:m.content,createdAt:new Date(m.created_at).getTime()}));
+        }
+        saveChatStore(store);
+        if(chatConversationId){const active=store.conversations.find(x=>x.id===chatConversationId);if(active){chatMessages=active.messages||[];renderChatMessages();}}
+        renderChatHistory();
+    }catch(e){console.debug("Chat history load skipped:",e.message);}
+}
+
+function createNewChat(){
+    chatConversationId=makeChatId();chatMessages=[];
+    const store=loadChatStore();store.conversations.unshift({id:chatConversationId,title:"Cuộc trò chuyện mới",createdAt:Date.now(),updatedAt:Date.now(),messages:[]});saveChatStore(store);renderChatMessages();renderChatHistory();closeChatDrawer();
+}
+function openChatDrawer(){document.getElementById("chat-drawer")?.classList.add("open");document.getElementById("chat-drawer-backdrop")?.classList.add("open");document.getElementById("chat-drawer")?.setAttribute("aria-hidden","false");renderChatHistory();}
+function closeChatDrawer(){document.getElementById("chat-drawer")?.classList.remove("open");document.getElementById("chat-drawer-backdrop")?.classList.remove("open");document.getElementById("chat-drawer")?.setAttribute("aria-hidden","true");}
+function initChatForCurrentUser(){
+    if(!currentUser)return;
+    const fab=document.getElementById("chat-fab"); if(fab)fab.classList.remove("hidden-fab");
+    if(chatInitializedFor===currentUser.id)return;
+    chatInitializedFor=currentUser.id;
+    const store=loadChatStore();let conv=store.conversations.sort((a,b)=>b.updatedAt-a.updatedAt)[0];
+    if(!conv){conv={id:makeChatId(),title:"Cuộc trò chuyện mới",createdAt:Date.now(),updatedAt:Date.now(),messages:[]};store.conversations.push(conv);saveChatStore(store);}
+    chatConversationId=conv.id;chatMessages=Array.isArray(conv.messages)?conv.messages:[];renderChatMessages();renderChatHistory();
+    cleanupOldChatHistory(30);
+}
+
+document.addEventListener("DOMContentLoaded",()=>{
+    ["chat-history-btn","chat-drawer-close","chat-drawer-backdrop"].forEach(id=>{
+        const el=document.getElementById(id);
+        if(el) el.addEventListener("click",closeChatDrawer);
+    });
+    document.getElementById("chat-history-btn")?.addEventListener("click",openChatDrawer);
+    document.getElementById("chat-new-btn")?.addEventListener("click",createNewChat);
+    document.getElementById("chat-delete-all-btn")?.addEventListener("click",deleteAllChatHistory);
+    document.getElementById("chat-fab")?.addEventListener("click",()=>{
+        const nav=document.querySelector('.nav-btn[data-page="chat"]');
+        nav?.click();
+    });
+    document.querySelectorAll("[data-chat-prompt]").forEach(btn=>{
+        btn.addEventListener("click",()=>sendChatMessage(btn.dataset.chatPrompt));
+    });
+    const chatForm=document.getElementById("chat-form");
+    const chatInput=document.getElementById("chat-input");
+    const chatSend=document.getElementById("chat-send");
+    if(chatForm && chatInput && chatSend){
+        chatForm.addEventListener("submit",e=>{
+            e.preventDefault();
+            const value=chatInput.value.trim();
+            if(!value || chatSending) return;
+            chatInput.value="";
+            chatInput.style.height="auto";
+            updateChatSendState();
+            sendChatMessage(value);
+        });
+        chatInput.addEventListener("input",()=>{
+            chatInput.style.height="auto";
+            chatInput.style.height=Math.min(chatInput.scrollHeight,120)+"px";
+            updateChatSendState();
+        });
+        chatInput.addEventListener("keydown",e=>{
+            if(e.key==="Enter" && !e.shiftKey){
+                e.preventDefault();
+                chatForm.requestSubmit();
+            }
+        });
+        updateChatSendState();
+    }
+    document.getElementById("chat-attach-btn")?.addEventListener("click",()=>showToast("Tính năng ảnh/tệp sẽ được kết nối ở bước AI nâng cao."));
+});
+
+</script>
 <style>
         * {
             box-sizing: border-box;
@@ -1945,6 +2262,70 @@
         }
 
         @media (max-width: 420px) {
+
+            #page-settings .settings-section {
+                padding: 12px;
+                border-radius: 20px;
+            }
+
+            .period-overview {
+                padding-bottom: 11px;
+            }
+
+            .period-overview-status {
+                padding: 0 8px;
+                font-size: 9px;
+            }
+
+            .period-list-head {
+                grid-template-columns: 38px 1fr 28px;
+                gap: 8px;
+                padding-left: 6px;
+                padding-right: 6px;
+            }
+
+            .period-row {
+                grid-template-columns: 38px minmax(0,1fr) 28px;
+                gap: 8px;
+                padding: 8px 6px;
+                border-radius: 15px;
+            }
+
+            .period-index {
+                width: 38px;
+                height: 46px;
+                border-radius: 12px;
+            }
+
+            .period-index span {
+                font-size: 14px;
+            }
+
+            .period-input-wrap {
+                height: 34px;
+                padding: 0 5px;
+            }
+
+            .period-input-wrap svg {
+                width: 12px;
+                height: 12px;
+            }
+
+            .period-input-wrap input {
+                font-size: 11px;
+            }
+
+            .delete-period-btn {
+                width: 28px;
+                height: 28px;
+                border-radius: 9px;
+            }
+
+            #page-settings .period-settings-actions {
+                grid-template-columns: 1fr 1.15fr;
+            }
+
+        }
             .user-area { gap: 5px; }
             .brand { font-size: 16px; }
 
@@ -2308,36 +2689,323 @@
             }
 
 
-            .period-row {
-                grid-template-columns: 1fr 1fr;
-                gap: 9px;
-                padding: 12px;
+
+            /* =========================================================
+               MOBILE SETTINGS — EDITORIAL TIME CONTROL
+               Designed as a compact, calm scheduling editor rather than
+               a generic form. Desktop layout remains untouched.
+            ========================================================= */
+            #page-settings .page-title {
+                margin-bottom: 14px;
             }
 
-            .period-number {
-                grid-column: 1 / -1;
+            #page-settings .page-title h2 {
+                display: flex;
+                align-items: center;
+                gap: 9px;
+                font-size: 22px;
+                letter-spacing: -0.03em;
+            }
+
+            #page-settings .page-title p {
+                max-width: 330px;
+                margin-top: 5px;
+                font-size: 12px;
+                line-height: 1.55;
+            }
+
+            #page-settings .settings-section {
+                padding: 14px;
+                margin-bottom: 14px;
+                border-radius: 22px;
+                overflow: hidden;
+            }
+
+            #page-settings .settings-section > h3 {
+                display: none;
+            }
+
+            .period-overview {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+                padding: 4px 2px 14px;
+            }
+
+            .period-overview-main {
+                display: flex;
+                flex-direction: column;
+                gap: 2px;
+            }
+
+            .period-overline {
+                font-size: 9px;
+                line-height: 1;
+                letter-spacing: .14em;
+                font-weight: 800;
+                color: var(--muted);
+            }
+
+            .period-overview-main strong {
+                font-size: 20px;
+                letter-spacing: -.035em;
+                color: var(--text);
+            }
+
+            .period-overview-status {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                min-height: 30px;
+                padding: 0 10px;
+                border-radius: 999px;
+                background: rgba(255,255,255,.58);
+                border: 1px solid rgba(255,255,255,.8);
+                color: var(--muted);
+                font-size: 10px;
+                font-weight: 700;
+                white-space: nowrap;
+            }
+
+            .period-status-dot {
+                width: 6px;
+                height: 6px;
+                border-radius: 50%;
+                background: #7a9b84;
+                box-shadow: 0 0 0 3px rgba(122,155,132,.12);
+            }
+
+            .period-list-head {
+                display: grid;
+                grid-template-columns: 42px 1fr 30px;
+                align-items: center;
+                gap: 10px;
+                padding: 0 8px 7px;
+                color: var(--muted);
+                font-size: 8px;
+                font-weight: 800;
+                letter-spacing: .12em;
+            }
+
+            .period-list {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .period-row {
+                position: relative;
+                display: grid;
+                grid-template-columns: 42px minmax(0, 1fr) 30px;
+                align-items: center;
+                gap: 10px;
+                padding: 9px 8px;
+                margin: 0;
+                border-radius: 17px;
+                background: rgba(255,255,255,.46);
+                border: 1px solid rgba(255,255,255,.78);
+                box-shadow: 0 5px 16px rgba(80,52,68,.055);
+                transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+            }
+
+            .period-row:focus-within {
+                transform: translateY(-1px);
+                border-color: rgba(184,129,155,.38);
+                box-shadow: 0 8px 22px rgba(80,52,68,.09);
+            }
+
+            .period-index {
+                width: 42px;
+                height: 48px;
+                display: grid;
+                place-items: center;
+                border-radius: 13px;
+                background: rgba(255,255,255,.72);
+                border: 1px solid rgba(255,255,255,.9);
+                box-shadow: inset 0 1px rgba(255,255,255,.9);
+            }
+
+            .period-index span {
+                font-size: 15px;
+                font-weight: 800;
+                letter-spacing: -.04em;
+                color: var(--text);
+                font-variant-numeric: tabular-nums;
+            }
+
+            .period-time-range {
+                min-width: 0;
+                display: grid;
+                grid-template-columns: minmax(0,1fr) 16px minmax(0,1fr);
+                align-items: end;
+                gap: 5px;
+            }
+
+            .period-time-field {
+                min-width: 0;
+                display: flex;
+                flex-direction: column;
+                gap: 3px;
+            }
+
+            .period-time-field > span {
+                padding-left: 2px;
+                font-size: 8px;
+                line-height: 1;
+                color: var(--muted);
+                font-weight: 700;
+            }
+
+            .period-input-wrap {
+                height: 36px;
+                min-width: 0;
+                display: flex;
+                align-items: center;
+                gap: 5px;
+                padding: 0 7px;
+                border-radius: 10px;
+                background: rgba(255,255,255,.66);
+                border: 1px solid rgba(255,255,255,.9);
+            }
+
+            .period-input-wrap svg,
+            .period-arrow svg,
+            .delete-period-btn svg,
+            .period-empty-icon svg {
+                width: 14px;
+                height: 14px;
+                flex: 0 0 auto;
+                stroke: currentColor;
+                stroke-width: 1.7;
+                stroke-linecap: round;
+                stroke-linejoin: round;
+            }
+
+            .period-input-wrap svg {
+                color: var(--muted);
+            }
+
+            .period-input-wrap input {
+                width: 100%;
+                min-width: 0;
+                height: 34px;
+                padding: 0;
+                border: 0;
+                outline: 0;
+                background: transparent;
+                color: var(--text);
+                font-size: 12px;
+                font-weight: 800;
+                font-variant-numeric: tabular-nums;
+            }
+
+            .period-arrow {
+                display: grid;
+                place-items: center;
+                padding-bottom: 8px;
+                color: #b58b9e;
+            }
+
+            .period-arrow svg {
+                width: 13px;
+                height: 13px;
+                stroke-width: 1.6;
             }
 
             .delete-period-btn {
-                width: 100%;
-                min-height: 42px;
+                width: 30px;
+                height: 30px;
+                display: grid;
+                place-items: center;
+                padding: 0;
+                border: 1px solid rgba(180,104,125,.16);
+                border-radius: 10px;
+                background: rgba(255,242,245,.62);
+                color: #b06f83;
+                box-shadow: none;
             }
 
-            .period-settings-actions {
+            .delete-period-btn svg {
+                width: 14px;
+                height: 14px;
+            }
+
+            .delete-period-btn:active {
+                transform: scale(.94);
+            }
+
+            .period-empty-modern {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding: 14px 4px 18px;
+            }
+
+            .period-empty-icon {
+                width: 42px;
+                height: 42px;
+                flex: 0 0 auto;
+                display: grid;
+                place-items: center;
+                border-radius: 13px;
+                background: rgba(255,255,255,.62);
+                border: 1px solid rgba(255,255,255,.85);
+                color: var(--muted);
+            }
+
+            .period-empty-modern > div:last-child {
+                display: flex;
+                flex-direction: column;
+                gap: 3px;
+            }
+
+            .period-empty-modern strong {
+                font-size: 13px;
+            }
+
+            .period-empty-modern span {
+                color: var(--muted);
+                font-size: 10px;
+                line-height: 1.45;
+            }
+
+            /* Keep the final period fully scrollable above the floating action bar. */
+            #page-settings .period-list {
+                padding-bottom: 112px;
+                scroll-padding-bottom: 112px;
+            }
+
+            #page-settings .period-settings-actions {
                 position: sticky;
                 bottom: 78px;
                 z-index: 20;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+                margin: 12px -2px -2px;
                 padding: 8px;
-                border-radius: 16px;
-                background: rgba(255,255,255,.72);
+                border-radius: 15px;
+                background: rgba(250,246,248,.78);
+                border: 1px solid rgba(255,255,255,.78);
+                box-shadow: 0 8px 22px rgba(75,48,63,.09);
                 backdrop-filter: blur(18px);
                 -webkit-backdrop-filter: blur(18px);
             }
 
-            .period-settings-actions .small-btn {
-                flex: 1;
-                min-height: 44px;
+            #page-settings .period-settings-actions .small-btn {
+                width: 100%;
+                min-height: 42px;
+                margin: 0;
+                border-radius: 12px;
+                font-size: 11px;
+                font-weight: 800;
             }
+
+            #page-settings #add-period-btn::first-letter {
+                font-size: 15px;
+            }
+
 
             .schedule-wrapper {
                 border-radius: 16px;
@@ -2434,7 +3102,58 @@
             .mobile-menu-toggle { width:40px; height:40px; flex-basis:40px; }
             .mobile-nav-drawer { width:min(86vw,320px); }
         }
-    </style>
+    
+/* =========================================================
+   AI CHAT — ANH, TRỢ LÝ RIÊNG CỦA VỢ
+========================================================= */
+.chat-page{min-height:100%;display:flex;flex-direction:column;gap:14px}
+.chat-shell{min-height:calc(100vh - 110px);display:flex;flex-direction:column;overflow:hidden;border-radius:28px;border:1px solid rgba(255,255,255,.75);background:rgba(255,255,255,.42);box-shadow:0 18px 50px rgba(74,48,62,.10);backdrop-filter:blur(18px)}
+.chat-topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;border-bottom:1px solid rgba(120,80,105,.10);background:rgba(255,255,255,.30)}
+.chat-identity{display:flex;align-items:center;gap:11px;min-width:0}
+.chat-avatar{width:42px;height:42px;flex:0 0 42px;border-radius:15px;display:grid;place-items:center;background:linear-gradient(145deg,rgba(255,255,255,.9),rgba(246,226,236,.78));border:1px solid rgba(255,255,255,.9);box-shadow:0 8px 20px rgba(121,76,103,.12)}
+.chat-avatar svg{width:22px;height:22px;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.chat-identity strong{display:block;font-size:15px;color:var(--text)}
+.chat-identity span{display:block;font-size:11px;color:var(--muted);margin-top:2px}
+.chat-menu-btn{width:38px;height:38px;border:0;border-radius:12px;background:rgba(255,255,255,.58);color:var(--text);display:grid;place-items:center;cursor:pointer}
+.chat-menu-btn svg{width:19px;height:19px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round}
+.chat-body{flex:1;min-height:0;overflow-y:auto;padding:20px 18px 28px;scroll-behavior:smooth}
+.chat-empty{min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px 10px 44px}
+.chat-empty-orb{width:74px;height:74px;border-radius:25px;display:grid;place-items:center;margin-bottom:15px;background:linear-gradient(145deg,rgba(255,255,255,.92),rgba(246,226,236,.72));border:1px solid rgba(255,255,255,.9);box-shadow:0 16px 35px rgba(121,76,103,.13)}
+.chat-empty-orb svg{width:34px;height:34px;stroke:currentColor;stroke-width:1.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.chat-empty h3{margin:0;font-size:23px;letter-spacing:-.4px}
+.chat-empty p{max-width:360px;margin:7px auto 20px;color:var(--muted);font-size:13px;line-height:1.65}
+.chat-quick-grid{width:min(560px,100%);display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.chat-quick{border:1px solid rgba(255,255,255,.86);background:rgba(255,255,255,.55);border-radius:17px;padding:13px;text-align:left;cursor:pointer;color:var(--text);box-shadow:0 7px 20px rgba(74,48,62,.06);transition:transform .18s ease,background .18s ease}
+.chat-quick:hover{transform:translateY(-2px);background:rgba(255,255,255,.78)}
+.chat-quick strong{display:block;font-size:12px;margin-bottom:3px}.chat-quick span{display:block;color:var(--muted);font-size:11px;line-height:1.4}
+.chat-msg-list{width:min(820px,100%);margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.chat-msg{display:flex;gap:9px;align-items:flex-end}.chat-msg.user{justify-content:flex-end}.chat-msg.assistant{justify-content:flex-start}
+.chat-msg-avatar{width:27px;height:27px;flex:0 0 27px;border-radius:10px;display:grid;place-items:center;background:rgba(255,255,255,.68);border:1px solid rgba(255,255,255,.8)}
+.chat-msg-avatar svg{width:15px;height:15px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.chat-bubble{max-width:min(76%,650px);padding:11px 14px;border-radius:18px;font-size:13px;line-height:1.65;white-space:pre-wrap;overflow-wrap:anywhere}
+.chat-msg.assistant .chat-bubble{background:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.86);border-bottom-left-radius:6px;box-shadow:0 7px 20px rgba(74,48,62,.05)}
+.chat-msg.user .chat-bubble{background:rgba(185,126,158,.14);border:1px solid rgba(185,126,158,.18);border-bottom-right-radius:6px}
+.chat-meta{font-size:9px;color:var(--muted);margin:4px 3px 0}
+.chat-msg.user .chat-meta{text-align:right}
+.chat-typing{display:inline-flex;gap:4px;padding:11px 14px;border-radius:18px;border-bottom-left-radius:6px;background:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.86)}
+.chat-typing i{width:5px;height:5px;border-radius:50%;background:currentColor;opacity:.45;animation:chatDot 1.1s infinite}.chat-typing i:nth-child(2){animation-delay:.15s}.chat-typing i:nth-child(3){animation-delay:.3s}@keyframes chatDot{0%,70%,100%{transform:translateY(0);opacity:.35}35%{transform:translateY(-3px);opacity:.8}}
+.chat-context-card{margin-top:9px;border:1px solid rgba(185,126,158,.18);background:rgba(255,255,255,.65);border-radius:17px;padding:13px}.chat-context-card strong{font-size:11px}.chat-context-card .chat-context-row{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid rgba(120,80,105,.08);font-size:11px}.chat-context-card .chat-context-row:last-child{border-bottom:0;padding-bottom:0}.chat-context-card small{color:var(--muted)}
+.chat-composer-wrap{padding:10px 14px 14px;border-top:1px solid rgba(120,80,105,.09);background:linear-gradient(to bottom,rgba(255,255,255,.28),rgba(255,255,255,.68))}
+.chat-composer{width:min(820px,100%);margin:auto;display:flex;align-items:flex-end;gap:8px;padding:7px 7px 7px 9px;border:1px solid rgba(255,255,255,.92);border-radius:20px;background:rgba(255,255,255,.74);box-shadow:0 10px 28px rgba(74,48,62,.09)}
+.chat-attach{width:38px;height:38px;flex:0 0 38px;border:0;border-radius:13px;background:rgba(120,80,105,.06);display:grid;place-items:center;color:var(--text);cursor:pointer}.chat-attach svg,.chat-send svg{width:19px;height:19px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.chat-input{flex:1;min-width:0;border:0!important;outline:0!important;background:transparent!important;box-shadow:none!important;padding:9px 3px!important;min-height:38px;max-height:120px;resize:none;font:inherit;font-size:13px;line-height:1.45;color:var(--text)}
+.chat-send{width:40px;height:40px;flex:0 0 40px;border:0;border-radius:14px;background:var(--primary,#b97e9e);color:white;display:grid;place-items:center;cursor:pointer;box-shadow:0 7px 16px rgba(121,76,103,.18)}.chat-send:disabled{opacity:.42;cursor:not-allowed;box-shadow:none}
+.chat-hint{text-align:center;color:var(--muted);font-size:9px;margin-top:6px}
+.chat-drawer-backdrop{position:fixed;inset:0;background:rgba(45,31,39,.18);z-index:1400;opacity:0;pointer-events:none;transition:opacity .2s}.chat-drawer-backdrop.open{opacity:1;pointer-events:auto}
+.chat-drawer{position:fixed;top:0;right:0;bottom:0;width:min(360px,88vw);z-index:1401;background:rgba(255,255,255,.92);backdrop-filter:blur(20px);box-shadow:-18px 0 45px rgba(45,31,39,.14);transform:translateX(100%);transition:transform .24s ease;padding:18px;display:flex;flex-direction:column;gap:14px}.chat-drawer.open{transform:translateX(0)}
+.chat-drawer-head{display:flex;align-items:center;justify-content:space-between}.chat-drawer-head strong{font-size:15px}.chat-drawer-close{border:0;background:rgba(120,80,105,.07);border-radius:10px;width:34px;height:34px;cursor:pointer}.chat-new-btn{border:0;border-radius:14px;padding:11px 13px;background:rgba(185,126,158,.12);color:var(--text);font-weight:700;cursor:pointer}.chat-history-list{overflow:auto;display:flex;flex-direction:column;gap:6px}.chat-history-item{border:0;background:transparent;text-align:left;padding:11px;border-radius:13px;cursor:pointer;color:var(--text)}.chat-history-item:hover,.chat-history-item.active{background:rgba(120,80,105,.07)}.chat-history-item strong{display:block;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.chat-history-item small{display:block;color:var(--muted);font-size:9px;margin-top:3px}
+.chat-history-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.chat-delete-all-btn{border:1px solid rgba(232,91,112,.22);border-radius:14px;padding:10px 12px;background:rgba(232,91,112,.07);color:var(--danger);font-weight:700;cursor:pointer}.chat-delete-all-btn:hover{background:rgba(232,91,112,.12)}.chat-history-row{display:flex;align-items:stretch;gap:4px;border-radius:13px}.chat-history-row.active{background:rgba(120,80,105,.07)}.chat-history-row .chat-history-item{flex:1;min-width:0}.chat-history-row .chat-history-item:hover{background:rgba(120,80,105,.07)}.chat-history-delete{flex:0 0 38px;display:grid;place-items:center;background:transparent;color:var(--muted);border-radius:10px}.chat-history-delete:hover{color:var(--danger);background:rgba(232,91,112,.08)}.chat-history-delete svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.chat-action-card{margin-top:10px;border-radius:16px;border:1px solid rgba(185,126,158,.20);padding:12px;background:rgba(250,241,246,.55)}.chat-action-title{font-size:11px;font-weight:800;margin-bottom:7px}.chat-action-buttons{display:flex;gap:7px}.chat-action-buttons button{flex:1;border:0;border-radius:11px;padding:9px 7px;font-size:10px;font-weight:700;cursor:pointer}.chat-action-confirm{background:rgba(185,126,158,.18)}.chat-action-cancel{background:rgba(120,80,105,.06)}
+.chat-fab{position:fixed;right:18px;bottom:20px;z-index:1100;width:54px;height:54px;border:0;border-radius:19px;background:linear-gradient(145deg,#c28aaa,#ad7394);color:#fff;display:grid;place-items:center;box-shadow:0 13px 30px rgba(121,76,103,.28);cursor:pointer}.chat-fab svg{width:24px;height:24px;stroke:currentColor;stroke-width:1.7;fill:none;stroke-linecap:round;stroke-linejoin:round}.chat-fab.hidden-fab{display:none}
+@media(max-width:800px){.chat-shell{min-height:calc(100dvh - 90px);border-radius:22px}.chat-body{padding:15px 12px 24px}.chat-composer-wrap{padding:8px 9px calc(10px + env(safe-area-inset-bottom))}.chat-quick-grid{grid-template-columns:1fr}.chat-bubble{max-width:84%}.chat-topbar{padding:13px 12px}.chat-empty h3{font-size:21px}.chat-fab{right:14px;bottom:86px;width:50px;height:50px;border-radius:17px}}
+@media(max-width:380px){.chat-quick{padding:11px}.chat-bubble{font-size:12px}.chat-avatar{width:38px;height:38px;flex-basis:38px}.chat-identity strong{font-size:14px}.chat-identity span{font-size:10px}}
+
+</style>
 </head>
 
 <!--
@@ -2626,7 +3345,17 @@
     </span>
     <span class="nav-label">Thời tiết</span>
 </button>
-<button class="nav-btn" data-page="settings" type="button">
+<button class="nav-btn" data-page="chat" type="button" aria-label="Mở Anh, trợ lý riêng của vợ">
+                <span class="nav-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M5 5.5C5 4.4 5.9 3.5 7 3.5H17C18.1 3.5 19 4.4 19 5.5V14C19 15.1 18.1 16 17 16H11L7 20V16H7C5.9 16 5 15.1 5 14V5.5Z"></path>
+                        <path d="M8.5 8.5H15.5M8.5 11.5H13"></path>
+                    </svg>
+                </span>
+                <span class="nav-label">Anh</span>
+            </button>
+
+            <button class="nav-btn" data-page="settings" type="button">
                 <span class="nav-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24" fill="none">
                         <path d="M5 6.5H19M5 12H19M5 17.5H19"></path>
@@ -2846,7 +3575,53 @@
                 </section>
         </section>
 
-            <div id="page-settings" class="page hidden">
+            <div id="page-chat" class="page hidden chat-page">
+    <div class="chat-shell">
+        <div class="chat-topbar">
+            <div class="chat-identity">
+                <div class="chat-avatar" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M5 5.5C5 4.4 5.9 3.5 7 3.5H17C18.1 3.5 19 4.4 19 5.5V14C19 15.1 18.1 16 17 16H11L7 20V16H7C5.9 16 5 15.1 5 14V5.5Z"/><path d="M8.5 8.5H15.5M8.5 11.5H13"/></svg>
+                </div>
+                <div><strong>Anh</strong><span>Trợ lý riêng của vợ</span></div>
+            </div>
+            <button class="chat-menu-btn" id="chat-history-btn" type="button" aria-label="Mở lịch sử chat">
+                <svg viewBox="0 0 24 24"><path d="M6 7H18M6 12H18M6 17H18"/></svg>
+            </button>
+        </div>
+
+        <div class="chat-body" id="chat-body">
+            <div class="chat-empty" id="chat-empty">
+                <div class="chat-empty-orb" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M5 5.5C5 4.4 5.9 3.5 7 3.5H17C18.1 3.5 19 4.4 19 5.5V14C19 15.1 18.1 16 17 16H11L7 20V16H7C5.9 16 5 15.1 5 14V5.5Z"/><path d="M8.5 8.5H15.5M8.5 11.5H13"/></svg>
+                </div>
+                <h3>Anh đây.</h3>
+                <p>Vợ cứ hỏi bất cứ điều gì. Anh có thể trò chuyện, hỗ trợ học tập và khi được kết nối với dữ liệu của web, anh còn có thể xem lịch học, ghi chú và hỗ trợ vợ thao tác.</p>
+                <div class="chat-quick-grid">
+                    <button class="chat-quick" data-chat-prompt="Anh xem lịch học hôm nay giúp vợ nhé."><strong>Lịch học</strong><span>Xem lịch hôm nay hoặc ngày mai</span></button>
+                    <button class="chat-quick" data-chat-prompt="Anh giúp vợ học bài nhé."><strong>Học tập</strong><span>Giải thích, tóm tắt, luyện tập</span></button>
+                    <button class="chat-quick" data-chat-prompt="Anh viết giúp vợ một nội dung nhé."><strong>Viết</strong><span>Soạn, sửa và viết lại nội dung</span></button>
+                    <button class="chat-quick" data-chat-prompt="Anh ơi, vợ muốn hỏi một chuyện."><strong>Hỏi bất cứ điều gì</strong><span>Trò chuyện tự nhiên với anh</span></button>
+                </div>
+            </div>
+            <div class="chat-msg-list" id="chat-msg-list"></div>
+        </div>
+
+        <div class="chat-composer-wrap">
+            <form class="chat-composer" id="chat-form">
+                <button class="chat-attach" id="chat-attach-btn" type="button" aria-label="Đính kèm">
+                    <svg viewBox="0 0 24 24"><path d="M8 12.5L13.8 6.7C15.5 5 18.2 5 19.9 6.7C21.6 8.4 21.6 11.1 19.9 12.8L11.2 21.5C8.8 23.9 4.9 23.9 2.5 21.5C.1 19.1.1 15.2 2.5 12.8L11.2 4.1" transform="scale(.85) translate(2 0)"/></svg>
+                </button>
+                <textarea class="chat-input" id="chat-input" rows="1" placeholder="Nhắn cho anh..."></textarea>
+                <button class="chat-send" id="chat-send" type="submit" aria-label="Gửi" disabled>
+                    <svg viewBox="0 0 24 24"><path d="M21 3L10 14M21 3L14 21L10 14L3 10L21 3Z"/></svg>
+                </button>
+            </form>
+            <div class="chat-hint">Anh có thể hỗ trợ vợ về nhiều chủ đề. Không chia sẻ thông tin nhạy cảm nếu không cần thiết.</div>
+        </div>
+    </div>
+</div>
+
+<div id="page-settings" class="page hidden">
 
                 <div class="page-title">
                     <h2>⚙️ Cài đặt</h2>
@@ -2887,6 +3662,20 @@
 
 </section>
 
+
+<div class="chat-drawer-backdrop" id="chat-drawer-backdrop"></div>
+<aside class="chat-drawer" id="chat-drawer" aria-hidden="true">
+    <div class="chat-drawer-head"><strong>Lịch sử trò chuyện</strong><button class="chat-drawer-close" id="chat-drawer-close" type="button" aria-label="Đóng">×</button></div>
+    <div class="chat-history-actions">
+        <button class="chat-new-btn" id="chat-new-btn" type="button">＋ Cuộc trò chuyện mới</button>
+        <button class="chat-delete-all-btn" id="chat-delete-all-btn" type="button">🗑 Xóa tất cả</button>
+    </div>
+    <div style="font-size:10px;color:var(--muted);line-height:1.45;padding:0 2px">Lịch sử cũ hơn 30 ngày sẽ được tự động dọn khỏi Supabase và thiết bị.</div>
+    <div class="chat-history-list" id="chat-history-list"></div>
+</aside>
+<button class="chat-fab hidden-fab" id="chat-fab" type="button" aria-label="Mở Anh">
+    <svg viewBox="0 0 24 24"><path d="M5 5.5C5 4.4 5.9 3.5 7 3.5H17C18.1 3.5 19 4.4 19 5.5V14C19 15.1 18.1 16 17 16H11L7 20V16H7C5.9 16 5 15.1 5 14V5.5Z"/><path d="M8.5 8.5H15.5M8.5 11.5H13"/></svg>
+</button>
 
 <!-- =========================================================
      MODAL
@@ -4470,6 +5259,10 @@ function renderCurrentPage() {
 
     if (currentPage === "settings") {
         renderPeriodSettings();
+    }
+
+    if (currentPage === "chat") {
+        initChatForCurrentUser();
     }
 
 
@@ -6140,62 +6933,122 @@ function renderPeriodSettings() {
                 Number(b.period_number)
         );
 
+    const total = sortedPeriods.length;
+    const configured = sortedPeriods.filter(
+        period => period.start_time && period.end_time
+    ).length;
+
+    const settingsSection = container.closest(".settings-section");
+    if (settingsSection) {
+        settingsSection.classList.toggle("has-periods", total > 0);
+    }
+
     if (!sortedPeriods.length) {
         container.innerHTML = `
-            <div class="empty period-empty">
-                <div class="emoji">⏰</div>
-                <h3>Chưa có tiết học</h3>
-                <p>Nhấn "＋ Thêm tiết" để tạo tiết đầu tiên.</p>
+            <div class="period-empty-modern">
+                <div class="period-empty-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="8.5"></circle>
+                        <path d="M12 7v5l3.2 2"></path>
+                    </svg>
+                </div>
+                <div>
+                    <strong>Chưa có khung giờ</strong>
+                    <span>Thêm tiết đầu tiên để bắt đầu thiết lập thời khóa biểu.</span>
+                </div>
             </div>
         `;
         return;
     }
 
-    container.innerHTML =
-        sortedPeriods.map(period => {
+    container.innerHTML = `
+        <div class="period-overview" aria-label="Tổng quan khung giờ">
+            <div class="period-overview-main">
+                <span class="period-overline">KHUNG GIỜ HỌC</span>
+                <strong>${total} tiết</strong>
+            </div>
+            <div class="period-overview-status">
+                <span class="period-status-dot"></span>
+                ${configured}/${total} đã thiết lập
+            </div>
+        </div>
 
-            const number =
-                Number(period.period_number);
+        <div class="period-list-head" aria-hidden="true">
+            <span>TIẾT</span>
+            <span>THỜI GIAN</span>
+            <span></span>
+        </div>
 
-            return `
-                <div class="period-row" data-period="${number}">
+        <div class="period-list">
+            ${sortedPeriods.map(period => {
+                const number = Number(period.period_number);
+                return `
+                    <article class="period-row" data-period="${number}">
+                        <div class="period-index" aria-label="Tiết ${number}">
+                            <span>${String(number).padStart(2, "0")}</span>
+                        </div>
 
-                    <div class="period-number">
-                        <strong>Tiết ${number}</strong>
-                    </div>
+                        <div class="period-time-range">
+                            <label class="period-time-field">
+                                <span>Bắt đầu</span>
+                                <div class="period-input-wrap">
+                                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                        <circle cx="12" cy="12" r="8.5"></circle>
+                                        <path d="M12 7v5l3.2 2"></path>
+                                    </svg>
+                                    <input
+                                        type="time"
+                                        id="period-start-${number}"
+                                        value="${timeToDisplay(period.start_time)}"
+                                        aria-label="Giờ bắt đầu tiết ${number}"
+                                    >
+                                </div>
+                            </label>
 
-                    <label class="period-time">
-                        <span>Bắt đầu</span>
-                        <input
-                            type="time"
-                            id="period-start-${number}"
-                            value="${timeToDisplay(period.start_time)}"
+                            <span class="period-arrow" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none">
+                                    <path d="M5 12h13"></path>
+                                    <path d="m14 8 4 4-4 4"></path>
+                                </svg>
+                            </span>
+
+                            <label class="period-time-field">
+                                <span>Kết thúc</span>
+                                <div class="period-input-wrap">
+                                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                        <circle cx="12" cy="12" r="8.5"></circle>
+                                        <path d="M12 7v5l3.2 2"></path>
+                                    </svg>
+                                    <input
+                                        type="time"
+                                        id="period-end-${number}"
+                                        value="${timeToDisplay(period.end_time)}"
+                                        aria-label="Giờ kết thúc tiết ${number}"
+                                    >
+                                </div>
+                            </label>
+                        </div>
+
+                        <button
+                            class="delete-period-btn"
+                            type="button"
+                            onclick="deletePeriod(${number})"
+                            title="Xóa tiết ${number}"
+                            aria-label="Xóa tiết ${number}"
                         >
-                    </label>
-
-                    <label class="period-time">
-                        <span>Kết thúc</span>
-                        <input
-                            type="time"
-                            id="period-end-${number}"
-                            value="${timeToDisplay(period.end_time)}"
-                        >
-                    </label>
-
-                    <button
-                        class="small-btn danger-btn delete-period-btn"
-                        type="button"
-                        onclick="deletePeriod(${number})"
-                        title="Xóa tiết ${number}"
-                    >
-                        🗑️ Xóa
-                    </button>
-
-                </div>
-            `;
-        }).join("");
+                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                <path d="M4 7h16"></path>
+                                <path d="M9 7V4h6v3"></path>
+                                <path d="m7 7 .8 13h8.4L17 7"></path>
+                                <path d="M10 11v5M14 11v5"></path>
+                            </svg>
+                        </button>
+                    </article>
+                `;
+            }).join("")}
+        </div>
+    `;
 }
-
 
 window.addPeriod =
 async function() {
