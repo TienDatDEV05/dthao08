@@ -276,7 +276,66 @@ function createNewChat(){
     chatConversationId=makeChatId();chatMessages=[];
     const store=loadChatStore();store.conversations.unshift({id:chatConversationId,title:"Cuộc trò chuyện mới",createdAt:Date.now(),updatedAt:Date.now(),messages:[]});saveChatStore(store);renderChatMessages();renderChatHistory();closeChatDrawer();
 }
-function openChatDrawer(){document.getElementById("chat-drawer")?.classList.add("open");document.getElementById("chat-drawer-backdrop")?.classList.add("open");document.getElementById("chat-drawer")?.setAttribute("aria-hidden","false");renderChatHistory();}
+
+/* MOBILE CHAT HISTORY — independent modal */
+function isMobileChatHistory(){
+  return window.matchMedia("(max-width: 800px)").matches;
+}
+function syncMobileChatHistory(){
+  const source=document.getElementById("chat-history-list");
+  const target=document.getElementById("mobile-chat-history-list");
+  if(source&&target) target.innerHTML=source.innerHTML;
+}
+function openMobileChatHistory(){
+  if(!isMobileChatHistory()) return;
+  if(typeof setMobileMenu==="function") setMobileMenu(false);
+  if(typeof closeChatDrawer==="function") closeChatDrawer();
+  syncMobileChatHistory();
+  const modal=document.getElementById("mobile-chat-history-modal");
+  if(!modal) return;
+  modal.classList.add("open");
+  modal.setAttribute("aria-hidden","false");
+  document.body.classList.add("mobile-chat-history-open");
+  document.getElementById("mobile-chat-history-close")?.focus();
+}
+function closeMobileChatHistory(){
+  const modal=document.getElementById("mobile-chat-history-modal");
+  if(!modal) return;
+  modal.classList.remove("open");
+  modal.setAttribute("aria-hidden","true");
+  document.body.classList.remove("mobile-chat-history-open");
+}
+document.addEventListener("click",(event)=>{
+  if(event.target.closest("#chat-menu-btn")&&isMobileChatHistory()){
+    event.preventDefault();event.stopPropagation();openMobileChatHistory();return;
+  }
+  if(event.target.closest("#mobile-chat-history-close")||
+     event.target.closest("[data-mobile-chat-history-close]")){
+    closeMobileChatHistory();return;
+  }
+  if(event.target.closest("#mobile-chat-new-btn")){
+    document.getElementById("chat-new-btn")?.click();
+    closeMobileChatHistory();return;
+  }
+  if(event.target.closest("#mobile-chat-delete-all-btn")){
+    document.getElementById("chat-delete-all-btn")?.click();
+    setTimeout(syncMobileChatHistory,0);
+  }
+},true);
+window.addEventListener("resize",()=>{
+  if(!isMobileChatHistory()) closeMobileChatHistory();
+});
+
+function openChatDrawer(){
+    // Keep the mobile navigation and chat history mutually exclusive.
+    if (window.innerWidth <= 800 && typeof setMobileMenu === "function") {
+        setMobileMenu(false);
+    }
+    document.getElementById("chat-drawer")?.classList.add("open");
+    document.getElementById("chat-drawer-backdrop")?.classList.add("open");
+    document.getElementById("chat-drawer")?.setAttribute("aria-hidden","false");
+    renderChatHistory();
+}
 function closeChatDrawer(){document.getElementById("chat-drawer")?.classList.remove("open");document.getElementById("chat-drawer-backdrop")?.classList.remove("open");document.getElementById("chat-drawer")?.setAttribute("aria-hidden","true");}
 function initChatForCurrentUser(){
     if(!currentUser)return;
@@ -290,7 +349,7 @@ function initChatForCurrentUser(){
 }
 
 document.addEventListener("DOMContentLoaded",()=>{
-    ["chat-history-btn","chat-drawer-close","chat-drawer-backdrop"].forEach(id=>{
+    ["chat-drawer-close","chat-drawer-backdrop"].forEach(id=>{
         const el=document.getElementById(id);
         if(el) el.addEventListener("click",closeChatDrawer);
     });
@@ -2574,7 +2633,7 @@ document.addEventListener("DOMContentLoaded",()=>{
             .mobile-menu-backdrop {
                 position: fixed;
                 inset: 0;
-                z-index: 190;
+                z-index: 1499;
                 display: block;
                 background: rgba(72, 42, 57, .22);
                 backdrop-filter: blur(3px);
@@ -2600,7 +2659,7 @@ document.addEventListener("DOMContentLoaded",()=>{
                 display: block !important;
                 transform: translateX(-105%);
                 transition: transform .28s cubic-bezier(.2,.8,.2,1);
-                z-index: 200;
+                z-index: 1500;
                 overflow-y: auto;
                 box-shadow: 16px 0 40px rgba(121,76,103,.16);
             }
@@ -3145,14 +3204,95 @@ document.addEventListener("DOMContentLoaded",()=>{
 .chat-send{width:40px;height:40px;flex:0 0 40px;border:0;border-radius:14px;background:var(--primary,#b97e9e);color:white;display:grid;place-items:center;cursor:pointer;box-shadow:0 7px 16px rgba(121,76,103,.18)}.chat-send:disabled{opacity:.42;cursor:not-allowed;box-shadow:none}
 .chat-hint{text-align:center;color:var(--muted);font-size:9px;margin-top:6px}
 .chat-drawer-backdrop{position:fixed;inset:0;background:rgba(45,31,39,.18);z-index:1400;opacity:0;pointer-events:none;transition:opacity .2s}.chat-drawer-backdrop.open{opacity:1;pointer-events:auto}
-.chat-drawer{position:fixed;top:0;right:0;bottom:0;width:min(360px,88vw);z-index:1401;background:rgba(255,255,255,.92);backdrop-filter:blur(20px);box-shadow:-18px 0 45px rgba(45,31,39,.14);transform:translateX(100%);transition:transform .24s ease;padding:18px;display:flex;flex-direction:column;gap:14px}.chat-drawer.open{transform:translateX(0)}
+.chat-drawer{position:fixed;top:0;right:0;bottom:0;width:min(360px,88vw);z-index:1401;background:rgba(255,255,255,.92);backdrop-filter:blur(20px);box-shadow:-18px 0 45px rgba(45,31,39,.14);transform:translateX(100%);transition:transform .24s ease,padding .2s ease; padding:18px;display:flex;flex-direction:column;gap:14px}.chat-drawer.open{transform:translateX(0)}
 .chat-drawer-head{display:flex;align-items:center;justify-content:space-between}.chat-drawer-head strong{font-size:15px}.chat-drawer-close{border:0;background:rgba(120,80,105,.07);border-radius:10px;width:34px;height:34px;cursor:pointer}.chat-new-btn{border:0;border-radius:14px;padding:11px 13px;background:rgba(185,126,158,.12);color:var(--text);font-weight:700;cursor:pointer}.chat-history-list{overflow:auto;display:flex;flex-direction:column;gap:6px}.chat-history-item{border:0;background:transparent;text-align:left;padding:11px;border-radius:13px;cursor:pointer;color:var(--text)}.chat-history-item:hover,.chat-history-item.active{background:rgba(120,80,105,.07)}.chat-history-item strong{display:block;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.chat-history-item small{display:block;color:var(--muted);font-size:9px;margin-top:3px}
 .chat-history-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.chat-delete-all-btn{border:1px solid rgba(232,91,112,.22);border-radius:14px;padding:10px 12px;background:rgba(232,91,112,.07);color:var(--danger);font-weight:700;cursor:pointer}.chat-delete-all-btn:hover{background:rgba(232,91,112,.12)}.chat-history-row{display:flex;align-items:stretch;gap:4px;border-radius:13px}.chat-history-row.active{background:rgba(120,80,105,.07)}.chat-history-row .chat-history-item{flex:1;min-width:0}.chat-history-row .chat-history-item:hover{background:rgba(120,80,105,.07)}.chat-history-delete{flex:0 0 38px;display:grid;place-items:center;background:transparent;color:var(--muted);border-radius:10px}.chat-history-delete:hover{color:var(--danger);background:rgba(232,91,112,.08)}.chat-history-delete svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .chat-action-card{margin-top:10px;border-radius:16px;border:1px solid rgba(185,126,158,.20);padding:12px;background:rgba(250,241,246,.55)}.chat-action-title{font-size:11px;font-weight:800;margin-bottom:7px}.chat-action-buttons{display:flex;gap:7px}.chat-action-buttons button{flex:1;border:0;border-radius:11px;padding:9px 7px;font-size:10px;font-weight:700;cursor:pointer}.chat-action-confirm{background:rgba(185,126,158,.18)}.chat-action-cancel{background:rgba(120,80,105,.06)}
 .chat-fab{position:fixed;right:18px;bottom:20px;z-index:1100;width:54px;height:54px;border:0;border-radius:19px;background:linear-gradient(145deg,#c28aaa,#ad7394);color:#fff;display:grid;place-items:center;box-shadow:0 13px 30px rgba(121,76,103,.28);cursor:pointer}.chat-fab svg{width:24px;height:24px;stroke:currentColor;stroke-width:1.7;fill:none;stroke-linecap:round;stroke-linejoin:round}.chat-fab.hidden-fab{display:none}
-@media(max-width:800px){.chat-shell{min-height:calc(100dvh - 90px);border-radius:22px}.chat-body{padding:15px 12px 24px}.chat-composer-wrap{padding:8px 9px calc(10px + env(safe-area-inset-bottom))}.chat-quick-grid{grid-template-columns:1fr}.chat-bubble{max-width:84%}.chat-topbar{padding:13px 12px}.chat-empty h3{font-size:21px}.chat-fab{right:14px;bottom:86px;width:50px;height:50px;border-radius:17px}}
+.chat-menu-btn{width:42px;height:42px;flex:0 0 42px;border:1px solid rgba(255,255,255,.86);border-radius:14px;background:rgba(255,255,255,.62);color:var(--text);display:grid;place-items:center;cursor:pointer;box-shadow:0 7px 18px rgba(121,76,103,.10);transition:transform .2s ease,background .2s ease,box-shadow .2s ease}.chat-menu-btn svg{width:21px;height:21px;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}.chat-menu-btn:hover{transform:translateY(-1px);background:rgba(255,255,255,.82);box-shadow:0 10px 22px rgba(121,76,103,.14)}
+@media(max-width:800px){
+.chat-shell{min-height:calc(100dvh - 90px);border-radius:22px}
+.chat-body{padding:15px 12px 24px}
+.chat-composer-wrap{padding:8px 9px calc(10px + env(safe-area-inset-bottom))}
+.chat-quick-grid{grid-template-columns:1fr}
+.chat-bubble{max-width:84%}
+.chat-topbar{padding:13px 12px}
+.chat-empty h3{font-size:21px}
+.chat-fab{right:14px;bottom:86px;width:50px;height:50px;border-radius:17px}
+    /* MOBILE CHAT HISTORY — independent viewport modal */
+    .chat-menu-btn{width:40px;height:40px;flex:0 0 40px;border-radius:13px}
+    .chat-menu-btn svg{width:20px;height:20px}
+
+    .mobile-chat-history-modal{
+        position:fixed !important;
+        inset:0 !important;
+        width:100vw !important;
+        height:100dvh !important;
+        z-index:20000 !important;
+        display:flex !important;
+        align-items:center !important;
+        justify-content:center !important;
+        padding:16px !important;
+        box-sizing:border-box !important;
+        margin:0 !important;
+        transform:none !important;
+        visibility:hidden;
+        opacity:0;
+        pointer-events:none;
+        transition:opacity .2s ease,visibility .2s ease;
+    }
+    .mobile-chat-history-modal.open{visibility:visible;opacity:1;pointer-events:auto}
+    .mobile-chat-history-overlay{
+        position:absolute;inset:0;width:100%;height:100%;
+        background:rgba(45,31,39,.30);
+        backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);
+    }
+    .mobile-chat-history-panel{
+        position:relative !important;
+        z-index:1;
+        width:min(100%,400px) !important;
+        height:min(78dvh,620px) !important;
+        max-height:78dvh !important;
+        margin:0 !important;
+        box-sizing:border-box;
+        display:flex;flex-direction:column;gap:12px;
+        padding:16px !important;
+        border:1px solid rgba(255,255,255,.88);
+        border-radius:24px;
+        background:rgba(255,255,255,.95);
+        backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+        box-shadow:0 24px 70px rgba(45,31,39,.24);
+        transform:none !important;
+        overflow:hidden;
+    }
+    .mobile-chat-history-panel .chat-drawer-head{
+        min-height:40px;display:flex;align-items:center;
+        justify-content:space-between;flex:0 0 auto;
+    }
+    .mobile-chat-history-panel .chat-history-actions{
+        grid-template-columns:1fr 1fr;gap:7px;flex:0 0 auto;
+    }
+    .mobile-chat-history-panel .chat-new-btn,
+    .mobile-chat-history-panel .chat-delete-all-btn{
+        min-height:42px;padding:9px 8px;font-size:11px;
+    }
+    .mobile-chat-history-panel .chat-history-list{
+        min-height:0;flex:1;padding-right:2px;
+        overflow-y:auto;overscroll-behavior:contain;
+    }
+    .mobile-chat-history-panel .chat-history-row{gap:4px}
+    .mobile-chat-history-panel .chat-history-item{padding:10px 9px}
+    .mobile-chat-history-panel .chat-history-item strong{font-size:12px}
+    .mobile-chat-history-panel .chat-history-item small{font-size:9px}
+    .mobile-chat-history-panel .chat-history-delete{flex-basis:38px}
+    body.mobile-chat-history-open{overflow:hidden !important}
+}
 @media(max-width:380px){.chat-quick{padding:11px}.chat-bubble{font-size:12px}.chat-avatar{width:38px;height:38px;flex-basis:38px}.chat-identity strong{font-size:14px}.chat-identity span{font-size:10px}}
 
+
+@media(max-width:800px){
+  body #chat-drawer,body #chat-drawer-backdrop{display:none !important}
+}
 </style>
 </head>
 
@@ -3584,8 +3724,12 @@ document.addEventListener("DOMContentLoaded",()=>{
                 </div>
                 <div><strong>Anh</strong><span>Trợ lý riêng của vợ</span></div>
             </div>
-            <button class="chat-menu-btn" id="chat-history-btn" type="button" aria-label="Mở lịch sử chat">
-                <svg viewBox="0 0 24 24"><path d="M6 7H18M6 12H18M6 17H18"/></svg>
+            <button class="chat-menu-btn" id="chat-history-btn" type="button" aria-label="Mở lịch sử trò chuyện" title="Lịch sử trò chuyện">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M12 6.2A5.8 5.8 0 1 1 6.2 12"/>
+                    <path d="M6.2 8.7V12H9.5"/>
+                    <path d="M12 8.8V12L14.7 13.7"/>
+                </svg>
             </button>
         </div>
 
@@ -3664,6 +3808,21 @@ document.addEventListener("DOMContentLoaded",()=>{
 
 
 <div class="chat-drawer-backdrop" id="chat-drawer-backdrop"></div>
+<div id="mobile-chat-history-modal" class="mobile-chat-history-modal" aria-hidden="true">
+  <div class="mobile-chat-history-overlay" data-mobile-chat-history-close></div>
+  <section class="mobile-chat-history-panel" role="dialog" aria-modal="true" aria-labelledby="mobile-chat-history-title">
+    <div class="chat-drawer-head">
+      <strong id="mobile-chat-history-title">Lịch sử trò chuyện</strong>
+      <button type="button" class="chat-drawer-close" id="mobile-chat-history-close" aria-label="Đóng lịch sử">×</button>
+    </div>
+    <div class="chat-history-actions">
+      <button type="button" class="chat-new-btn" id="mobile-chat-new-btn">+ Cuộc trò chuyện mới</button>
+      <button type="button" class="chat-delete-all-btn" id="mobile-chat-delete-all-btn">Xóa tất cả</button>
+    </div>
+    <div id="mobile-chat-history-list" class="chat-history-list" aria-live="polite"></div>
+  </section>
+</div>
+
 <aside class="chat-drawer" id="chat-drawer" aria-hidden="true">
     <div class="chat-drawer-head"><strong>Lịch sử trò chuyện</strong><button class="chat-drawer-close" id="chat-drawer-close" type="button" aria-label="Đóng">×</button></div>
     <div class="chat-history-actions">
@@ -5131,6 +5290,12 @@ function defaultEndTime(period) {
    MOBILE HAMBURGER MENU
 ========================================================= */
 function setMobileMenu(open) {
+    // Mobile navigation and chatbot history drawer must never be open
+    // at the same time. Otherwise the chat drawer can cover the left menu.
+    if (open && typeof closeChatDrawer === "function") {
+        closeChatDrawer();
+    }
+
     document.body.classList.toggle("mobile-nav-open", open);
 
     const toggle =
