@@ -16,6 +16,7 @@
 
 
     <!-- Supabase -->
+<!-- CHAT/SCHEDULE PROTOCOL v5: frontend and smart-responder share the same day/period/subject mapping. -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
@@ -356,176 +357,266 @@ async function askChatBackend(input){
     };
 }
 
+function parseClientScheduleAction(message){
+    const text=String(message||'').toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+        .replace(/\s+/g,' ').trim();
+
+    // MUST MATCH smart-responder exactly: 1=Mon ... 7=Sun.
+    let day=null;
+    const dayPatterns=[
+        [/\bchu\s*nhat\b/,7],
+        [/\bthu\s*(?:2|hai)\b/,1],
+        [/\bthu\s*(?:3|ba)\b/,2],
+        [/\bthu\s*(?:4|tu)\b/,3],
+        [/\bthu\s*(?:5|nam)\b/,4],
+        [/\bthu\s*(?:6|sau)\b/,5],
+        [/\bthu\s*(?:7|bay)\b/,6],
+        [/\bt([2-7])\b/,0]
+    ];
+    for(const [re,val] of dayPatterns){
+        const m=text.match(re);
+        if(m){ day=val===0?Number(m[1])-1:val; break; }
+    }
+
+    let period=null;
+    const periodPatterns=[
+        /\b(?:tiet|lesson|period)\s*(?:thu\s*)?(\d{1,2})\b/,
+        /\bp\s*(\d{1,2})\b/,
+        /\bt\s*(\d{1,2})\b/
+    ];
+    for(const re of periodPatterns){
+        const m=text.match(re);
+        if(m){
+            const n=Number(m[1]);
+            if(Number.isInteger(n)&&n>=1&&n<=100){ period=n; break; }
+        }
+    }
+
+    const normalizeName=v=>String(v||'').toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+        .replace(/\s+/g,' ').trim();
+
+    const candidates=(Array.isArray(subjects)?subjects:[])
+        .map(s=>({s,name:normalizeName(s.name)}))
+        .filter(x=>x.name && x.s?.id)
+        .sort((a,b)=>b.name.length-a.name.length);
+
+    // Exact name first, so "Tiếng Anh" beats a generic leading "anh".
+    let subject=null;
+    for(const c of candidates){
+        if(text.includes(c.name)){ subject=c.s; break; }
+    }
+
+    // Remove schedule/control words before token scoring.
+    let subjectText=text
+        .replace(/\bchu\s*nhat\b/g,' ')
+        .replace(/\bthu\s*(?:2|hai|3|ba|4|tu|5|nam|6|sau|7|bay)\b/g,' ')
+        .replace(/\bt([2-7])\b/g,' ')
+        .replace(/\b(?:tiet|lesson|period)\s*(?:thu\s*)?\d{1,2}\b/g,' ')
+        .replace(/\bp\s*\d{1,2}\b/g,' ')
+        .replace(/\bt\s*\d{1,2}\b/g,' ')
+        .replace(/\b(?:them|them mon|them vao|vao|cho|mon|hoc|lich|thoi khoa bieu|tkb|sua|doi|thay|chuyen|xoa|delete|remove|update)\b/g,' ')
+        .replace(/\s+/g,' ').trim();
+
+    if(!subject){
+        for(const c of candidates){
+            if(subjectText===c.name || subjectText.includes(c.name) || c.name.includes(subjectText)){
+                subject=c.s; break;
+            }
+        }
+    }
+
+    if(!subject){
+        const words=new Set(subjectText.split(/\s+/).filter(Boolean));
+        let best=null;
+        for(const c of candidates){
+            const tokens=c.name.split(/\s+/).filter(t=>t.length>=2);
+            const matched=tokens.filter(t=>words.has(t)).length;
+            if(!matched) continue;
+            const score=matched*100+c.name.length;
+            if(!best || score>best.score) best={s:c.s,score};
+        }
+        subject=best?.s||null;
+    }
+
+    const isDelete=/\b(xoa|delete|remove)\b/.test(text);
+    const isUpdate=/\b(sua|doi|thay|update|chuyen)\b/.test(text);
+    const action=isDelete?'delete_schedule':isUpdate?'update_schedule':'add_schedule';
+
+    // Only classify as a schedule mutation when day+period are explicit.
+    if(day===null || period===null) return null;
+    if(action!=='delete_schedule' && !subject?.id) return null;
+
+    return {
+        action,
+        confirmationRequired:true,
+        summary:`${action==='add_schedule'?'Thêm':action==='update_schedule'?'Đổi':'Xóa'} ${subject?.name||'môn học'} — ${getChatDayName(day)}, tiết ${period}`,
+        day,
+        period,
+        subjectId:subject?.id||null,
+        subjectName:subject?.name||null,
+        entryId:null,
+        semesterId:currentSemesterId || (Array.isArray(semesters)?semesters[0]?.id:null) || null
+    };
+}
+
 async function executeChatScheduleAction(action){
     if(!currentUser){
-        return {
-            ok:false,
-            message:"Anh chưa thể cập nhật lịch vì vợ iuu chưa đăng nhập."
-        };
+        return {ok:false,message:"Anh chưa thể cập nhật lịch vì vợ iuu chưa đăng nhập."};
     }
 
-    if(!action || !action.action || action.action === "none"){
-        return {ok:true, message:""};
+    if(!action || !action.action || action.action==='none'){
+        return {ok:true,message:""};
     }
 
-    const actionName = action.action;
-    const day = Number(action.day);
-    const period = Number(action.period);
-    const semesterId = action.semesterId || currentSemesterId;
-    const subjectId = action.subjectId || null;
-    const entryId = action.entryId || null;
+    const actionName=String(action.action);
+    const day=Number(action.day);
+    const period=Number(action.period);
+    const semesterId=action.semesterId || currentSemesterId || semesters?.[0]?.id || null;
+    const subjectId=action.subjectId || null;
+    let entryId=action.entryId || null;
 
-    if(
-        !["add_schedule","update_schedule","delete_schedule"].includes(actionName) ||
-        !semesterId
-    ){
-        return {
-            ok:false,
-            message:"Anh chưa đủ dữ liệu để cập nhật thời khóa biểu cho vợ iuu."
-        };
+    if(!['add_schedule','update_schedule','delete_schedule'].includes(actionName) || !semesterId){
+        return {ok:false,message:"Anh chưa đủ dữ liệu học kỳ để cập nhật thời khóa biểu cho vợ iuu."};
+    }
+
+    if(!day || !period){
+        return {ok:false,message:"Anh chưa xác định được ngày hoặc tiết từ câu lệnh của vợ iuu."};
+    }
+    if((actionName==='add_schedule' || actionName==='update_schedule') && !subjectId){
+        return {ok:false,message:"Anh chưa xác định được môn học từ câu lệnh của vợ iuu."};
     }
 
     try{
-        if(actionName === "add_schedule"){
-            if(!day || !period || !subjectId){
-                throw new Error("Thiếu ngày, tiết hoặc môn học.");
-            }
-
-            // Không cho chatbot ghi đè âm thầm lên một ô đã có lịch.
-            const {data:existing,error:existingError} = await db
-                .from("schedule_entries")
-                .select("id")
-                .eq("user_id",currentUser.id)
-                .eq("semester_id",semesterId)
-                .eq("day_of_week",day)
-                .eq("period_number",period)
+        if(actionName==='add_schedule'){
+            const {data:existing,error:existingError}=await db
+                .from('schedule_entries')
+                .select('id,subject_id')
+                .eq('user_id',currentUser.id)
+                .eq('semester_id',semesterId)
+                .eq('day_of_week',day)
+                .eq('period_number',period)
                 .maybeSingle();
-
             if(existingError) throw existingError;
 
             if(existing){
-                const subject = subjects.find(s=>s.id===existing.subject_id);
-                return {
-                    ok:false,
-                    message:`${getChatDayName(day)} tiết ${period} đã có ${subject?.name || "môn học"} rồi. Anh không ghi đè lịch hiện tại của vợ iuu.`
-                };
+                const existingSubject=subjects.find(s=>s.id===existing.subject_id);
+                return {ok:false,message:`${getChatDayName(day)} tiết ${period} đã có ${existingSubject?.name||'môn học'} rồi. Anh không ghi đè lịch hiện tại của vợ iuu.`};
             }
 
-            const {error} = await db
-                .from("schedule_entries")
-                .insert({
-                    user_id:currentUser.id,
+            const {error}=await db.from('schedule_entries').insert({
+                user_id:currentUser.id,
+                semester_id:semesterId,
+                subject_id:subjectId,
+                day_of_week:day,
+                period_number:period
+            });
+            if(error) throw error;
+        }
+
+        if(actionName==='update_schedule' || actionName==='delete_schedule'){
+            // Never trust an entryId supplied by the model/client when day+period are known.
+            // Resolve the real row from the user's own semester/day/period.
+            const {data:existing,error:findError}=await db
+                .from('schedule_entries')
+                .select('id,subject_id')
+                .eq('user_id',currentUser.id)
+                .eq('semester_id',semesterId)
+                .eq('day_of_week',day)
+                .eq('period_number',period)
+                .maybeSingle();
+            if(findError) throw findError;
+            if(!existing) return {ok:false,message:`Không tìm thấy lịch ở ${getChatDayName(day)} tiết ${period}.`};
+            entryId=existing.id;
+
+            if(actionName==='update_schedule'){
+                const {error}=await db.from('schedule_entries').update({
                     semester_id:semesterId,
                     subject_id:subjectId,
                     day_of_week:day,
                     period_number:period
-                });
-
-            if(error) throw error;
-        }
-
-        if(actionName === "update_schedule"){
-            if(!entryId || !day || !period || !subjectId){
-                throw new Error("Thiếu dữ liệu để sửa lịch.");
+                }).eq('id',entryId).eq('user_id',currentUser.id);
+                if(error) throw error;
+            }else{
+                const {error}=await db.from('schedule_entries').delete().eq('id',entryId).eq('user_id',currentUser.id);
+                if(error) throw error;
             }
-
-            const {error} = await db
-                .from("schedule_entries")
-                .update({
-                    semester_id:semesterId,
-                    subject_id:subjectId,
-                    day_of_week:day,
-                    period_number:period
-                })
-                .eq("id",entryId)
-                .eq("user_id",currentUser.id);
-
-            if(error) throw error;
-        }
-
-        if(actionName === "delete_schedule"){
-            if(!entryId){
-                throw new Error("Không tìm thấy tiết học cần xóa.");
-            }
-
-            const {error} = await db
-                .from("schedule_entries")
-                .delete()
-                .eq("id",entryId)
-                .eq("user_id",currentUser.id);
-
-            if(error) throw error;
         }
 
         await loadAllData();
         renderSchedule();
 
-        const actionText =
-            action.summary ||
-            (actionName === "add_schedule"
-                ? `Đã thêm ${action.subjectName || "môn học"} vào ${getChatDayName(day)}, tiết ${period}.`
-                : actionName === "update_schedule"
-                    ? `Đã cập nhật ${getChatDayName(day)}, tiết ${period}.`
-                    : `Đã xóa lịch ${getChatDayName(day)}, tiết ${period}.`);
+        const subjectName=action.subjectName || subjects.find(s=>s.id===subjectId)?.name || 'môn học';
+        const actionText=actionName==='add_schedule'
+            ? `Đã thêm ${subjectName} vào ${getChatDayName(day)}, tiết ${period}.`
+            : actionName==='update_schedule'
+                ? `Đã đổi ${getChatDayName(day)}, tiết ${period} thành ${subjectName}.`
+                : `Đã xóa lịch ${getChatDayName(day)}, tiết ${period}.`;
 
-        return {
-            ok:true,
-            message:`${actionText} Thời khóa biểu của vợ iuu đã được cập nhật thành công ♡`
-        };
+        return {ok:true,message:`${actionText} Thời khóa biểu của vợ iuu đã được cập nhật thành công ♡`};
     }catch(error){
-        console.error("Chat schedule action error:",error);
-        return {
-            ok:false,
-            message:
-                error?.message ||
-                "Anh chưa thể cập nhật thời khóa biểu. Vợ iuu thử lại giúp Anh nhé."
-        };
+        console.error('Chat schedule action error:',error);
+        return {ok:false,message:error?.message||'Anh chưa thể cập nhật thời khóa biểu. Vợ iuu thử lại giúp Anh nhé.'};
     }
 }
 
 async function sendChatMessage(text){
-    const value=String(text||"").trim();
+    const value=String(text||'').trim();
     if(!value||chatSending)return;
 
     chatSending=true;
-    document.getElementById("chat-send").disabled=true;
-    addChatMessage("user",value);
+    document.getElementById('chat-send').disabled=true;
+    addChatMessage('user',value);
     setChatTyping(true);
 
     try{
+        // FIRST: deterministic schedule parser. When day+period+subject are
+        // explicit, do not call AI at all. This makes schedule writes immune
+        // to model JSON/schema mistakes and guarantees the weekday mapping.
+        const clientAction=parseClientScheduleAction(value);
+        if(clientAction){
+            setChatTyping(false);
+            const actionResult=await executeChatScheduleAction(clientAction);
+            addChatMessage('assistant',actionResult.message||'Anh đã xử lý yêu cầu của vợ iuu.');
+            return;
+        }
+
         const result=await askChatBackend(value);
         setChatTyping(false);
 
-        if(result?.action && result.action.action && result.action.action !== "none"){
-            const actionResult=await executeChatScheduleAction(result.action);
+        let finalAction=result?.action||null;
+        // If the backend returned a complete action, normalize it with the
+        // same client parser whenever possible. Never shift an explicit day.
+        if(finalAction && finalAction.action && finalAction.action!=='none'){
+            const backendSafe={...finalAction};
+            const parsedDayPeriod=parseClientScheduleAction(value);
+            if(parsedDayPeriod){
+                backendSafe.day=parsedDayPeriod.day;
+                backendSafe.period=parsedDayPeriod.period;
+                backendSafe.subjectId=parsedDayPeriod.subjectId||backendSafe.subjectId;
+                backendSafe.subjectName=parsedDayPeriod.subjectName||backendSafe.subjectName;
+                backendSafe.semesterId=backendSafe.semesterId||parsedDayPeriod.semesterId;
+            }
+            finalAction=backendSafe;
+        }
 
-            // Chỉ báo "thành công" sau khi Supabase đã ghi dữ liệu thành công.
-            // Không sử dụng câu trả lời của AI để giả lập việc đã lưu.
-            addChatMessage(
-                "assistant",
-                actionResult.message ||
-                result.reply ||
-                "Anh đã xử lý yêu cầu của vợ iuu."
-            );
+        if(finalAction && finalAction.action && finalAction.action!=='none'){
+            const actionResult=await executeChatScheduleAction(finalAction);
+            addChatMessage('assistant',actionResult.message||result.reply||'Anh đã xử lý yêu cầu của vợ iuu.');
         }else{
-            addChatMessage(
-                "assistant",
-                result?.reply ||
-                "Anh chưa nhận được nội dung trả lời từ máy chủ."
-            );
+            addChatMessage('assistant',result?.reply||'Anh chưa nhận được nội dung trả lời từ máy chủ.');
         }
     }catch(err){
         setChatTyping(false);
-        addChatMessage(
-            "assistant",
-            "Anh gặp lỗi khi kết nối máy chủ. Vợ iuu kiểm tra kết nối mạng hoặc thử lại sau nhé."
-        );
-        console.error(err);
+        console.error('Chat send error:',err);
+        addChatMessage('assistant','Anh gặp lỗi khi xử lý yêu cầu. Vợ iuu thử lại giúp Anh nhé.');
     }finally{
         chatSending=false;
         updateChatSendState();
     }
 }
+
 function updateChatSendState(){const input=document.getElementById("chat-input"),send=document.getElementById("chat-send");if(input&&send)send.disabled=chatSending||!input.value.trim();}
 function openChatConversation(id){
     const store=loadChatStore(); const conv=store.conversations.find(c=>c.id===id); if(!conv)return;
@@ -3406,8 +3497,7 @@ document.addEventListener("DOMContentLoaded",()=>{
         }
         .brand-mark { font-family: Georgia, serif; font-size:20px; color:#e26794; line-height:1; }
         .brand-name { font-family: Georgia, 'Times New Roman', serif; font-size:23px; line-height:1; letter-spacing:-.02em; color:#633e51; }
-        .brand-name strong { font-weight:700; }
-        .brand-name em { font-weight:400; font-style:italic; color:#b94f79; }
+        .brand-name strong, .brand-name em { font-weight:700; font-style:normal; color:inherit; }
         .brand-subtitle { position:absolute; left:29px; bottom:-5px; font-size:7px; letter-spacing:.24em; text-transform:uppercase; color:#a77b8e; font-weight:700; }
 
         .logo-elegant { position:relative; }
@@ -3595,6 +3685,24 @@ document.addEventListener("DOMContentLoaded",()=>{
   body #chat-drawer,body #chat-drawer-backdrop{display:none !important}
 }
 </style>
+<style>
+
+/* ===== Navigation Sound Studio ===== */
+.nav-sound-studio{margin-top:16px;padding:18px;border-radius:18px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12)}
+.nav-sound-studio h3{margin:0 0 6px;font-size:18px}
+.nav-sound-studio .studio-desc{margin:0 0 16px;opacity:.72;font-size:13px;line-height:1.5}
+.nav-sound-control{display:grid;grid-template-columns:110px 1fr 72px;gap:10px;align-items:center;margin:12px 0}
+.nav-sound-control label{font-size:13px}
+.nav-sound-control input[type=range]{width:100%}
+.nav-sound-value{text-align:right;font-variant-numeric:tabular-nums;font-size:13px;opacity:.8}
+.nav-sound-select{width:100%;padding:9px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.16);background:rgba(0,0,0,.12);color:inherit}
+.nav-sound-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.nav-sound-actions button{border:0;border-radius:11px;padding:10px 14px;cursor:pointer;font-weight:600}
+.nav-sound-actions .sound-preview-btn{background:#fff;color:#111}
+.nav-sound-actions .sound-save-btn{background:rgba(255,255,255,.12);color:inherit;border:1px solid rgba(255,255,255,.15)}
+.nav-sound-status{margin-top:10px;font-size:12px;opacity:.7}
+
+</style>
 </head>
 
 <!--
@@ -3623,7 +3731,7 @@ document.addEventListener("DOMContentLoaded",()=>{
                 src="assets/logo.png"
                 alt="Logo Đoàn Thảo"
             >
-            <h1><strong>Đoàn</strong> <em>Thảo</em></h1>
+            <h1><strong>Đoàn</strong> <span>Thảo</span></h1>
             <span class="auth-brand-line"></span>
             <p>PERSONAL SPACE</p>
             <small>Một góc nhỏ dành riêng cho những điều thân thương.</small>
@@ -3706,7 +3814,7 @@ document.addEventListener("DOMContentLoaded",()=>{
 
         <div class="brand brand-elegant" aria-label="Đoàn Thảo">
             <span class="brand-mark" aria-hidden="true">♡</span>
-            <span class="brand-name"><strong>Đoàn</strong> <em>Thảo</em></span>
+            <span class="brand-name"><strong>Đoàn</strong> <span>Thảo</span></span>
             <span class="brand-subtitle">personal space</span>
         </div>
 
@@ -4085,6 +4193,60 @@ document.addEventListener("DOMContentLoaded",()=>{
                 </div>
 
                 <div class="settings-section">
+
+<div class="nav-sound-studio" id="navSoundStudio">
+  <h3>🎧 Navigation Sound Studio</h3>
+  <p class="studio-desc">Tự chỉnh âm thanh điều hướng, bấm “Nghe thử” để nghe ngay và “Lưu âm thanh” để áp dụng cho các mục NAVIGATION.</p>
+
+  <div class="nav-sound-control">
+    <label for="navSoundVolume">Âm lượng</label>
+    <input id="navSoundVolume" type="range" min="0" max="100" value="75">
+    <span class="nav-sound-value" id="navSoundVolumeValue">75%</span>
+  </div>
+
+  <div class="nav-sound-control">
+    <label for="navSoundFrequency">Tần số</label>
+    <input id="navSoundFrequency" type="range" min="100" max="3000" value="1200">
+    <span class="nav-sound-value" id="navSoundFrequencyValue">1200 Hz</span>
+  </div>
+
+  <div class="nav-sound-control">
+    <label for="navSoundDuration">Độ dài</label>
+    <input id="navSoundDuration" type="range" min="20" max="300" value="55">
+    <span class="nav-sound-value" id="navSoundDurationValue">55 ms</span>
+  </div>
+
+  <div class="nav-sound-control">
+    <label for="navSoundAttack">Attack</label>
+    <input id="navSoundAttack" type="range" min="1" max="50" value="3">
+    <span class="nav-sound-value" id="navSoundAttackValue">3 ms</span>
+  </div>
+
+  <div class="nav-sound-control">
+    <label for="navSoundRelease">Release</label>
+    <input id="navSoundRelease" type="range" min="10" max="300" value="50">
+    <span class="nav-sound-value" id="navSoundReleaseValue">50 ms</span>
+  </div>
+
+  <div class="nav-sound-control">
+    <label for="navSoundWave">Kiểu sóng</label>
+    <select id="navSoundWave" class="nav-sound-select">
+      <option value="sine">Sine</option>
+      <option value="square" selected>Square</option>
+      <option value="triangle">Triangle</option>
+      <option value="sawtooth">Sawtooth</option>
+    </select>
+    <span></span>
+  </div>
+
+  <div class="nav-sound-actions">
+    <button type="button" class="sound-preview-btn" id="navSoundPreview">▶ Nghe thử</button>
+    <button type="button" class="sound-save-btn" id="navSoundSave">💾 Lưu âm thanh</button>
+  </div>
+  <div class="nav-sound-status" id="navSoundStatus">Âm thanh hiện tại dùng cấu hình mặc định.</div>
+</div>
+
+
 
                     <h3>⏰ Thời gian các tiết</h3>
 
@@ -5722,6 +5884,15 @@ window.addEventListener(
 
 
 /* =========================================================
+   NAVIGATION SOUND
+   Âm thanh click nhẹ cho toàn bộ mục điều hướng.
+   Dùng Web Audio API để không cần thêm file .mp3/.wav.
+========================================================= */
+let navigationAudioContext = null;
+
+
+
+/* =========================================================
    NAVIGATION
 ========================================================= */
 
@@ -5732,6 +5903,8 @@ document
         button.addEventListener(
             "click",
             () => {
+
+                playNavigationSound();
 
                 currentPage =
                     button.dataset.page;
@@ -8223,5 +8396,146 @@ initializeApp();
 
 </script>
 
+
+<script>
+
+/* ===== Navigation Sound Studio ===== */
+(function(){
+  const STORAGE_KEY = "navigationSoundSettings";
+  const defaults = {
+    volume: 75,
+    frequency: 1200,
+    duration: 55,
+    attack: 3,
+    release: 50,
+    wave: "square"
+  };
+
+  const $ = id => document.getElementById(id);
+
+  function loadSettings(){
+    try{
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+      return Object.assign({}, defaults, saved || {});
+    }catch(e){
+      return Object.assign({}, defaults);
+    }
+  }
+
+  window.navigationSoundSettings = loadSettings();
+
+  function syncControls(){
+    const s = window.navigationSoundSettings;
+    const map = {
+      navSoundVolume:["volume","%"],
+      navSoundFrequency:["frequency"," Hz"],
+      navSoundDuration:["duration"," ms"],
+      navSoundAttack:["attack"," ms"],
+      navSoundRelease:["release"," ms"]
+    };
+    Object.entries(map).forEach(([id,[key,suffix]])=>{
+      const el = $(id), out = $(id+"Value");
+      if(el) el.value = s[key];
+      if(out) out.textContent = s[key] + suffix;
+    });
+    const wave = $("navSoundWave");
+    if(wave) wave.value = s.wave;
+  }
+
+  function readControls(){
+    return {
+      volume: Number($("navSoundVolume")?.value || defaults.volume),
+      frequency: Number($("navSoundFrequency")?.value || defaults.frequency),
+      duration: Number($("navSoundDuration")?.value || defaults.duration),
+      attack: Number($("navSoundAttack")?.value || defaults.attack),
+      release: Number($("navSoundRelease")?.value || defaults.release),
+      wave: $("navSoundWave")?.value || defaults.wave
+    };
+  }
+
+  function updateLabels(){
+    const s = readControls();
+    $("navSoundVolumeValue").textContent = s.volume + "%";
+    $("navSoundFrequencyValue").textContent = s.frequency + " Hz";
+    $("navSoundDurationValue").textContent = s.duration + " ms";
+    $("navSoundAttackValue").textContent = s.attack + " ms";
+    $("navSoundReleaseValue").textContent = s.release + " ms";
+  }
+
+  window.playNavigationSound = function(){
+    try{
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if(!AudioCtx) return;
+
+      window.__navAudioCtx = window.__navAudioCtx || new AudioCtx();
+      const ctx = window.__navAudioCtx;
+      if(ctx.state === "suspended") ctx.resume().catch(()=>{});
+
+      const s = window.navigationSoundSettings || defaults;
+      const now = ctx.currentTime;
+      const duration = Math.max(0.02, s.duration / 1000);
+      const attack = Math.min(duration * 0.45, Math.max(0.001, s.attack / 1000));
+      const release = Math.min(duration * 0.8, Math.max(0.008, s.release / 1000));
+      const peak = Math.max(0.0001, Math.min(0.95, s.volume / 100));
+
+      const master = ctx.createGain();
+      master.gain.setValueAtTime(0.0001, now);
+      master.gain.linearRampToValueAtTime(peak, now + attack);
+      master.gain.exponentialRampToValueAtTime(0.0001, now + Math.max(attack + 0.005, Math.min(duration, release + attack)));
+      master.connect(ctx.destination);
+
+      const osc = ctx.createOscillator();
+      osc.type = s.wave;
+      osc.frequency.setValueAtTime(s.frequency, now);
+      osc.frequency.exponentialRampToValueAtTime(Math.max(80, s.frequency * 0.42), now + duration);
+      osc.connect(master);
+      osc.start(now);
+      osc.stop(now + duration + 0.01);
+    }catch(e){
+      console.warn("Navigation sound unavailable:", e);
+    }
+  };
+
+  function bindStudio(){
+    if(!$("navSoundStudio")) return;
+
+    ["navSoundVolume","navSoundFrequency","navSoundDuration","navSoundAttack","navSoundRelease"].forEach(id=>{
+      $(id)?.addEventListener("input", updateLabels);
+    });
+
+    $("navSoundPreview")?.addEventListener("click", ()=>{
+      const temp = readControls();
+      const old = window.navigationSoundSettings;
+      window.navigationSoundSettings = temp;
+      window.playNavigationSound();
+      window.navigationSoundSettings = old;
+    });
+
+    $("navSoundSave")?.addEventListener("click", ()=>{
+      const settings = readControls();
+      window.navigationSoundSettings = settings;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+      const status = $("navSoundStatus");
+      if(status) status.textContent = "✓ Đã lưu và áp dụng âm thanh điều hướng.";
+      window.playNavigationSound();
+    });
+
+    syncControls();
+    updateLabels();
+
+    const status = $("navSoundStatus");
+    if(status && localStorage.getItem(STORAGE_KEY)){
+      status.textContent = "✓ Đang dùng cấu hình âm thanh đã lưu.";
+    }
+  }
+
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", bindStudio);
+  }else{
+    bindStudio();
+  }
+})();
+
+</script>
 </body>
 </html>
