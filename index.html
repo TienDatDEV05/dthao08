@@ -3702,15 +3702,6 @@ document.addEventListener("DOMContentLoaded",()=>{
 .nav-sound-actions .sound-save-btn{background:rgba(255,255,255,.12);color:inherit;border:1px solid rgba(255,255,255,.15)}
 .nav-sound-status{margin-top:10px;font-size:12px;opacity:.7}
 
-<style>
-/* ===== YouTube Audio interaction hardening ===== */
-.youtube-results-list{position:relative;z-index:5;pointer-events:auto}
-.youtube-result-card{position:relative;z-index:6;pointer-events:auto;cursor:pointer;touch-action:manipulation}
-.youtube-result-card button{position:relative;z-index:7;pointer-events:auto;cursor:pointer;touch-action:manipulation}
-.youtube-thumb img{display:block;pointer-events:none}
-.youtube-result-card:focus-visible{outline:2px solid currentColor;outline-offset:3px}
-.youtube-player-frame{position:relative;z-index:1;min-height:220px}
-.youtube-player-frame iframe{display:block;width:100%;height:100%;border:0}
 </style>
 </head>
 
@@ -8491,8 +8482,8 @@ initializeApp();
     player=new YT.Player("youtube-player",{
       width:"100%",
       height:"100%",
-      videoId: pendingVideo?.videoId || undefined,
-      playerVars:{playsinline:1,rel:0,modestbranding:1,enablejsapi:1,origin:location.origin,widget_referrer:location.href},
+      host:"https://www.youtube.com",
+      playerVars:{playsinline:1,rel:0,modestbranding:1,origin:location.origin},
       events:{
         onReady:e=>{
           playerReady=true;
@@ -8584,39 +8575,18 @@ initializeApp();
     $("youtube-progress")?.addEventListener("input",e=>player?.seekTo?.(Number(e.target.value),true));
     $("youtube-volume")?.addEventListener("input",e=>{const v=Number(e.target.value);$("youtube-volume-value").textContent=v+"%";player?.setVolume?.(v)});
 
-    // Global delegation: bắt click kể cả khi danh sách được render lại.
-    document.addEventListener("click",e=>{
-      const playBtn=e.target.closest?.("[data-yt-play]");
-      if(playBtn){
-        e.preventDefault();e.stopPropagation();
-        const v=videoCache.get(playBtn.dataset.ytPlay);
-        if(v)play(v,queue.findIndex(x=>x.videoId===v.videoId));
-        return;
-      }
-      const queueBtn=e.target.closest?.("[data-yt-queue]");
-      if(queueBtn){
-        e.preventDefault();e.stopPropagation();
-        const v=videoCache.get(queueBtn.dataset.ytQueue);
-        if(v)add(v,false);
-        return;
-      }
-      const card=e.target.closest?.("[data-yt-video]");
-      if(card && $("page-youtube-audio")?.classList.contains("hidden")===false){
-        const v=videoCache.get(card.dataset.ytVideo);
-        if(v)play(v,queue.findIndex(x=>x.videoId===v.videoId));
-      }
-    },true);
-    document.addEventListener("keydown",e=>{
-      if(e.key!=="Enter"&&e.key!==" ")return;
-      const card=e.target.closest?.("[data-yt-video]");
-      if(!card||e.target.closest("button"))return;
-      e.preventDefault();
-      const v=videoCache.get(card.dataset.ytVideo);
-      if(v)play(v,queue.findIndex(x=>x.videoId===v.videoId));
+    // Event delegation: hoạt động ổn định kể cả khi kết quả được render lại.
+    $("youtube-results")?.addEventListener("click",e=>{
+      const playBtn=e.target.closest("[data-yt-play]");
+      if(playBtn){e.preventDefault();e.stopPropagation();const v=videoCache.get(playBtn.dataset.ytPlay);if(v)play(v,queue.findIndex(x=>x.videoId===v.videoId));return}
+      const queueBtn=e.target.closest("[data-yt-queue]");
+      if(queueBtn){e.preventDefault();e.stopPropagation();const v=videoCache.get(queueBtn.dataset.ytQueue);if(v)add(v,false);return}
+      const card=e.target.closest("[data-yt-video]");
+      if(card){const v=videoCache.get(card.dataset.ytVideo);if(v)play(v,queue.findIndex(x=>x.videoId===v.videoId))}
     });
+    $("youtube-results")?.addEventListener("keydown",e=>{if(e.key!=="Enter"&&e.key!==" ")return;const card=e.target.closest("[data-yt-video]");if(!card||e.target.closest("button"))return;e.preventDefault();const v=videoCache.get(card.dataset.ytVideo);if(v)play(v,queue.findIndex(x=>x.videoId===v.videoId))});
   }
 
-  window.youtubeAudioPlayById=(videoId)=>{const v=videoCache.get(String(videoId));if(v)play(v,queue.findIndex(x=>x.videoId===v.videoId));};
   window.youtubeAudioOpen=()=>{loadAPI().catch(e=>console.warn(e))};
   document.addEventListener("DOMContentLoaded",bind);
 })();
