@@ -64,14 +64,14 @@ async function syncChatToSupabase(){
     if(!currentUser || !chatConversationId) return;
     try {
         const conv = getChatConversation();
-        const { error: convError } = await db.from("chat_conversations").upsert({
+        const { error: convError } = await supa.from("chat_conversations").upsert({
             id: conv.id, user_id: currentUser.id, title: conv.title, updated_at: new Date(conv.updatedAt).toISOString()
         }, { onConflict: "id" });
         if(convError) return;
         const rows = chatMessages.slice(-100).map(m => ({
             id: m.id, conversation_id: chatConversationId, user_id: currentUser.id, role: m.role, content: m.content, created_at: new Date(m.createdAt).toISOString()
         }));
-        if(rows.length) await db.from("chat_messages").upsert(rows, { onConflict: "id" });
+        if(rows.length) await supa.from("chat_messages").upsert(rows, { onConflict: "id" });
     } catch (e) {
         console.debug("Chat history Supabase sync skipped:", e.message);
     }
@@ -112,9 +112,9 @@ async function deleteChatConversation(id){
     if(!confirm(`Xóa cuộc trò chuyện "${conv.title||"Cuộc trò chuyện"}"?\n\nToàn bộ tin nhắn sẽ được xóa khỏi Supabase và thiết bị.`))return;
     try{
         if(currentUser){
-            const {error:msgError}=await db.from("chat_messages").delete().eq("conversation_id",id).eq("user_id",currentUser.id);
+            const {error:msgError}=await supa.from("chat_messages").delete().eq("conversation_id",id).eq("user_id",currentUser.id);
             if(msgError)throw msgError;
-            const {error:convError}=await db.from("chat_conversations").delete().eq("id",id).eq("user_id",currentUser.id);
+            const {error:convError}=await supa.from("chat_conversations").delete().eq("id",id).eq("user_id",currentUser.id);
             if(convError)throw convError;
         }
         store.conversations=(store.conversations||[]).filter(c=>c.id!==id);
@@ -141,13 +141,13 @@ async function deleteAllChatHistory(){
     if(!currentUser){showToast("Vợ cần đăng nhập để xóa lịch sử trên Supabase.",true);return;}
     if(!confirm("XÓA TOÀN BỘ LỊCH SỬ CHAT?\n\nTất cả cuộc trò chuyện và tin nhắn của vợ sẽ bị xóa khỏi Supabase và thiết bị.\n\nHành động này không thể hoàn tác."))return;
     try{
-        const {data,error}=await db.from("chat_conversations").select("id").eq("user_id",currentUser.id);
+        const {data,error}=await supa.from("chat_conversations").select("id").eq("user_id",currentUser.id);
         if(error)throw error;
         const ids=(data||[]).map(x=>x.id);
         if(ids.length){
-            const {error:msgError}=await db.from("chat_messages").delete().eq("user_id",currentUser.id).in("conversation_id",ids);
+            const {error:msgError}=await supa.from("chat_messages").delete().eq("user_id",currentUser.id).in("conversation_id",ids);
             if(msgError)throw msgError;
-            const {error:convError}=await db.from("chat_conversations").delete().eq("user_id",currentUser.id).in("id",ids);
+            const {error:convError}=await supa.from("chat_conversations").delete().eq("user_id",currentUser.id).in("id",ids);
             if(convError)throw convError;
         }
         localStorage.removeItem(chatStorageKey());
@@ -176,12 +176,12 @@ async function cleanupOldChatHistory(days=30){
     // Dọn Supabase: chỉ xóa dữ liệu của user hiện tại.
     if(!currentUser)return;
     try{
-        const {data,error}=await db.from("chat_conversations").select("id").eq("user_id",currentUser.id).lt("updated_at",new Date(cutoff).toISOString());
+        const {data,error}=await supa.from("chat_conversations").select("id").eq("user_id",currentUser.id).lt("updated_at",new Date(cutoff).toISOString());
         if(error||!data?.length)return;
         const ids=data.map(x=>x.id);
-        const {error:msgError}=await db.from("chat_messages").delete().eq("user_id",currentUser.id).in("conversation_id",ids);
+        const {error:msgError}=await supa.from("chat_messages").delete().eq("user_id",currentUser.id).in("conversation_id",ids);
         if(msgError)throw msgError;
-        const {error:convError}=await db.from("chat_conversations").delete().eq("user_id",currentUser.id).in("id",ids);
+        const {error:convError}=await supa.from("chat_conversations").delete().eq("user_id",currentUser.id).in("id",ids);
         if(convError)throw convError;
         console.debug(`Chat cleanup: đã xóa ${ids.length} cuộc trò chuyện cũ hơn ${days} ngày.`);
     }catch(e){console.debug("Supabase chat cleanup skipped:",e.message);}
@@ -505,7 +505,7 @@ async function executeChatScheduleAction(action){
                 return {ok:false,message:`${getChatDayName(day)} tiết ${period} đã có ${existingSubject?.name||'môn học'} rồi. Anh không ghi đè lịch hiện tại của vợ iuu.`};
             }
 
-            const {error}=await db.from('schedule_entries').insert({
+            const {error}=await supa.from('schedule_entries').insert({
                 user_id:currentUser.id,
                 semester_id:semesterId,
                 subject_id:subjectId,
@@ -531,7 +531,7 @@ async function executeChatScheduleAction(action){
             entryId=existing.id;
 
             if(actionName==='update_schedule'){
-                const {error}=await db.from('schedule_entries').update({
+                const {error}=await supa.from('schedule_entries').update({
                     semester_id:semesterId,
                     subject_id:subjectId,
                     day_of_week:day,
@@ -539,7 +539,7 @@ async function executeChatScheduleAction(action){
                 }).eq('id',entryId).eq('user_id',currentUser.id);
                 if(error) throw error;
             }else{
-                const {error}=await db.from('schedule_entries').delete().eq('id',entryId).eq('user_id',currentUser.id);
+                const {error}=await supa.from('schedule_entries').delete().eq('id',entryId).eq('user_id',currentUser.id);
                 if(error) throw error;
             }
         }
@@ -626,13 +626,13 @@ function openChatConversation(id){
 async function loadChatFromSupabase(){
     if(!currentUser) return;
     try{
-        const {data,error}=await db.from("chat_conversations").select("id,title,created_at,updated_at").eq("user_id",currentUser.id).order("updated_at",{ascending:false}).limit(30);
+        const {data,error}=await supa.from("chat_conversations").select("id,title,created_at,updated_at").eq("user_id",currentUser.id).order("updated_at",{ascending:false}).limit(30);
         if(error || !data?.length) return;
         const store=loadChatStore();
         for(const c of data){
             let conv=store.conversations.find(x=>x.id===c.id);
             if(!conv){conv={id:c.id,title:c.title||"Cuộc trò chuyện",createdAt:new Date(c.created_at).getTime(),updatedAt:new Date(c.updated_at).getTime(),messages:[]};store.conversations.push(conv);}
-            const {data:msgs}=await db.from("chat_messages").select("id,role,content,created_at").eq("conversation_id",c.id).order("created_at",{ascending:true}).limit(100);
+            const {data:msgs}=await supa.from("chat_messages").select("id,role,content,created_at").eq("conversation_id",c.id).order("created_at",{ascending:true}).limit(100);
             if(msgs?.length) conv.messages=msgs.map(m=>({id:m.id,role:m.role,content:m.content,createdAt:new Date(m.created_at).getTime()}));
         }
         saveChatStore(store);
@@ -3703,6 +3703,94 @@ document.addEventListener("DOMContentLoaded",()=>{
 .nav-sound-status{margin-top:10px;font-size:12px;opacity:.7}
 
 </style>
+
+<style id="youtube-phase3-style">
+/* ===== YouTube Audio — Phase 3: Global Player + Media Session ===== */
+.youtube-global-player-host{position:fixed;right:20px;bottom:88px;width:min(420px,calc(100vw - 32px));aspect-ratio:16/9;background:#120b10;border:1px solid rgba(255,255,255,.16);border-radius:20px;overflow:hidden;box-shadow:0 24px 70px rgba(70,30,52,.35);z-index:2200;display:none}
+.youtube-global-player-host.open{display:block}
+.youtube-global-player-host.collapsed{display:block;opacity:.001;pointer-events:none;width:1px;height:1px;right:0;bottom:72px;border:0;box-shadow:none}
+.youtube-global-player-host.mini-video{width:min(360px,calc(100vw - 32px));bottom:88px}
+.youtube-global-player-host iframe,.youtube-global-player-host>div{width:100%!important;height:100%!important;display:block}
+.youtube-global-player-close{position:absolute;right:8px;top:8px;width:34px;height:34px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;z-index:2;font-size:18px}
+.youtube-mini-player{position:fixed;left:16px;right:16px;bottom:16px;z-index:2100;display:none;align-items:center;gap:10px;padding:9px 12px;border:1px solid rgba(255,255,255,.45);border-radius:18px;background:rgba(255,248,251,.92);backdrop-filter:blur(18px);box-shadow:0 18px 45px rgba(110,65,92,.22)}
+.youtube-mini-player.open{display:flex}
+.youtube-mini-thumb{width:48px;height:48px;border-radius:12px;object-fit:cover;background:#eadce4;flex:0 0 auto}
+.youtube-mini-info{min-width:0;flex:1}
+.youtube-mini-title{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.youtube-mini-channel{font-size:12px;color:#9b7f8e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.youtube-mini-progress{position:absolute;left:14px;right:14px;bottom:3px;height:3px;width:calc(100% - 28px);accent-color:#ed4f89}
+.youtube-mini-actions{display:flex;align-items:center;gap:5px;flex:0 0 auto}
+.youtube-mini-actions button{width:36px;height:36px;border-radius:11px;background:#fff;color:#6b4a5b}
+.youtube-mini-actions button.primary{background:#ed4f89;color:#fff}
+.youtube-mini-expand{display:none}
+.youtube-media-status{margin-top:9px;font-size:12px;color:#9b7f8e;display:flex;align-items:center;gap:6px}
+.youtube-media-status.ok{color:#4b9a73}
+.youtube-media-status.warn{color:#b37b42}
+.youtube-player-frame.phase3-placeholder{min-height:210px}
+@media(max-width:800px){
+  .youtube-mini-player{left:8px;right:8px;bottom:8px;padding:8px 9px;border-radius:16px}
+  .youtube-mini-actions button{width:34px;height:34px}
+  .youtube-mini-thumb{width:44px;height:44px}
+  .youtube-global-player-host{right:8px;left:8px;bottom:72px;width:auto;border-radius:17px}
+}
+@media(prefers-reduced-motion:reduce){.youtube-global-player-host,.youtube-mini-player{scroll-behavior:auto}}
+</style>
+
+
+<style id="youtube-phase4-style">
+/* ===== YouTube Audio — Phase 4: Supabase Library Sync ===== */
+.youtube-library-bar{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 0}
+.youtube-library-tab{padding:10px 13px;border-radius:13px;background:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.9);color:#704d60;font-weight:750;box-shadow:0 8px 20px rgba(110,65,92,.08)}
+.youtube-library-tab.active{background:#ed4f89;color:#fff;box-shadow:0 10px 24px rgba(237,79,137,.2)}
+.youtube-library-panel{margin-top:14px;border:1px solid rgba(255,255,255,.78);border-radius:20px;background:rgba(255,255,255,.55);padding:14px;box-shadow:0 12px 34px rgba(110,65,92,.08);backdrop-filter:blur(14px)}
+.youtube-library-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.youtube-library-head strong{font-size:15px;color:#5d4050}
+.youtube-library-head span{font-size:11px;color:#a78696}
+.youtube-library-actions{display:flex;gap:7px;flex-wrap:wrap}
+.youtube-library-list{display:grid;gap:8px}
+.youtube-library-item{display:flex;align-items:center;gap:10px;padding:9px;border-radius:15px;background:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.8);min-width:0}
+.youtube-library-item img{width:76px;height:48px;border-radius:10px;object-fit:cover;background:#eadce4;flex:0 0 auto}
+.youtube-library-item-main{min-width:0;flex:1}
+.youtube-library-item-title{font-weight:800;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#5d4050}
+.youtube-library-item-meta{font-size:10px;color:#a78696;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.youtube-library-item-actions{display:flex;gap:5px;flex:0 0 auto}
+.youtube-library-item-actions button{width:34px;height:34px;border-radius:10px;background:#fff;color:#704d60}
+.youtube-library-item-actions button.primary{background:#ed4f89;color:#fff}
+.youtube-library-empty{padding:24px 12px;text-align:center;color:#a78696;font-size:12px}
+.youtube-library-progress{height:4px;border-radius:99px;background:#f1dce5;overflow:hidden;margin-top:6px}
+.youtube-library-progress i{display:block;height:100%;background:#ed4f89;border-radius:99px}
+.youtube-playlist-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:9px}
+.youtube-playlist-card{padding:12px;border-radius:16px;background:rgba(255,255,255,.75);border:1px solid rgba(255,255,255,.85)}
+.youtube-playlist-card strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#5d4050}
+.youtube-playlist-card small{display:block;margin-top:4px;color:#a78696}
+.youtube-playlist-card .row{display:flex;gap:6px;margin-top:10px}
+.youtube-playlist-card button{flex:1;min-height:34px;border-radius:10px;background:#fff;color:#704d60}
+.youtube-playlist-card button.primary{background:#ed4f89;color:#fff}
+.youtube-sync-status{font-size:10px;color:#a78696;margin-left:auto}
+.youtube-sync-status.ok{color:#4b9a73}.youtube-sync-status.err{color:#c85a6e}
+.youtube-add-playlist{display:flex;gap:8px;margin-bottom:12px}.youtube-add-playlist input{flex:1;min-width:0;padding:10px 12px;border-radius:12px;border:1px solid #f0cfdd;background:#fff;color:#5d4050}.youtube-add-playlist button{padding:10px 14px;border-radius:12px;background:#ed4f89;color:#fff;font-weight:800}
+.youtube-result-actions button[data-yt-fav].active{background:#ffe1ec;color:#ed4f89}
+@media(max-width:800px){.youtube-library-bar{overflow-x:auto;flex-wrap:nowrap;padding-bottom:2px}.youtube-library-tab{white-space:nowrap}.youtube-library-item img{width:68px;height:44px}.youtube-library-item-actions button{width:32px;height:32px}.youtube-playlist-grid{grid-template-columns:1fr}}
+</style>
+
+
+<style id="youtube-phase5-style">
+/* ===== YouTube Audio — Phase 5: Smart Listening + Playback Automation ===== */
+.youtube-phase5-controls{margin-top:10px;padding:11px;border:1px solid rgba(255,255,255,.82);border-radius:16px;background:rgba(255,255,255,.55);box-shadow:0 10px 24px rgba(110,65,92,.06)}
+.youtube-phase5-row{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+.youtube-phase5-row+.youtube-phase5-row{margin-top:8px}
+.youtube-phase5-control{min-height:34px;padding:7px 10px;border-radius:10px;border:1px solid #efd5e0;background:#fff;color:#704d60;font-size:11px;font-weight:750}
+.youtube-phase5-control.active{background:#ed4f89;color:#fff;border-color:#ed4f89}
+.youtube-phase5-label{font-size:10px;color:#a78696;font-weight:700}
+.youtube-phase5-control select,.youtube-phase5-select{border:0;background:transparent;color:inherit;font:inherit;outline:none}
+.youtube-smart-mix{display:flex;gap:8px;align-items:center;margin-top:10px;padding:10px 12px;border-radius:14px;background:linear-gradient(135deg,rgba(237,79,137,.10),rgba(255,255,255,.78));border:1px solid rgba(237,79,137,.14)}
+.youtube-smart-mix strong{font-size:12px;color:#5d4050}.youtube-smart-mix span{font-size:10px;color:#a78696;flex:1}
+.youtube-search-history{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.youtube-search-chip{border:1px solid #f0d7e1;background:#fff;border-radius:999px;padding:6px 9px;font-size:10px;color:#704d60;cursor:pointer}
+.youtube-sleep-status{font-size:10px;color:#ed4f89;font-weight:800}
+@media(max-width:800px){.youtube-phase5-row{gap:5px}.youtube-phase5-control{flex:1;min-width:92px}.youtube-smart-mix{align-items:flex-start}.youtube-smart-mix button{flex:0 0 auto}}
+</style>
+
 </head>
 
 <!--
@@ -4082,6 +4170,19 @@ document.addEventListener("DOMContentLoaded",()=>{
                             <label>Sắp xếp <select id="youtube-search-order"><option value="relevance">Phù hợp nhất</option><option value="date">Mới nhất</option><option value="viewCount">Lượt xem cao</option></select></label>
                             <label>Thời lượng <select id="youtube-search-duration"><option value="any">Tất cả</option><option value="short">Dưới 4 phút</option><option value="medium">4–20 phút</option><option value="long">Trên 20 phút</option></select></label>
                         </div>
+                        <div id="youtube-search-history" class="youtube-search-history" aria-label="Tìm kiếm gần đây"></div>
+                    </div>
+                    <div class="youtube-library-bar" id="youtube-library-bar" role="tablist" aria-label="Thư viện YouTube">
+                        <button type="button" class="youtube-library-tab active" data-youtube-library="history">🕘 Lịch sử</button>
+                        <button type="button" class="youtube-library-tab" data-youtube-library="continue">▶ Tiếp tục nghe</button>
+                        <button type="button" class="youtube-library-tab" data-youtube-library="favorites">❤️ Yêu thích</button>
+                        <button type="button" class="youtube-library-tab" data-youtube-library="playlists">📁 Playlist</button>
+                        <button type="button" class="youtube-library-tab" data-youtube-library="queue">🎵 Hàng đợi</button>
+                        <span id="youtube-sync-status" class="youtube-sync-status">Chưa đồng bộ</span>
+                    </div>
+                    <div id="youtube-library-panel" class="youtube-library-panel">
+                        <div class="youtube-library-head"><div><strong id="youtube-library-title">Lịch sử nghe</strong><span id="youtube-library-count"></span></div><div class="youtube-library-actions"><button type="button" class="youtube-library-tab" id="youtube-library-refresh">↻ Làm mới</button></div></div>
+                        <div id="youtube-library-content" class="youtube-library-list"></div>
                     </div>
                     <div class="youtube-content-grid">
                         <div class="youtube-results-panel">
@@ -4091,11 +4192,31 @@ document.addEventListener("DOMContentLoaded",()=>{
                         </div>
                         <aside class="youtube-now-panel">
                             <div class="youtube-now-header"><strong>Đang phát</strong><span id="youtube-player-status">Sẵn sàng</span></div>
-                            <div class="youtube-player-frame" id="youtube-player-frame"><div class="youtube-player-placeholder" id="youtube-player-placeholder"><div>▶</div><span>Chọn một video để bắt đầu</span></div></div>
+                            <div class="youtube-player-frame" id="youtube-player-frame"><div class="youtube-player-placeholder" id="youtube-player-placeholder"><div>▶</div><span>Chọn một video để bắt đầu — player sẽ mở ở cửa sổ phát toàn cục</span></div></div>
                             <div class="youtube-now-info"><h3 id="youtube-now-title">Chưa có video</h3><p id="youtube-now-channel">Chọn một kết quả YouTube để phát.</p></div>
                             <div class="youtube-now-actions"><button type="button" id="youtube-prev-btn">⏮</button><button type="button" class="primary" id="youtube-play-btn">▶</button><button type="button" id="youtube-next-btn">⏭</button><button type="button" id="youtube-open-btn">↗</button></div>
                             <div class="youtube-progress-row"><span id="youtube-current-time">0:00</span><input id="youtube-progress" type="range" min="0" max="100" value="0" step="0.1"><span id="youtube-duration">0:00</span></div>
                             <div class="youtube-volume-row"><span>🔊</span><input id="youtube-volume" type="range" min="0" max="100" value="80"><span id="youtube-volume-value">80%</span></div>
+                            <div id="youtube-media-status" class="youtube-media-status">◉ Đang chuẩn bị điều khiển màn hình khóa…</div>
+                            <div class="youtube-phase5-controls" aria-label="Điều khiển nghe thông minh">
+                                <div class="youtube-phase5-row">
+                                    <span class="youtube-phase5-label">Tốc độ</span>
+                                    <label class="youtube-phase5-control"><select id="youtube-playback-rate" aria-label="Tốc độ phát"><option value="0.5">0.5×</option><option value="0.75">0.75×</option><option value="1" selected>1×</option><option value="1.25">1.25×</option><option value="1.5">1.5×</option><option value="1.75">1.75×</option><option value="2">2×</option></select></label>
+                                    <button type="button" class="youtube-phase5-control" id="youtube-repeat-btn" aria-pressed="false">↻ Lặp: Tắt</button>
+                                    <button type="button" class="youtube-phase5-control" id="youtube-shuffle-btn" aria-pressed="false">🔀 Trộn</button>
+                                    <button type="button" class="youtube-phase5-control active" id="youtube-autoplay-btn" aria-pressed="true">▶ Tự phát</button>
+                                </div>
+                                <div class="youtube-phase5-row">
+                                    <span class="youtube-phase5-label">Hẹn giờ</span>
+                                    <label class="youtube-phase5-control"><select id="youtube-sleep-timer" aria-label="Hẹn giờ tắt"><option value="0">Tắt</option><option value="15">15 phút</option><option value="30">30 phút</option><option value="45">45 phút</option><option value="60">60 phút</option><option value="end">Hết video</option></select></label>
+                                    <span id="youtube-sleep-status" class="youtube-sleep-status"></span>
+                                </div>
+                                <div class="youtube-smart-mix">
+                                    <div><strong>✨ Smart Mix</strong><div><span>Tạo chuỗi video dựa trên lịch sử, yêu thích và nội dung đang nghe.</span></div></div>
+                                    <button type="button" class="youtube-phase5-control active" id="youtube-smart-mix-btn">Tạo mix</button>
+                                </div>
+                            </div>
+
                         </aside>
                     </div>
                 </div>
@@ -5659,6 +5780,7 @@ async function enterApp(user) {
 
     await loadAllData();
 
+    window.youtubePhase4Init?.();
     renderCurrentPage();
 
     /*
@@ -5971,6 +6093,7 @@ document
                     );
 
                 renderCurrentPage();
+                window.youtubeAudioVisibility?.(currentPage === "youtube-audio");
 
                 setMobileMenu(false);
             }
@@ -8438,26 +8561,88 @@ initializeApp();
 
 
 <script>
-/* ===== YouTube Audio — Phase 1 + Phase 2 (FIXED PLAYER CLICK) ===== */
+/* ===== YouTube Audio — Phase 1 + Phase 2 + Phase 3 ===== */
 (function(){
   const API="https://qwvhudppdoauivpdewin.supabase.co/functions/v1/youtube-search";
   let player=null, playerReady=false, queue=[], index=-1, token="", timer=null, current=null, loadingApi=null, pendingVideo=null;
+  let globalHost=null, miniPlayer=null;
   const videoCache=new Map();
   const $=id=>document.getElementById(id);
-  const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
+  const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;",'':"&#039;"}[c]));
   const time=s=>{s=Math.max(0,Math.floor(Number(s)||0));let h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return h?`${h}:${String(m).padStart(2,"0")}:${String(x).padStart(2,"0")}`:`${m}:${String(x).padStart(2,"0")}`};
 
   function setStatus(text){const el=$("youtube-player-status");if(el)el.textContent=text}
+  function mediaStatus(text,kind=""){const el=$("youtube-media-status");if(!el)return;el.textContent=text;el.className="youtube-media-status"+(kind?" "+kind:"")}
+  function safeMediaHandler(action,fn){try{if("mediaSession" in navigator)navigator.mediaSession.setActionHandler(action,fn)}catch(_){}}
+
+  function updateMediaMetadata(v){
+    if(!("mediaSession" in navigator)){
+      mediaStatus("◉ Trình duyệt này chưa hỗ trợ Media Session.","warn");
+      return;
+    }
+    try{
+      navigator.mediaSession.metadata=new MediaMetadata({
+        title:v?.title||"YouTube Audio",
+        artist:v?.channelName||"YouTube",
+        album:"YouTube Audio",
+        artwork:v?.thumbnail?[{src:v.thumbnail,sizes:"480x360",type:"image/jpeg"}]:[]
+      });
+      mediaStatus("✓ Đã kết nối điều khiển media của trình duyệt.","ok");
+    }catch(e){mediaStatus("◉ Không thể cập nhật metadata màn hình khóa.","warn")}
+  }
+
+  function setupMediaSession(){
+    if(!("mediaSession" in navigator)){
+      mediaStatus("◉ Trình duyệt này chưa hỗ trợ Media Session.","warn");
+      return;
+    }
+    safeMediaHandler("play",()=>{try{if(playerReady)player.playVideo()}catch(_){}});
+    safeMediaHandler("pause",()=>{try{if(playerReady)player.pauseVideo()}catch(_){}});
+    safeMediaHandler("nexttrack",()=>next());
+    safeMediaHandler("previoustrack",()=>prev());
+    safeMediaHandler("seekbackward",details=>{try{if(playerReady){const p=Math.max(0,player.getCurrentTime()-(details.seekOffset||10));player.seekTo(p,true)}}catch(_){}});
+    safeMediaHandler("seekforward",details=>{try{if(playerReady){const d=player.getDuration();const p=Math.min(d||Infinity,player.getCurrentTime()+(details.seekOffset||10));player.seekTo(p,true)}}catch(_){}});
+    safeMediaHandler("seekto",details=>{try{if(playerReady&&Number.isFinite(details.seekTime))player.seekTo(details.seekTime,true)}catch(_){}});
+    mediaStatus("✓ Media Session đã sẵn sàng.","ok");
+  }
+
+  function updateMediaPlaybackState(state){
+    if(!("mediaSession" in navigator))return;
+    try{navigator.mediaSession.playbackState=state}catch(_){ }
+  }
+
+  function updatePositionState(){
+    if(!("mediaSession" in navigator)||!playerReady||!player?.getDuration)return;
+    try{
+      const duration=Number(player.getDuration()),position=Number(player.getCurrentTime());
+      if(duration>0&&Number.isFinite(duration)&&Number.isFinite(position)){
+        navigator.mediaSession.setPositionState({duration,position:Math.min(Math.max(position,0),duration),playbackRate:1});
+      }
+    }catch(_){ }
+  }
+
+  function syncMini(){
+    const m=$("youtube-mini-player");
+    if(!m)return;
+    m.classList.toggle("open",!!current);
+    if(!current)return;
+    const img=$("youtube-mini-thumb");
+    if(img)img.src=current.thumbnail||"";
+    if($("youtube-mini-title"))$("youtube-mini-title").textContent=current.title||"YouTube video";
+    if($("youtube-mini-channel"))$("youtube-mini-channel").textContent=current.channelName||"YouTube";
+  }
+
+  function updateMiniProgress(c,d){
+    const p=$("youtube-mini-progress");
+    if(p){p.max=Math.max(1,d||1);p.value=Math.max(0,Math.min(Number(c)||0,d||1))}
+  }
 
   function loadAPI(){
     if(window.YT?.Player)return Promise.resolve();
     if(loadingApi)return loadingApi;
     loadingApi=new Promise((res,rej)=>{
       const previous=window.onYouTubeIframeAPIReady;
-      window.onYouTubeIframeAPIReady=()=>{
-        try{if(typeof previous==='function')previous()}catch(_){ }
-        loadingApi=null;res();
-      };
+      window.onYouTubeIframeAPIReady=()=>{try{if(typeof previous==='function')previous()}catch(_){}loadingApi=null;res()};
       const s=document.createElement("script");
       s.src="https://www.youtube.com/iframe_api";
       s.async=true;
@@ -8470,40 +8655,34 @@ initializeApp();
   async function ensurePlayer(){
     await loadAPI();
     if(player)return player;
-    const f=$("youtube-player-frame");
-    if(!f)throw new Error("Không tìm thấy khu vực YouTube Player.");
-    $("youtube-player-placeholder")?.remove();
+    globalHost=$("youtube-global-player-host");
+    if(!globalHost)throw new Error("Không tìm thấy trình phát YouTube toàn cục.");
+    globalHost.classList.add("open");
+    globalHost.classList.remove("collapsed");
     const d=document.createElement("div");
-    d.id="youtube-player";
-    d.style.width="100%";
-    d.style.height="100%";
-    f.appendChild(d);
-
-    player=new YT.Player("youtube-player",{
-      width:"100%",
-      height:"100%",
-      host:"https://www.youtube.com",
-      playerVars:{playsinline:1,rel:0,modestbranding:1,origin:location.origin},
+    d.id="youtube-player-global";
+    d.style.width="100%";d.style.height="100%";
+    globalHost.appendChild(d);
+    player=new YT.Player("youtube-player-global",{
+      width:"100%",height:"100%",
+      playerVars:{playsinline:1,rel:0,modestbranding:1,enablejsapi:1,origin:location.origin,widget_referrer:location.href},
       events:{
         onReady:e=>{
           playerReady=true;
           e.target.setVolume(Number($("youtube-volume")?.value||80));
-          if(pendingVideo){
-            const v=pendingVideo;
-            pendingVideo=null;
-            setStatus("Đang tải video…");
-            e.target.loadVideoById(v.videoId);
-          }
+          setupMediaSession();
+          try{window.youtubePhase5?.onPlayerReady?.(e.target)}catch(_){}
+          if(pendingVideo){const v=pendingVideo;pendingVideo=null;setStatus("Đang tải video…");e.target.loadVideoById({videoId:v.videoId,startSeconds:0})}
         },
         onStateChange:e=>{
-          if(e.data===YT.PlayerState.PLAYING){setStatus("Đang phát");startTimer();updatePlayButton(true)}
-          else if(e.data===YT.PlayerState.PAUSED){setStatus("Đã tạm dừng");stopTimer();updatePlayButton(false)}
-          else if(e.data===YT.PlayerState.ENDED){stopTimer();updatePlayButton(false);next()}
+          if(e.data===YT.PlayerState.PLAYING){setStatus("Đang phát");startTimer();updatePlayButton(true);updateMediaPlaybackState("playing");globalHost?.classList.add("open");syncMini();try{window.youtubePhase5?.onPlaying?.(e.target)}catch(_){} }
+          else if(e.data===YT.PlayerState.PAUSED){setStatus("Đã tạm dừng");stopTimer();updatePlayButton(false);updateMediaPlaybackState("paused")}
+          else if(e.data===YT.PlayerState.ENDED){stopTimer();updatePlayButton(false);updateMediaPlaybackState("none");try{if(window.youtubePhase5?.handleEnded?.(e.target))return}catch(_){} next()}
           else if(e.data===YT.PlayerState.BUFFERING){setStatus("Đang tải…")}
-          else if(e.data===YT.PlayerState.CUED){setStatus("Sẵn sàng");updatePlayButton(false)}
+          else if(e.data===YT.PlayerState.CUED){setStatus("Sẵn sàng");updatePlayButton(false);updateMediaPlaybackState("paused")}
         },
         onError:e=>{
-          stopTimer();updatePlayButton(false);
+          stopTimer();updatePlayButton(false);updateMediaPlaybackState("none");
           const codes={2:"Mã video không hợp lệ.",5:"YouTube không thể phát video này trong player.",100:"Video không tồn tại hoặc đã bị xóa.",101:"Chủ video không cho phép phát video được nhúng.",150:"Chủ video không cho phép phát video được nhúng."};
           setStatus(codes[e.data]||("Video không thể phát (mã "+e.data+")"));
         }
@@ -8512,8 +8691,8 @@ initializeApp();
     return player;
   }
 
-  function updatePlayButton(isPlaying){const b=$("youtube-play-btn");if(b)b.textContent=isPlaying?"⏸":"▶"}
-  function startTimer(){stopTimer();timer=setInterval(()=>{if(!playerReady||!player?.getCurrentTime)return;try{let c=player.getCurrentTime(),d=player.getDuration();$("youtube-progress").max=Math.max(1,d);$("youtube-progress").value=c;$("youtube-current-time").textContent=time(c);$("youtube-duration").textContent=time(d)}catch(_){ }},500)}
+  function updatePlayButton(isPlaying){const a=$("youtube-play-btn"),b=$("youtube-mini-play");if(a)a.textContent=isPlaying?"⏸":"▶";if(b)b.textContent=isPlaying?"⏸":"▶"}
+  function startTimer(){stopTimer();timer=setInterval(()=>{if(!playerReady||!player?.getCurrentTime)return;try{const c=player.getCurrentTime(),d=player.getDuration();$("youtube-progress").max=Math.max(1,d);$("youtube-progress").value=c;$("youtube-current-time").textContent=time(c);$("youtube-duration").textContent=time(d);updateMiniProgress(c,d);updatePositionState()}catch(_){ }},500)}
   function stopTimer(){if(timer){clearInterval(timer);timer=null}}
 
   async function play(v,i=-1){
@@ -8524,15 +8703,14 @@ initializeApp();
     $("youtube-now-title").textContent=v.title||"YouTube video";
     $("youtube-now-channel").textContent=v.channelName||"";
     $("youtube-open-btn").dataset.videoId=v.videoId;
+    updateMediaMetadata(v);syncMini();
+    globalHost?.classList.add("open");
     setStatus("Đang khởi tạo trình phát…");
     try{
       const p=await ensurePlayer();
       if(!playerReady){pendingVideo=v;setStatus("Đang tải trình phát YouTube…");return}
       p.loadVideoById({videoId:v.videoId,startSeconds:0});
-    }catch(e){
-      console.error("YouTube player error:",e);
-      setStatus(e.message||"Không thể mở video.");
-    }
+    }catch(e){console.error("YouTube player error:",e);setStatus(e.message||"Không thể mở video.")}
   }
 
   function next(){if(index<queue.length-1)play(queue[++index]);else setStatus("Hết hàng đợi")}
@@ -8542,16 +8720,16 @@ initializeApp();
     let i=queue.findIndex(x=>x.videoId===v.videoId);
     if(i<0){queue.push(v);i=queue.length-1}
     if(now)play(v,i);else if(typeof window.showToast==='function')window.showToast("Đã thêm vào hàng đợi.");
+    window.youtubePhase4?.saveQueue?.();
   }
 
   function render(items,append=false){
-    const c=$("youtube-results");
-    if(!c)return;
+    const c=$("youtube-results");if(!c)return;
     if(!append)c.innerHTML="";
     if(!items.length&&!append){$("youtube-search-state").innerHTML="<div class='youtube-empty-icon'>🔎</div><h3>Không tìm thấy video</h3><p>Thử một từ khóa khác nhé.</p>";$("youtube-search-state").classList.remove("hidden");return}
     $("youtube-search-state").classList.add("hidden");
     items.forEach(v=>videoCache.set(v.videoId,v));
-    c.insertAdjacentHTML(append?"beforeend":"afterbegin",items.map(v=>`<article class="youtube-result-card" data-yt-video="${esc(v.videoId)}" tabindex="0" role="button" aria-label="Phát ${esc(v.title)}"><button type="button" class="youtube-thumb" data-yt-play="${esc(v.videoId)}" aria-label="Phát video"><img src="${esc(v.thumbnail)}" alt="" loading="lazy"><span class="youtube-duration">${esc(v.durationText)}</span></button><div class="youtube-result-main"><div class="youtube-result-title">${esc(v.title)}</div><div class="youtube-result-channel">${esc(v.channelName)}</div><div class="youtube-result-meta">${esc(v.viewCountText)} ${v.publishedAtText?"· "+esc(v.publishedAtText):""}</div></div><div class="youtube-result-actions"><button type="button" class="primary" data-yt-play="${esc(v.videoId)}" aria-label="Phát">▶</button><button type="button" data-yt-queue="${esc(v.videoId)}" aria-label="Thêm vào hàng đợi">＋</button></div></article>`).join(""));
+    c.insertAdjacentHTML(append?"beforeend":"afterbegin",items.map(v=>`<article class="youtube-result-card" data-yt-video="${esc(v.videoId)}" tabindex="0" role="button" aria-label="Phát ${esc(v.title)}"><button type="button" class="youtube-thumb" data-yt-play="${esc(v.videoId)}" aria-label="Phát video"><img src="${esc(v.thumbnail)}" alt="" loading="lazy"><span class="youtube-duration">${esc(v.durationText)}</span></button><div class="youtube-result-main"><div class="youtube-result-title">${esc(v.title)}</div><div class="youtube-result-channel">${esc(v.channelName)}</div><div class="youtube-result-meta">${esc(v.viewCountText)} ${v.publishedAtText?"· "+esc(v.publishedAtText):""}</div></div><div class="youtube-result-actions"><button type="button" class="primary" data-yt-play="${esc(v.videoId)}" aria-label="Phát">▶</button><button type="button" data-yt-queue="${esc(v.videoId)}" aria-label="Thêm vào hàng đợi">＋</button><button type="button" data-yt-fav="${esc(v.videoId)}" aria-label="Thêm yêu thích">♡</button><button type="button" data-yt-playlist="${esc(v.videoId)}" aria-label="Thêm vào playlist">📁</button></div></article>`).join(""));
   }
 
   async function search(append=false){
@@ -8564,6 +8742,8 @@ initializeApp();
     try{const r=await fetch(API+"?"+p.toString(),{headers:{Accept:"application/json"}});const d=await r.json();if(!r.ok)throw new Error(d.error||"Không thể tìm kiếm YouTube.");token=d.nextPageToken||"";render(d.items||[],append);$("youtube-results-title").textContent=q;$("youtube-results-meta").textContent=(d.items||[]).length+" kết quả";$("youtube-load-more").classList.toggle("hidden",!token)}catch(e){$("youtube-search-state").innerHTML=`<div class="youtube-error">${esc(e.message)}</div>`;$("youtube-search-state").classList.remove("hidden");$("youtube-load-more").classList.add("hidden")}
   }
 
+  function openYoutubePage(){document.querySelector('.nav-btn[data-page="youtube-audio"]')?.click()}
+
   function bind(){
     $("youtube-search-form")?.addEventListener("submit",e=>{e.preventDefault();search()});
     $("youtube-load-more")?.addEventListener("click",()=>search(true));
@@ -8574,23 +8754,286 @@ initializeApp();
     $("youtube-open-btn")?.addEventListener("click",()=>{const id=$("youtube-open-btn").dataset.videoId;if(id)window.open("https://www.youtube.com/watch?v="+encodeURIComponent(id),"_blank","noopener,noreferrer")});
     $("youtube-progress")?.addEventListener("input",e=>player?.seekTo?.(Number(e.target.value),true));
     $("youtube-volume")?.addEventListener("input",e=>{const v=Number(e.target.value);$("youtube-volume-value").textContent=v+"%";player?.setVolume?.(v)});
-
-    // Event delegation: hoạt động ổn định kể cả khi kết quả được render lại.
     $("youtube-results")?.addEventListener("click",e=>{
       const playBtn=e.target.closest("[data-yt-play]");
       if(playBtn){e.preventDefault();e.stopPropagation();const v=videoCache.get(playBtn.dataset.ytPlay);if(v)play(v,queue.findIndex(x=>x.videoId===v.videoId));return}
       const queueBtn=e.target.closest("[data-yt-queue]");
       if(queueBtn){e.preventDefault();e.stopPropagation();const v=videoCache.get(queueBtn.dataset.ytQueue);if(v)add(v,false);return}
+      const favBtn=e.target.closest("[data-yt-fav]");
+      if(favBtn){e.preventDefault();e.stopPropagation();const v=videoCache.get(favBtn.dataset.ytFav);window.youtubePhase4?.toggleFavorite(v);return}
+      const playlistBtn=e.target.closest("[data-yt-playlist]");
+      if(playlistBtn){e.preventDefault();e.stopPropagation();const v=videoCache.get(playlistBtn.dataset.ytPlaylist);window.youtubePhase4?.choosePlaylist(v);return}
       const card=e.target.closest("[data-yt-video]");
       if(card){const v=videoCache.get(card.dataset.ytVideo);if(v)play(v,queue.findIndex(x=>x.videoId===v.videoId))}
     });
     $("youtube-results")?.addEventListener("keydown",e=>{if(e.key!=="Enter"&&e.key!==" ")return;const card=e.target.closest("[data-yt-video]");if(!card||e.target.closest("button"))return;e.preventDefault();const v=videoCache.get(card.dataset.ytVideo);if(v)play(v,queue.findIndex(x=>x.videoId===v.videoId))});
+    $("youtube-mini-play")?.addEventListener("click",()=>$("youtube-play-btn")?.click());
+    $("youtube-mini-prev")?.addEventListener("click",prev);
+    $("youtube-mini-next")?.addEventListener("click",next);
+    $("youtube-mini-expand")?.addEventListener("click",openYoutubePage);
+    $("youtube-mini-progress")?.addEventListener("input",e=>player?.seekTo?.(Number(e.target.value),true));
+    $("youtube-global-player-close")?.addEventListener("click",()=>{const h=$("youtube-global-player-host");h?.classList.remove("open");h?.classList.add("collapsed")});
+    setupMediaSession();
   }
 
-  window.youtubeAudioOpen=()=>{loadAPI().catch(e=>console.warn(e))};
+  window.youtubeAudioOpen=()=>{loadAPI().catch(e=>console.warn(e));syncMini()};
+  window.youtubeAudioVisibility=visible=>{if(visible&&current)syncMini()};
+  window.youtubeAudioAPI={
+    getState:()=>({current,queue:queue.map(x=>({...x})),index,playerReady,isPlaying:!!(playerReady&&player?.getPlayerState&&player.getPlayerState()===window.YT?.PlayerState?.PLAYING),currentTime:playerReady&&player?.getCurrentTime?Number(player.getCurrentTime())||0:0,duration:playerReady&&player?.getDuration?Number(player.getDuration())||0:0}),
+    play:(v,i=-1)=>play(v,i),
+    add:(v,now=false)=>add(v,now),
+    next,
+    prev,
+    replaceQueue:(items=[],startIndex=-1)=>{queue=Array.isArray(items)?items.filter(x=>x?.videoId):[];index=Number.isInteger(startIndex)?startIndex:-1;syncMini();},
+    removeFromQueue:(videoId)=>{const i=queue.findIndex(x=>x.videoId===videoId);if(i<0)return false;queue.splice(i,1);if(index>i)index--;else if(index>=queue.length)index=queue.length-1;return true;},
+    clearQueue:()=>{queue=[];index=-1;syncMini();},
+    getPlayer:()=>player
+  };
   document.addEventListener("DOMContentLoaded",bind);
 })();
 </script>
+<script>
+/* ===== YouTube Audio — Phase 4: Supabase History + Continue + Favorites + Playlists + Queue ===== */
+(function(){
+  const TABLE={history:"youtube_history",favorites:"youtube_favorites",playlists:"youtube_playlists",playlistItems:"youtube_playlist_items",queue:"youtube_queue"};
+  let activeTab="history";
+  let historyRows=[], favoriteRows=[], playlistRows=[], queueRows=[];
+  let initializedFor=null, syncTimer=null, lastSavedVideoId=null, lastSavedPosition=-1;
+  const $=id=>document.getElementById(id);
+  const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;",'':"&#039;"}[c]));
+  const time=s=>{s=Math.max(0,Math.floor(Number(s)||0));let h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return h?`${h}:${String(m).padStart(2,"0")}:${String(x).padStart(2,"0")}`:`${m}:${String(x).padStart(2,"0")}`};
+  const toast=(m,err=false)=>typeof window.showToast==='function'?window.showToast(m,err):console[err?'error':'log'](m);
+  const user=()=>window.currentUser||currentUser||null;
+  const api=()=>window.youtubeAudioAPI;
+  function setSync(text,kind=""){const el=$("youtube-sync-status");if(!el)return;el.textContent=text;el.className="youtube-sync-status"+(kind?" "+kind:"")}
+  function rowVideo(r){const id=r?.video_id||r?.videoId||"";const dur=Number(r?.duration_seconds??r?.durationSeconds)||0;return {videoId:id,title:r?.title||"YouTube video",channelName:r?.channel_name||r?.channelName||"YouTube",thumbnail:r?.thumbnail_url||r?.thumbnail||"",durationSeconds:dur,durationText:r?.durationText||time(dur),viewCountText:r?.view_count_text||r?.viewCountText||""}}
+  function fmtDate(v){try{return new Date(v).toLocaleString("vi-VN",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"})}catch(_){return ""}}
+  function currentUserId(){return user()?.id||null}
+
+  async function loadLibrary(){
+    const u=currentUserId(); if(!u){setSync("Chưa đăng nhập","err");return}
+    setSync("Đang đồng bộ…");
+    try{
+      const [h,f,p,q]=await Promise.all([
+        supa.from(TABLE.history).select("id,video_id,title,channel_name,thumbnail_url,duration_seconds,position_seconds,last_played_at,updated_at").eq("user_id",u).order("last_played_at",{ascending:false}).limit(50),
+        supa.from(TABLE.favorites).select("id,video_id,title,channel_name,thumbnail_url,duration_seconds,created_at").eq("user_id",u).order("created_at",{ascending:false}).limit(100),
+        supa.from(TABLE.playlists).select("id,name,description,created_at,updated_at").eq("user_id",u).order("updated_at",{ascending:false}),
+        supa.from(TABLE.queue).select("id,video_id,title,channel_name,thumbnail_url,duration_seconds,position,created_at").eq("user_id",u).order("position",{ascending:true})
+      ]);
+      if(h.error)throw h.error;if(f.error)throw f.error;if(p.error)throw p.error;if(q.error)throw q.error;
+      historyRows=h.data||[];favoriteRows=f.data||[];playlistRows=p.data||[];queueRows=q.data||[];
+      if(api()) api().replaceQueue(queueRows.map(rowVideo),queueRows.length?0:-1);
+      setSync("✓ Đã đồng bộ","ok");
+      renderLibrary();
+    }catch(e){console.error("YouTube Phase 4 load error",e);setSync("Lỗi đồng bộ","err");toast("Không thể tải thư viện YouTube: "+(e.message||"Lỗi Supabase"),true)}
+  }
+
+  async function saveHistory(snapshot,force=false){
+    const u=currentUserId(); if(!u||!snapshot?.current?.videoId)return;
+    const v=snapshot.current, pos=Math.max(0,Math.floor(snapshot.currentTime||0)), dur=Math.max(0,Math.floor(snapshot.duration||v.durationSeconds||0));
+    if(!force && lastSavedVideoId===v.videoId && Math.abs(pos-lastSavedPosition)<8)return;
+    lastSavedVideoId=v.videoId;lastSavedPosition=pos;
+    const payload={user_id:u,video_id:v.videoId,title:v.title||"YouTube video",channel_name:v.channelName||"YouTube",thumbnail_url:v.thumbnail||"",duration_seconds:dur,position_seconds:pos,last_played_at:new Date().toISOString(),updated_at:new Date().toISOString()};
+    const {error}=await supa.from(TABLE.history).upsert(payload,{onConflict:"user_id,video_id"});
+    if(error){console.debug("History sync error",error);return}
+    const idx=historyRows.findIndex(x=>x.video_id===v.videoId); if(idx>=0)historyRows[idx]={...historyRows[idx],...payload}; else historyRows.unshift({id:null,...payload});
+    if(activeTab==="history"||activeTab==="continue")renderLibrary();
+  }
+
+  async function toggleFavorite(v){
+    const u=currentUserId();if(!u){toast("Vợ cần đăng nhập để lưu yêu thích.",true);return}
+    if(!v?.videoId)return;
+    const exists=favoriteRows.find(x=>x.video_id===v.videoId);
+    try{
+      if(exists){const {error}=await supa.from(TABLE.favorites).delete().eq("user_id",u).eq("video_id",v.videoId);if(error)throw error;favoriteRows=favoriteRows.filter(x=>x.video_id!==v.videoId);toast("Đã bỏ khỏi yêu thích.")}
+      else{const payload={user_id:u,video_id:v.videoId,title:v.title||"YouTube video",channel_name:v.channelName||"YouTube",thumbnail_url:v.thumbnail||"",duration_seconds:Number(v.durationSeconds)||0};const {data,error}=await supa.from(TABLE.favorites).insert(payload).select().single();if(error)throw error;favoriteRows.unshift(data||payload);toast("❤️ Đã thêm vào yêu thích.")}
+      renderLibrary();
+    }catch(e){console.error(e);toast("Không thể cập nhật yêu thích: "+(e.message||"Lỗi"),true)}
+  }
+
+  async function createPlaylist(){
+    const u=currentUserId();if(!u){toast("Vợ cần đăng nhập để tạo playlist.",true);return}
+    const input=$("youtube-new-playlist-name"),name=input?.value.trim();if(!name){input?.focus();return}
+    try{const {data,error}=await supa.from(TABLE.playlists).insert({user_id:u,name,description:""}).select().single();if(error)throw error;playlistRows.unshift(data);input.value="";toast("📁 Đã tạo playlist.");renderLibrary()}
+    catch(e){toast("Không thể tạo playlist: "+(e.message||"Lỗi"),true)}
+  }
+
+  async function choosePlaylist(v){
+    const u=currentUserId();if(!u){toast("Vợ cần đăng nhập để lưu playlist.",true);return}
+    if(!v?.videoId)return;
+    if(!playlistRows.length){toast("Vợ chưa có playlist. Hãy tạo playlist trước nhé.",true);setActiveTab("playlists");return}
+    const names=playlistRows.map((p,i)=>`${i+1}. ${p.name}`).join("\n");
+    const answer=prompt(`Chọn playlist để thêm video:\n\n${names}\n\nNhập số:`);
+    const n=Number(answer);if(!Number.isInteger(n)||n<1||n>playlistRows.length)return;
+    const pl=playlistRows[n-1];
+    try{
+      const {data:existing,error:findError}=await supa.from(TABLE.playlistItems).select("id").eq("playlist_id",pl.id).eq("video_id",v.videoId).maybeSingle();if(findError)throw findError;
+      if(existing){toast("Video đã có trong playlist này.");return}
+      const {data:maxRows,error:maxError}=await supa.from(TABLE.playlistItems).select("position").eq("playlist_id",pl.id).order("position",{ascending:false}).limit(1);if(maxError)throw maxError;
+      const position=(maxRows?.[0]?.position??-1)+1;
+      const {error}=await supa.from(TABLE.playlistItems).insert({user_id:u,playlist_id:pl.id,video_id:v.videoId,title:v.title||"YouTube video",channel_name:v.channelName||"YouTube",thumbnail_url:v.thumbnail||"",duration_seconds:Number(v.durationSeconds)||0,position});if(error)throw error;
+      await supa.from(TABLE.playlists).update({updated_at:new Date().toISOString()}).eq("id",pl.id).eq("user_id",u);
+      toast(`📁 Đã thêm vào “${pl.name}”.`);loadLibrary();
+    }catch(e){toast("Không thể thêm vào playlist: "+(e.message||"Lỗi"),true)}
+  }
+
+  async function deletePlaylist(id){
+    const u=currentUserId();if(!u||!id)return;if(!confirm("Xóa playlist này? Các video trong playlist cũng sẽ được xóa khỏi danh sách."))return;
+    try{const {error}=await supa.from(TABLE.playlists).delete().eq("id",id).eq("user_id",u);if(error)throw error;playlistRows=playlistRows.filter(p=>p.id!==id);toast("Đã xóa playlist.");renderLibrary()}
+    catch(e){toast("Không thể xóa playlist: "+(e.message||"Lỗi"),true)}
+  }
+
+  async function openPlaylist(id){
+    const u=currentUserId();if(!u)return;
+    const panel=$("youtube-library-content");panel.innerHTML="<div class='youtube-library-empty'>Đang tải playlist…</div>";
+    try{const {data,error}=await supa.from(TABLE.playlistItems).select("id,video_id,title,channel_name,thumbnail_url,duration_seconds,position,added_at").eq("user_id",u).eq("playlist_id",id).order("position",{ascending:true});if(error)throw error;renderVideoList(data||[],"playlist",playlistRows.find(p=>p.id===id)?.name||"Playlist")}
+    catch(e){panel.innerHTML=`<div class='youtube-library-empty'>${esc(e.message||"Không thể tải playlist.")}</div>`}
+  }
+
+  async function saveQueue(){
+    const u=currentUserId(),a=api();if(!u||!a)return;
+    const state=a.getState(),items=state.queue||[];
+    try{
+      const {error:delError}=await supa.from(TABLE.queue).delete().eq("user_id",u);if(delError)throw delError;
+      if(items.length){const rows=items.map((v,i)=>({user_id:u,video_id:v.videoId,title:v.title||"YouTube video",channel_name:v.channelName||"YouTube",thumbnail_url:v.thumbnail||"",duration_seconds:Number(v.durationSeconds)||0,position:i}));const {error:insError}=await supa.from(TABLE.queue).insert(rows);if(insError)throw insError}
+      queueRows=items.map((v,i)=>({...v,video_id:v.videoId,position:i}));
+      setSync("✓ Đã lưu hàng đợi","ok");
+    }catch(e){console.error(e);setSync("Lỗi lưu hàng đợi","err")}
+  }
+
+  function renderVideoList(rows,mode,title){
+    const panel=$("youtube-library-content"),count=$("youtube-library-count");if(!panel)return;
+    const list=(rows||[]).map(rowVideo);
+    if(count)count.textContent=` · ${list.length}`;
+    if(!list.length){panel.innerHTML=`<div class='youtube-library-empty'>Chưa có nội dung trong ${esc(title||"thư viện")}.</div>`;return}
+    panel.innerHTML=list.map(v=>`<div class='youtube-library-item'><img src='${esc(v.thumbnail)}' alt=''><div class='youtube-library-item-main'><div class='youtube-library-item-title'>${esc(v.title)}</div><div class='youtube-library-item-meta'>${esc(v.channelName)} · ${esc(v.durationText)}</div></div><div class='youtube-library-item-actions'><button type='button' class='primary' data-lib-play='${esc(v.videoId)}'>▶</button><button type='button' data-lib-queue='${esc(v.videoId)}'>＋</button></div></div>`).join("");
+    panel.querySelectorAll("[data-lib-play]").forEach(b=>b.onclick=()=>{const v=list.find(x=>x.videoId===b.dataset.libPlay);if(v)api()?.play(v)});
+    panel.querySelectorAll("[data-lib-queue]").forEach(b=>b.onclick=async()=>{const v=list.find(x=>x.videoId===b.dataset.libQueue);if(v){api()?.add(v,false);await saveQueue()}});
+  }
+
+  function renderHistory(){
+    const rows=activeTab==="continue"?historyRows.filter(r=>Number(r.duration_seconds)>0&&Number(r.position_seconds)>5&&Number(r.position_seconds)<Number(r.duration_seconds)-10):historyRows;
+    const title=activeTab==="continue"?"Tiếp tục nghe":"Lịch sử nghe";
+    const panel=$("youtube-library-content"),count=$("youtube-library-count");if(!panel)return;if(count)count.textContent=` · ${rows.length}`;
+    if(!rows.length){panel.innerHTML=`<div class='youtube-library-empty'>${activeTab==="continue"?"Chưa có video nào đang nghe dở.":"Chưa có lịch sử nghe."}</div>`;return}
+    panel.innerHTML=rows.map(r=>{const v=rowVideo(r),pos=Number(r.position_seconds)||0,dur=Number(r.duration_seconds)||0,pct=dur?Math.min(100,pos/dur*100):0;return `<div class='youtube-library-item'><img src='${esc(v.thumbnail)}' alt=''><div class='youtube-library-item-main'><div class='youtube-library-item-title'>${esc(v.title)}</div><div class='youtube-library-item-meta'>${esc(v.channelName)} · ${time(pos)} / ${esc(v.durationText)} · ${esc(fmtDate(r.last_played_at))}</div><div class='youtube-library-progress'><i style='width:${pct}%'></i></div></div><div class='youtube-library-item-actions'><button type='button' class='primary' data-history-play='${esc(v.videoId)}'>▶</button></div></div>`}).join("");
+    panel.querySelectorAll("[data-history-play]").forEach(b=>b.onclick=()=>{const r=rows.find(x=>x.video_id===b.dataset.historyPlay);if(r)api()?.play(rowVideo(r));});
+  }
+
+  function renderFavorites(){renderVideoList(favoriteRows,"favorites","Yêu thích")}
+  function renderQueue(){
+    const a=api(),items=a?.getState()?.queue||queueRows.map(rowVideo);
+    const panel=$("youtube-library-content"),count=$("youtube-library-count");if(!panel)return;if(count)count.textContent=` · ${items.length}`;
+    if(!items.length){panel.innerHTML=`<div class='youtube-library-empty'>Hàng đợi đang trống.</div>`;return}
+    panel.innerHTML=`<div class='youtube-library-actions' style='margin-bottom:10px'><button type='button' class='youtube-library-tab' id='youtube-clear-queue'>🗑 Xóa hàng đợi</button></div>`+items.map((v,i)=>`<div class='youtube-library-item'><img src='${esc(v.thumbnail)}' alt=''><div class='youtube-library-item-main'><div class='youtube-library-item-title'>${i+1}. ${esc(v.title)}</div><div class='youtube-library-item-meta'>${esc(v.channelName)} · ${esc(v.durationText)}</div></div><div class='youtube-library-item-actions'><button type='button' class='primary' data-lib-play='${esc(v.videoId)}'>▶</button><button type='button' data-queue-remove='${esc(v.videoId)}'>×</button></div></div>`).join("");
+    $("youtube-clear-queue")?.addEventListener("click",async()=>{a?.clearQueue?.();await saveQueue();renderQueue();toast("Đã xóa hàng đợi.")});
+    panel.querySelectorAll("[data-lib-play]").forEach(b=>b.onclick=()=>{const v=items.find(x=>x.videoId===b.dataset.libPlay);if(v)a?.play(v,items.findIndex(x=>x.videoId===v.videoId))});
+    panel.querySelectorAll("[data-queue-remove]").forEach(b=>b.onclick=async()=>{a?.removeFromQueue?.(b.dataset.queueRemove);await saveQueue();renderQueue()});
+  }
+  function renderPlaylists(){
+    const panel=$("youtube-library-content"),count=$("youtube-library-count");if(!panel)return;if(count)count.textContent=` · ${playlistRows.length}`;
+    panel.innerHTML=`<div class='youtube-add-playlist'><input id='youtube-new-playlist-name' maxlength='80' placeholder='Tên playlist mới…'><button type='button' id='youtube-create-playlist'>+ Tạo</button></div>`+
+      (playlistRows.length?`<div class='youtube-playlist-grid'>${playlistRows.map(p=>`<div class='youtube-playlist-card'><strong>${esc(p.name)}</strong><small>Cập nhật ${esc(fmtDate(p.updated_at||p.created_at))}</small><div class='row'><button type='button' class='primary' data-playlist-open='${esc(p.id)}'>Mở</button><button type='button' data-playlist-delete='${esc(p.id)}'>Xóa</button></div></div>`).join("")}</div>`:`<div class='youtube-library-empty'>Chưa có playlist. Tạo playlist đầu tiên của vợ nhé.</div>`);
+    $("youtube-create-playlist")?.addEventListener("click",createPlaylist);$("youtube-new-playlist-name")?.addEventListener("keydown",e=>{if(e.key==="Enter")createPlaylist()});
+    panel.querySelectorAll("[data-playlist-open]").forEach(b=>b.onclick=()=>openPlaylist(b.dataset.playlistOpen));panel.querySelectorAll("[data-playlist-delete]").forEach(b=>b.onclick=()=>deletePlaylist(b.dataset.playlistDelete));
+  }
+  function renderLibrary(){
+    const title={history:"Lịch sử nghe",continue:"Tiếp tục nghe",favorites:"Yêu thích",playlists:"Playlist",queue:"Hàng đợi"}[activeTab]||"Lịch sử nghe";if($("youtube-library-title"))$("youtube-library-title").textContent=title;
+    document.querySelectorAll("[data-youtube-library]").forEach(b=>b.classList.toggle("active",b.dataset.youtubeLibrary===activeTab));
+    if(activeTab==="history"||activeTab==="continue")renderHistory();else if(activeTab==="favorites")renderFavorites();else if(activeTab==="playlists")renderPlaylists();else renderQueue();
+  }
+  function setActiveTab(tab){activeTab=tab;renderLibrary();$("youtube-library-panel")?.scrollIntoView({behavior:"smooth",block:"nearest"})}
+
+  async function syncPlayback(){
+    const a=api();if(!a||!currentUserId())return;const state=a.getState();if(state.current?.videoId){await saveHistory(state,false)}
+  }
+  async function onBeforeLeave(){const a=api();if(a?.getState()?.current)await saveHistory(a.getState(),true);await saveQueue()}
+
+  window.youtubePhase4={toggleFavorite,choosePlaylist,loadLibrary,saveQueue};
+  window.youtubePhase4Init=()=>{if(initializedFor===currentUserId())return;if(!currentUserId())return;initializedFor=currentUserId();loadLibrary();clearInterval(syncTimer);syncTimer=setInterval(syncPlayback,5000)};
+  document.addEventListener("DOMContentLoaded",()=>{
+    document.querySelectorAll("[data-youtube-library]").forEach(b=>b.addEventListener("click",()=>setActiveTab(b.dataset.youtubeLibrary)));
+    $("youtube-library-refresh")?.addEventListener("click",loadLibrary);
+    window.youtubePhase4Init?.();
+    setTimeout(()=>window.youtubePhase4Init?.(),1000);
+  });
+  window.addEventListener("beforeunload",()=>{try{const a=api(),s=a?.getState();if(s?.current)saveHistory(s,true);saveQueue()}catch(_) {}});
+  window.addEventListener("pagehide",()=>{try{const a=api(),s=a?.getState();if(s?.current)saveHistory(s,true);saveQueue()}catch(_) {}});
+})();
+</script>
+
+<script>
+/* ===== YouTube Audio — Phase 5: Smart Listening + Playback Automation ===== */
+(function(){
+  const TABLE={searchHistory:"youtube_search_history",settings:"youtube_player_settings"};
+  const API="https://qwvhudppdoauivpdewin.supabase.co/functions/v1/youtube-search";
+  const defaults={playbackRate:1,repeatMode:"off",shuffle:false,autoplay:true,sleepMinutes:0};
+  let settings={...defaults},sleepTimer=null,sleepEndAt=0,saveTimer=null,searchTimer=null;
+  const $=id=>document.getElementById(id);
+  const supa=(()=>{try{return typeof db!=="undefined"?db:(window.db||window.supabaseClient||null)}catch(_){return window.db||window.supabaseClient||null}})();
+  const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
+  function toast(m,err=false){if(typeof window.showToast==='function')window.showToast(m,err);else console[err?'error':'log'](m)}
+  function userId(){try{return (typeof currentUser!=="undefined"?currentUser:(window.currentUser||window.__currentUser||null))?.id||null}catch(_){return (window.currentUser||window.__currentUser||null)?.id||null}}
+  function api(){return window.youtubeAudioAPI}
+  function setText(id,t){const e=$(id);if(e)e.textContent=t}
+  function setActive(id,on){const e=$(id);if(!e)return;e.classList.toggle("active",!!on);e.setAttribute("aria-pressed",String(!!on))}
+  function persistLocal(){try{localStorage.setItem("youtubePhase5Settings",JSON.stringify(settings))}catch(_){}}
+  function loadLocal(){try{const x=JSON.parse(localStorage.getItem("youtubePhase5Settings")||"null");if(x)settings={...defaults,...x}}catch(_){} }
+  async function loadRemote(){
+    if(!supa||!userId())return;
+    try{const {data,error}=await supa.from(TABLE.settings).select("playback_rate,repeat_mode,shuffle_enabled,autoplay_enabled,sleep_timer_minutes").eq("user_id",userId()).maybeSingle();if(error)throw error;if(data)settings={playbackRate:Number(data.playback_rate)||1,repeatMode:data.repeat_mode||"off",shuffle:!!data.shuffle_enabled,autoplay:data.autoplay_enabled!==false,sleepMinutes:Number(data.sleep_timer_minutes)||0};applyUI();}catch(e){console.debug("Phase5 settings load:",e.message)}
+  }
+  function scheduleSave(){persistLocal();clearTimeout(saveTimer);saveTimer=setTimeout(saveRemote,400)}
+  async function saveRemote(){if(!supa||!userId())return;try{await supa.from(TABLE.settings).upsert({user_id:userId(),playback_rate:Number(settings.playbackRate)||1,repeat_mode:settings.repeatMode,shuffle_enabled:!!settings.shuffle,autoplay_enabled:!!settings.autoplay,sleep_timer_minutes:Number(settings.sleepMinutes)||0,updated_at:new Date().toISOString()},{onConflict:"user_id"})}catch(e){console.debug("Phase5 settings save:",e.message)}}
+  function applyRate(p){try{if(p?.setPlaybackRate)p.setPlaybackRate(Number(settings.playbackRate)||1)}catch(_){} }
+  function applyUI(){
+    if($("youtube-playback-rate"))$("youtube-playback-rate").value=String(settings.playbackRate);
+    const repeatText=settings.repeatMode==="one"?"↻ Lặp: 1":settings.repeatMode==="all"?"↻ Lặp: Tất cả":"↻ Lặp: Tắt";setText("youtube-repeat-btn",repeatText);setActive("youtube-repeat-btn",settings.repeatMode!=="off");setText("youtube-shuffle-btn",settings.shuffle?"🔀 Đã trộn":"🔀 Trộn");setActive("youtube-shuffle-btn",settings.shuffle);setText("youtube-autoplay-btn",settings.autoplay?"▶ Tự phát":"⏸ Tự phát tắt");setActive("youtube-autoplay-btn",settings.autoplay);if($("youtube-sleep-timer"))$("youtube-sleep-timer").value=String(settings.sleepMinutes||0);updateSleepStatus();
+  }
+  function updateSleepStatus(){if(!settings.sleepMinutes){setText("youtube-sleep-status","");return}if(settings.sleepMinutes==="end"){setText("youtube-sleep-status","⏹ Dừng khi hết video");return}if(!sleepEndAt){setText("youtube-sleep-status","⏰ "+settings.sleepMinutes+" phút");return}const sec=Math.max(0,Math.ceil((sleepEndAt-Date.now())/1000));setText("youtube-sleep-status","⏰ "+Math.floor(sec/60)+":"+String(sec%60).padStart(2,"0"))}
+  function clearSleepTimer(){if(sleepTimer){clearInterval(sleepTimer);sleepTimer=null}sleepEndAt=0}
+  function startSleepTimer(){clearSleepTimer();if(!settings.sleepMinutes||settings.sleepMinutes==="end")return;if(Number(settings.sleepMinutes)>0){sleepEndAt=Date.now()+Number(settings.sleepMinutes)*60000;sleepTimer=setInterval(()=>{updateSleepStatus();if(Date.now()>=sleepEndAt){clearSleepTimer();const p=api()?.getPlayer?.();try{p?.pauseVideo?.()}catch(_){}settings.sleepMinutes=0;applyUI();scheduleSave();toast("⏰ Đã hết giờ nghe, vợ đã tạm dừng video.")}},1000)}}
+  function onTimerChange(){const v=$("youtube-sleep-timer")?.value||"0";settings.sleepMinutes=v==="end"?"end":Number(v)||0;if(settings.sleepMinutes)startSleepTimer();else clearSleepTimer();applyUI();scheduleSave();if(settings.sleepMinutes)toast(settings.sleepMinutes==="end"?"⏹ Sẽ dừng khi hết video.":"⏰ Đã đặt hẹn giờ "+settings.sleepMinutes+" phút.")}
+  function handleEnded(){
+    if(settings.sleepMinutes==="end"){settings.sleepMinutes=0;clearSleepTimer();applyUI();scheduleSave();toast("⏹ Đã hết video, hẹn giờ đã dừng.");return true}
+    if(settings.repeatMode==="one"){const s=api()?.getState?.();if(s?.current){api()?.play?.(s.current,s.index);return true}}
+    if(!settings.autoplay)return true;
+    const s=api()?.getState?.();const q=s?.queue||[];if(!q.length)return true;
+    if(settings.shuffle&&q.length>1){let n=s.index;for(let tries=0;tries<5&&n===s.index;tries++)n=Math.floor(Math.random()*q.length);api()?.play?.(q[n],n);return true}
+    if(s.index<q.length-1){api()?.next?.();return true}
+    if(settings.repeatMode==="all"){api()?.play?.(q[0],0);return true}
+    return true;
+  }
+  async function saveSearch(q){if(!supa||!userId()||!q)return;try{await supa.from(TABLE.searchHistory).insert({user_id:userId(),query:q.slice(0,100)});loadSearchHistory()}catch(e){console.debug("Search history:",e.message)}}
+  async function loadSearchHistory(){if(!supa||!userId())return;try{const {data,error}=await supa.from(TABLE.searchHistory).select("id,query,created_at").eq("user_id",userId()).order("created_at",{ascending:false}).limit(8);if(error)throw error;renderSearchHistory(data||[])}catch(e){console.debug("Search history load:",e.message)}}
+  function renderSearchHistory(rows){let box=$("youtube-search-history");if(!box)return;box.innerHTML=(rows||[]).map(r=>`<button type="button" class="youtube-search-chip" data-search-chip="${esc(r.query)}">${esc(r.query)}</button>`).join("");box.querySelectorAll("[data-search-chip]").forEach(b=>b.addEventListener("click",()=>{$("youtube-search-input").value=b.dataset.searchChip;$('youtube-search-form')?.requestSubmit()}));}
+  async function smartMix(){
+    const s=api()?.getState?.(),base=s?.current?.title||"";
+    let terms=[];
+    if(base)terms.push(base);
+    try{if(db&&userId()){const {data}=await supa.from("youtube_favorites").select("title,channel_name").eq("user_id",userId()).order("created_at",{ascending:false}).limit(3);(data||[]).forEach(x=>{if(x.title)terms.push(x.title)})}}catch(_){}
+    if(!terms.length)terms=["nhạc học bài tập trung"];
+    const raw=terms.join(" ").replace(/[^\p{L}\p{N}\s-]/gu," ").replace(/\s+/g," ").trim();
+    const words=raw.split(" ").filter(Boolean).slice(0,10);const q=words.join(" ");
+    const input=$("youtube-search-input");if(input)input.value=q;
+    try{await saveSearch(q);toast("✨ Đang tạo Smart Mix…");$("youtube-search-form")?.requestSubmit()}catch(e){toast("Không thể tạo Smart Mix.",true)}
+  }
+  function bind(){
+    loadLocal();applyUI();
+    $("youtube-playback-rate")?.addEventListener("change",e=>{settings.playbackRate=Number(e.target.value)||1;applyRate(api()?.getPlayer?.());scheduleSave();toast("Tốc độ "+settings.playbackRate+"×")});
+    $("youtube-repeat-btn")?.addEventListener("click",()=>{settings.repeatMode=settings.repeatMode==="off"?"all":settings.repeatMode==="all"?"one":"off";applyUI();scheduleSave()});
+    $("youtube-shuffle-btn")?.addEventListener("click",()=>{settings.shuffle=!settings.shuffle;applyUI();scheduleSave();toast(settings.shuffle?"🔀 Đã bật phát trộn.":"Đã tắt phát trộn.")});
+    $("youtube-autoplay-btn")?.addEventListener("click",()=>{settings.autoplay=!settings.autoplay;applyUI();scheduleSave()});
+    $("youtube-sleep-timer")?.addEventListener("change",onTimerChange);
+    $("youtube-smart-mix-btn")?.addEventListener("click",smartMix);
+    $("youtube-search-form")?.addEventListener("submit",()=>{const q=$("youtube-search-input")?.value.trim();if(q)saveSearch(q)},true);
+    loadRemote();loadSearchHistory();
+  }
+  window.youtubePhase5={handleEnded,onPlayerReady:p=>applyRate(p),onPlaying:p=>{applyRate(p);if(settings.sleepMinutes&&settings.sleepMinutes!=="end"&&!sleepEndAt)startSleepTimer();},getSettings:()=>({...settings})};
+  document.addEventListener("DOMContentLoaded",bind);
+})();
+</script>
+
 <script>
 
 /* ===== Navigation Sound Studio ===== */
@@ -8731,5 +9174,25 @@ initializeApp();
 })();
 
 </script>
+
+<!-- ===== YouTube Audio Phase 3: Global Player ===== -->
+<div id="youtube-global-player-host" class="youtube-global-player-host" aria-label="YouTube player toàn cục">
+  <button type="button" id="youtube-global-player-close" class="youtube-global-player-close" aria-label="Đóng trình phát nổi">×</button>
+</div>
+<div id="youtube-mini-player" class="youtube-mini-player" aria-label="Trình phát YouTube thu gọn">
+  <img id="youtube-mini-thumb" class="youtube-mini-thumb" src="" alt="">
+  <div class="youtube-mini-info">
+    <div id="youtube-mini-title" class="youtube-mini-title">Chưa có video</div>
+    <div id="youtube-mini-channel" class="youtube-mini-channel">YouTube Audio</div>
+  </div>
+  <div class="youtube-mini-actions">
+    <button type="button" id="youtube-mini-prev" aria-label="Video trước">⏮</button>
+    <button type="button" id="youtube-mini-play" class="primary" aria-label="Phát hoặc tạm dừng">▶</button>
+    <button type="button" id="youtube-mini-next" aria-label="Video tiếp theo">⏭</button>
+    <button type="button" id="youtube-mini-expand" aria-label="Mở YouTube Audio">↗</button>
+  </div>
+  <input id="youtube-mini-progress" class="youtube-mini-progress" type="range" min="0" max="100" value="0" step="0.1" aria-label="Tiến trình phát">
+</div>
+
 </body>
 </html>
