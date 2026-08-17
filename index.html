@@ -4513,7 +4513,7 @@ document.addEventListener("DOMContentLoaded",()=>{
             <section class="page hidden" id="page-youtube-audio" data-page="youtube-audio">
                 <div class="youtube-audio-page">
                     <div class="youtube-modern-brand">
-                        <div class="youtube-modern-brand-mark" aria-hidden="true"><span>▶</span></div>
+                        <div class="youtube-modern-brand-mark" aria-hidden="true"><span data-yt-icon="play"></span></div>
                         <div>
                             <div class="youtube-modern-brand-title">YouTube <span>Audio</span></div>
                             <div class="youtube-modern-brand-subtitle">Khám phá · nghe · lưu lại những nội dung bạn yêu thích</div>
@@ -4523,7 +4523,7 @@ document.addEventListener("DOMContentLoaded",()=>{
                     <div class="page-title youtube-page-title"><div><h2>Khám phá nội dung</h2><p>Tìm video YouTube và nghe ngay trong web của vợ iuu.</p></div><button class="youtube-clear-btn" id="youtube-clear-search" type="button">Xóa</button></div>
                     <div class="youtube-search-shell">
                         <form id="youtube-search-form" class="youtube-search-form" autocomplete="off">
-                            <div class="youtube-search-input-wrap"><span>🔎</span><input id="youtube-search-input" type="search" placeholder="Tìm bài hát, nhạc học bài, podcast, chủ đề..." maxlength="100"><button id="youtube-search-submit" type="submit">Tìm</button></div>
+                            <div class="youtube-search-input-wrap"><span data-yt-icon="search"></span><input id="youtube-search-input" type="search" placeholder="Tìm bài hát, nhạc học bài, podcast, chủ đề..." maxlength="100"><button id="youtube-search-submit" type="submit">Tìm</button></div>
                         </form>
                         <div class="youtube-filter-row">
                             <label>Sắp xếp <select id="youtube-search-order"><option value="relevance">Phù hợp nhất</option><option value="date">Mới nhất</option><option value="viewCount">Lượt xem cao</option></select></label>
@@ -4531,48 +4531,48 @@ document.addEventListener("DOMContentLoaded",()=>{
                         </div>
                         <div class="youtube-topic-chips" aria-label="Chủ đề nhanh">
                             <button type="button" class="youtube-topic-chip active" data-topic="Tất cả">Tất cả</button>
-                            <button type="button" class="youtube-topic-chip" data-topic="Nhạc">🎵 Nhạc</button>
-                            <button type="button" class="youtube-topic-chip" data-topic="Học tập">📚 Học tập</button>
-                            <button type="button" class="youtube-topic-chip" data-topic="Podcast">🎙️ Podcast</button>
-                            <button type="button" class="youtube-topic-chip" data-topic="Thư giãn">🌙 Thư giãn</button>
-                            <button type="button" class="youtube-topic-chip" data-topic="Lofi">☕ Lofi</button>
-                            <button type="button" class="youtube-topic-chip" data-topic="Tập trung">🧠 Tập trung</button>
+                            <button type="button" class="youtube-topic-chip" data-topic="Nhạc"><span class="youtube-icon-label"><span data-yt-icon="music"></span>Nhạc</span></button>
+                            <button type="button" class="youtube-topic-chip" data-topic="Học tập"><span class="youtube-icon-label"><span data-yt-icon="book"></span>Học tập</span></button>
+                            <button type="button" class="youtube-topic-chip" data-topic="Podcast"><span class="youtube-icon-label"><span data-yt-icon="mic"></span>Podcast</span></button>
+                            <button type="button" class="youtube-topic-chip" data-topic="Thư giãn"><span class="youtube-icon-label"><span data-yt-icon="moon"></span>Thư giãn</span></button>
+                            <button type="button" class="youtube-topic-chip" data-topic="Lofi"><span class="youtube-icon-label"><span data-yt-icon="coffee"></span>Lofi</span></button>
+                            <button type="button" class="youtube-topic-chip" data-topic="Tập trung"><span class="youtube-icon-label"><span data-yt-icon="brain"></span>Tập trung</span></button>
                         </div>
                         <div id="youtube-search-history" class="youtube-search-history" aria-label="Tìm kiếm gần đây"></div>
                     </div>
                     <div class="youtube-library-bar" id="youtube-library-bar" role="tablist" aria-label="Thư viện YouTube">
-                        <button type="button" class="youtube-library-tab active" data-youtube-library="history">🕘 Lịch sử</button>
-                        <button type="button" class="youtube-library-tab" data-youtube-library="continue">▶ Tiếp tục nghe</button>
-                        <button type="button" class="youtube-library-tab" data-youtube-library="favorites">❤️ Yêu thích</button>
-                        <button type="button" class="youtube-library-tab" data-youtube-library="playlists">📁 Playlist</button>
-                        <button type="button" class="youtube-library-tab" data-youtube-library="queue">🎵 Hàng đợi</button>
+                        <button type="button" class="youtube-library-tab active" data-youtube-library="history"><span class="youtube-icon-label"><span data-yt-icon="history"></span>Lịch sử</span></button>
+                        <button type="button" class="youtube-library-tab" data-youtube-library="continue"><span class="youtube-icon-label"><span data-yt-icon="play"></span>Tiếp tục nghe</span></button>
+                        <button type="button" class="youtube-library-tab" data-youtube-library="favorites"><span class="youtube-icon-label"><span data-yt-icon="heart"></span>Yêu thích</span></button>
+                        <button type="button" class="youtube-library-tab" data-youtube-library="playlists"><span class="youtube-icon-label"><span data-yt-icon="folder"></span>Playlist</span></button>
+                        <button type="button" class="youtube-library-tab" data-youtube-library="queue"><span class="youtube-icon-label"><span data-yt-icon="queue"></span>Hàng đợi</span></button>
                         <span id="youtube-sync-status" class="youtube-sync-status">Chưa đồng bộ</span>
                     </div>
                     <div id="youtube-library-panel" class="youtube-library-panel">
-                        <div class="youtube-library-head"><div><strong id="youtube-library-title">Lịch sử nghe</strong><span id="youtube-library-count"></span></div><div class="youtube-library-actions"><button type="button" class="youtube-library-tab" id="youtube-library-refresh">↻ Làm mới</button></div></div>
+                        <div class="youtube-library-head"><div><strong id="youtube-library-title">Lịch sử nghe</strong><span id="youtube-library-count"></span></div><div class="youtube-library-actions"><button type="button" class="youtube-library-tab" id="youtube-library-refresh"><span class="youtube-icon-label"><span data-yt-icon="refresh"></span>Làm mới</span></button></div></div>
                         <div id="youtube-library-content" class="youtube-library-list"></div>
                     </div>
                     <div class="youtube-content-grid">
                         <div class="youtube-results-panel">
                             <div class="youtube-section-heading"><div><strong id="youtube-results-title">Khám phá</strong><span id="youtube-results-meta"></span></div><button type="button" class="youtube-load-more hidden" id="youtube-load-more">Xem thêm</button></div>
-                            <div id="youtube-search-state" class="youtube-search-state"><div class="youtube-empty-icon">🎧</div><h3>Tìm nội dung bạn muốn nghe</h3><p>Ví dụ: “nhạc học bài”, “piano relaxing”, “podcast công nghệ”.</p></div>
+                            <div id="youtube-search-state" class="youtube-search-state"><div class="youtube-empty-icon"><span data-yt-icon="headphones"></span></div><h3>Tìm nội dung bạn muốn nghe</h3><p>Ví dụ: “nhạc học bài”, “piano relaxing”, “podcast công nghệ”.</p></div>
                             <div id="youtube-results" class="youtube-results-list"></div>
                         </div>
                         <aside class="youtube-now-panel">
                             <div class="youtube-now-header"><strong>Đang phát</strong><span id="youtube-player-status">Sẵn sàng</span></div>
-                            <div class="youtube-player-frame" id="youtube-player-frame"><div class="youtube-player-placeholder" id="youtube-player-placeholder"><div>▶</div><span>Chọn một video để bắt đầu — player sẽ mở ở cửa sổ phát toàn cục</span></div></div>
+                            <div class="youtube-player-frame" id="youtube-player-frame"><div class="youtube-player-placeholder" id="youtube-player-placeholder"><div><span data-yt-icon="play" class="lg"></span></div><span>Chọn một video để bắt đầu — player sẽ mở ở cửa sổ phát toàn cục</span></div></div>
                             <div class="youtube-now-info"><h3 id="youtube-now-title">Chưa có video</h3><p id="youtube-now-channel">Chọn một kết quả YouTube để phát.</p></div>
-                            <div class="youtube-now-actions"><button type="button" id="youtube-prev-btn">⏮</button><button type="button" class="primary" id="youtube-play-btn">▶</button><button type="button" id="youtube-next-btn">⏭</button><button type="button" id="youtube-open-btn">↗</button></div>
+                            <div class="youtube-now-actions"><button type="button" id="youtube-prev-btn" aria-label="Video trước"><span data-yt-icon="prev"></span></button><button type="button" class="primary" id="youtube-play-btn" aria-label="Phát hoặc tạm dừng"><span data-yt-icon="play"></span></button><button type="button" id="youtube-next-btn" aria-label="Video tiếp theo"><span data-yt-icon="next"></span></button><button type="button" id="youtube-open-btn" aria-label="Mở YouTube"><span data-yt-icon="external"></span></button></div>
                             <div class="youtube-progress-row"><span id="youtube-current-time">0:00</span><input id="youtube-progress" type="range" min="0" max="100" value="0" step="0.1"><span id="youtube-duration">0:00</span></div>
-                            <div class="youtube-volume-row"><span>🔊</span><input id="youtube-volume" type="range" min="0" max="100" value="80"><span id="youtube-volume-value">80%</span></div>
+                            <div class="youtube-volume-row"><span data-yt-icon="volume"></span><input id="youtube-volume" type="range" min="0" max="100" value="80"><span id="youtube-volume-value">80%</span></div>
                             <div id="youtube-media-status" class="youtube-media-status">◉ Đang chuẩn bị điều khiển màn hình khóa…</div>
                             <div class="youtube-phase5-controls" aria-label="Điều khiển nghe thông minh">
                                 <div class="youtube-phase5-row">
                                     <span class="youtube-phase5-label">Tốc độ</span>
                                     <label class="youtube-phase5-control"><select id="youtube-playback-rate" aria-label="Tốc độ phát"><option value="0.5">0.5×</option><option value="0.75">0.75×</option><option value="1" selected>1×</option><option value="1.25">1.25×</option><option value="1.5">1.5×</option><option value="1.75">1.75×</option><option value="2">2×</option></select></label>
-                                    <button type="button" class="youtube-phase5-control" id="youtube-repeat-btn" aria-pressed="false">↻ Lặp: Tắt</button>
-                                    <button type="button" class="youtube-phase5-control" id="youtube-shuffle-btn" aria-pressed="false">🔀 Trộn</button>
-                                    <button type="button" class="youtube-phase5-control active" id="youtube-autoplay-btn" aria-pressed="true">▶ Tự phát</button>
+                                    <button type="button" class="youtube-phase5-control" id="youtube-repeat-btn" aria-pressed="false"><span data-yt-icon="repeat"></span><span>Lặp: Tắt</span></button>
+                                    <button type="button" class="youtube-phase5-control" id="youtube-shuffle-btn" aria-pressed="false"><span data-yt-icon="shuffle"></span><span>Trộn</span></button>
+                                    <button type="button" class="youtube-phase5-control active" id="youtube-autoplay-btn" aria-pressed="true"><span data-yt-icon="autoplay"></span><span>Tự phát</span></button>
                                 </div>
                                 <div class="youtube-phase5-row">
                                     <span class="youtube-phase5-label">Hẹn giờ</span>
@@ -4580,7 +4580,7 @@ document.addEventListener("DOMContentLoaded",()=>{
                                     <span id="youtube-sleep-status" class="youtube-sleep-status"></span>
                                 </div>
                                 <div class="youtube-smart-mix">
-                                    <div><strong>✨ Smart Mix</strong><div><span>Tạo chuỗi video dựa trên lịch sử, yêu thích và nội dung đang nghe.</span></div></div>
+                                    <div><strong><span class="youtube-icon-label"><span data-yt-icon="sparkles"></span>Smart Mix</span></strong><div><span>Tạo chuỗi video dựa trên lịch sử, yêu thích và nội dung đang nghe.</span></div></div>
                                     <button type="button" class="youtube-phase5-control active" id="youtube-smart-mix-btn">Tạo mix</button>
                                 </div>
                             </div>
@@ -9059,7 +9059,7 @@ initializeApp();
     return player;
   }
 
-  function updatePlayButton(isPlaying){const a=$("youtube-play-btn"),b=$("youtube-mini-play");if(a)a.textContent=isPlaying?"⏸":"▶";if(b)b.textContent=isPlaying?"⏸":"▶"}
+  function updatePlayButton(isPlaying){const a=$("youtube-play-btn"),b=$("youtube-mini-play");if(a)a.innerHTML=window.ytIconMarkup(isPlaying?"pause":"play");if(b)b.innerHTML=window.ytIconMarkup(isPlaying?"pause":"play")}
   function startTimer(){stopTimer();timer=setInterval(()=>{if(!playerReady||!player?.getCurrentTime)return;try{const c=player.getCurrentTime(),d=player.getDuration();$("youtube-progress").max=Math.max(1,d);$("youtube-progress").value=c;$("youtube-current-time").textContent=time(c);$("youtube-duration").textContent=time(d);updateMiniProgress(c,d);updatePositionState()}catch(_){ }},500)}
   function stopTimer(){if(timer){clearInterval(timer);timer=null}}
 
@@ -9094,10 +9094,10 @@ initializeApp();
   function render(items,append=false){
     const c=$("youtube-results");if(!c)return;
     if(!append)c.innerHTML="";
-    if(!items.length&&!append){$("youtube-search-state").innerHTML="<div class='youtube-empty-icon'>🔎</div><h3>Không tìm thấy video</h3><p>Thử một từ khóa khác nhé.</p>";$("youtube-search-state").classList.remove("hidden");return}
+    if(!items.length&&!append){$("youtube-search-state").innerHTML="<div class='youtube-empty-icon'><span data-yt-icon='search'></span></div><h3>Không tìm thấy video</h3><p>Thử một từ khóa khác nhé.</p>";window.hydrateYtIcons($("youtube-search-state"));$("youtube-search-state").classList.remove("hidden");return}
     $("youtube-search-state").classList.add("hidden");
     items.forEach(v=>videoCache.set(v.videoId,v));
-    c.insertAdjacentHTML(append?"beforeend":"afterbegin",items.map(v=>`<article class="youtube-result-card" data-yt-video="${esc(v.videoId)}" tabindex="0" role="button" aria-label="Phát ${esc(v.title)}"><button type="button" class="youtube-thumb" data-yt-play="${esc(v.videoId)}" aria-label="Phát video"><img src="${esc(v.thumbnail)}" alt="" loading="lazy"><span class="youtube-duration">${esc(v.durationText)}</span></button><div class="youtube-result-main"><div class="youtube-result-title">${esc(v.title)}</div><div class="youtube-result-channel">${esc(v.channelName)}</div><div class="youtube-result-meta">${esc(v.viewCountText)} ${v.publishedAtText?"· "+esc(v.publishedAtText):""}</div></div><div class="youtube-result-actions"><button type="button" class="primary" data-yt-play="${esc(v.videoId)}" aria-label="Phát">▶</button><button type="button" data-yt-queue="${esc(v.videoId)}" aria-label="Thêm vào hàng đợi">＋</button><button type="button" data-yt-fav="${esc(v.videoId)}" aria-label="Thêm yêu thích">♡</button><button type="button" data-yt-playlist="${esc(v.videoId)}" aria-label="Thêm vào playlist">📁</button></div></article>`).join(""));
+    c.insertAdjacentHTML(append?"beforeend":"afterbegin",items.map(v=>`<article class="youtube-result-card" data-yt-video="${esc(v.videoId)}" tabindex="0" role="button" aria-label="Phát ${esc(v.title)}"><button type="button" class="youtube-thumb" data-yt-play="${esc(v.videoId)}" aria-label="Phát video"><img src="${esc(v.thumbnail)}" alt="" loading="lazy"><span class="youtube-duration">${esc(v.durationText)}</span></button><div class="youtube-result-main"><div class="youtube-result-title">${esc(v.title)}</div><div class="youtube-result-channel">${esc(v.channelName)}</div><div class="youtube-result-meta">${esc(v.viewCountText)} ${v.publishedAtText?"· "+esc(v.publishedAtText):""}</div></div><div class="youtube-result-actions"><button type="button" class="primary" data-yt-play="${esc(v.videoId)}" aria-label="Phát"><span data-yt-icon="play"></span></button><button type="button" data-yt-queue="${esc(v.videoId)}" aria-label="Thêm vào hàng đợi"><span data-yt-icon="plus"></span></button><button type="button" data-yt-fav="${esc(v.videoId)}" aria-label="Thêm yêu thích"><span data-yt-icon="heart"></span></button><button type="button" data-yt-playlist="${esc(v.videoId)}" aria-label="Thêm vào playlist">📁</button></div></article>`).join(""));
   }
 
   async function search(append=false){
@@ -9284,7 +9284,7 @@ initializeApp();
     const title=activeTab==="continue"?"Tiếp tục nghe":"Lịch sử nghe";
     const panel=$("youtube-library-content"),count=$("youtube-library-count");if(!panel)return;if(count)count.textContent=` · ${rows.length}`;
     if(!rows.length){panel.innerHTML=`<div class='youtube-library-empty'>${activeTab==="continue"?"Chưa có video nào đang nghe dở.":"Chưa có lịch sử nghe."}</div>`;return}
-    panel.innerHTML=rows.map(r=>{const v=rowVideo(r),pos=Number(r.position_seconds)||0,dur=Number(r.duration_seconds)||0,pct=dur?Math.min(100,pos/dur*100):0;return `<div class='youtube-library-item'><img src='${esc(v.thumbnail)}' alt=''><div class='youtube-library-item-main'><div class='youtube-library-item-title'>${esc(v.title)}</div><div class='youtube-library-item-meta'>${esc(v.channelName)} · ${time(pos)} / ${esc(v.durationText)} · ${esc(fmtDate(r.last_played_at))}</div><div class='youtube-library-progress'><i style='width:${pct}%'></i></div></div><div class='youtube-library-item-actions'><button type='button' class='primary' data-history-play='${esc(v.videoId)}'>▶</button></div></div>`}).join("");
+    panel.innerHTML=rows.map(r=>{const v=rowVideo(r),pos=Number(r.position_seconds)||0,dur=Number(r.duration_seconds)||0,pct=dur?Math.min(100,pos/dur*100):0;return `<div class='youtube-library-item'><img src='${esc(v.thumbnail)}' alt=''><div class='youtube-library-item-main'><div class='youtube-library-item-title'>${esc(v.title)}</div><div class='youtube-library-item-meta'>${esc(v.channelName)} · ${time(pos)} / ${esc(v.durationText)} · ${esc(fmtDate(r.last_played_at))}</div><div class='youtube-library-progress'><i style='width:${pct}%'></i></div></div><div class='youtube-library-item-actions'><button type='button' class='primary' data-history-play='${esc(v.videoId)}'><span data-yt-icon='play'></span></button></div></div>`}).join("");
     panel.querySelectorAll("[data-history-play]").forEach(b=>b.onclick=()=>{const r=rows.find(x=>x.video_id===b.dataset.historyPlay);if(r)api()?.play(rowVideo(r));});
   }
 
@@ -9293,7 +9293,7 @@ initializeApp();
     const a=api(),items=a?.getState()?.queue||queueRows.map(rowVideo);
     const panel=$("youtube-library-content"),count=$("youtube-library-count");if(!panel)return;if(count)count.textContent=` · ${items.length}`;
     if(!items.length){panel.innerHTML=`<div class='youtube-library-empty'>Hàng đợi đang trống.</div>`;return}
-    panel.innerHTML=`<div class='youtube-library-actions' style='margin-bottom:10px'><button type='button' class='youtube-library-tab' id='youtube-clear-queue'>🗑 Xóa hàng đợi</button></div>`+items.map((v,i)=>`<div class='youtube-library-item'><img src='${esc(v.thumbnail)}' alt=''><div class='youtube-library-item-main'><div class='youtube-library-item-title'>${i+1}. ${esc(v.title)}</div><div class='youtube-library-item-meta'>${esc(v.channelName)} · ${esc(v.durationText)}</div></div><div class='youtube-library-item-actions'><button type='button' class='primary' data-lib-play='${esc(v.videoId)}'>▶</button><button type='button' data-queue-remove='${esc(v.videoId)}'>×</button></div></div>`).join("");
+    panel.innerHTML=`<div class='youtube-library-actions' style='margin-bottom:10px'><button type='button' class='youtube-library-tab' id='youtube-clear-queue'><span class='youtube-icon-label'><span data-yt-icon='trash'></span>Xóa hàng đợi</span></button></div>`+items.map((v,i)=>`<div class='youtube-library-item'><img src='${esc(v.thumbnail)}' alt=''><div class='youtube-library-item-main'><div class='youtube-library-item-title'>${i+1}. ${esc(v.title)}</div><div class='youtube-library-item-meta'>${esc(v.channelName)} · ${esc(v.durationText)}</div></div><div class='youtube-library-item-actions'><button type='button' class='primary' data-lib-play='${esc(v.videoId)}'><span data-yt-icon='play'></span></button><button type='button' data-queue-remove='${esc(v.videoId)}' aria-label='Xóa khỏi hàng đợi'><span data-yt-icon='close'></span></button></div></div>`).join("");
     $("youtube-clear-queue")?.addEventListener("click",async()=>{a?.clearQueue?.();await saveQueue();renderQueue();toast("Đã xóa hàng đợi.")});
     panel.querySelectorAll("[data-lib-play]").forEach(b=>b.onclick=()=>{const v=items.find(x=>x.videoId===b.dataset.libPlay);if(v)a?.play(v,items.findIndex(x=>x.videoId===v.videoId))});
     panel.querySelectorAll("[data-queue-remove]").forEach(b=>b.onclick=async()=>{a?.removeFromQueue?.(b.dataset.queueRemove);await saveQueue();renderQueue()});
@@ -9354,9 +9354,10 @@ initializeApp();
   function scheduleSave(){persistLocal();clearTimeout(saveTimer);saveTimer=setTimeout(saveRemote,400)}
   async function saveRemote(){if(!supa||!userId())return;try{await supa.from(TABLE.settings).upsert({user_id:userId(),playback_rate:Number(settings.playbackRate)||1,repeat_mode:settings.repeatMode,shuffle_enabled:!!settings.shuffle,autoplay_enabled:!!settings.autoplay,sleep_timer_minutes:Number(settings.sleepMinutes)||0,updated_at:new Date().toISOString()},{onConflict:"user_id"})}catch(e){console.debug("Phase5 settings save:",e.message)}}
   function applyRate(p){try{if(p?.setPlaybackRate)p.setPlaybackRate(Number(settings.playbackRate)||1)}catch(_){} }
+  function setIconLabel(id,icon,label,active){const el=$(id);if(!el)return;el.innerHTML=window.ytIconMarkup(icon)+"<span>"+esc(label)+"</span>";el.classList.toggle("active",!!active);el.setAttribute("aria-pressed",active?"true":"false")}
   function applyUI(){
     if($("youtube-playback-rate"))$("youtube-playback-rate").value=String(settings.playbackRate);
-    const repeatText=settings.repeatMode==="one"?"↻ Lặp: 1":settings.repeatMode==="all"?"↻ Lặp: Tất cả":"↻ Lặp: Tắt";setText("youtube-repeat-btn",repeatText);setActive("youtube-repeat-btn",settings.repeatMode!=="off");setText("youtube-shuffle-btn",settings.shuffle?"🔀 Đã trộn":"🔀 Trộn");setActive("youtube-shuffle-btn",settings.shuffle);setText("youtube-autoplay-btn",settings.autoplay?"▶ Tự phát":"⏸ Tự phát tắt");setActive("youtube-autoplay-btn",settings.autoplay);if($("youtube-sleep-timer"))$("youtube-sleep-timer").value=String(settings.sleepMinutes||0);updateSleepStatus();
+    const repeatText=settings.repeatMode==="one"?"Lặp: 1":settings.repeatMode==="all"?"Lặp: Tất cả":"Lặp: Tắt";setIconLabel("youtube-repeat-btn","repeat",repeatText,settings.repeatMode!=="off");setIconLabel("youtube-shuffle-btn","shuffle",settings.shuffle?"Đã trộn":"Trộn",settings.shuffle);setIconLabel("youtube-autoplay-btn",settings.autoplay?"Tự phát":"Tự phát tắt",settings.autoplay);if($("youtube-sleep-timer"))$("youtube-sleep-timer").value=String(settings.sleepMinutes||0);updateSleepStatus();
   }
   function updateSleepStatus(){if(!settings.sleepMinutes){setText("youtube-sleep-status","");return}if(settings.sleepMinutes==="end"){setText("youtube-sleep-status","⏹ Dừng khi hết video");return}if(!sleepEndAt){setText("youtube-sleep-status","⏰ "+settings.sleepMinutes+" phút");return}const sec=Math.max(0,Math.ceil((sleepEndAt-Date.now())/1000));setText("youtube-sleep-status","⏰ "+Math.floor(sec/60)+":"+String(sec%60).padStart(2,"0"))}
   function clearSleepTimer(){if(sleepTimer){clearInterval(sleepTimer);sleepTimer=null}sleepEndAt=0}
@@ -9545,7 +9546,7 @@ initializeApp();
 
 <!-- ===== YouTube Audio Phase 3: Global Player ===== -->
 <div id="youtube-global-player-host" class="youtube-global-player-host" aria-label="YouTube player toàn cục">
-  <button type="button" id="youtube-global-player-close" class="youtube-global-player-close" aria-label="Đóng trình phát nổi">×</button>
+  <button type="button" id="youtube-global-player-close" class="youtube-global-player-close" aria-label="Đóng trình phát nổi"><span data-yt-icon="close"></span></button>
 </div>
 <div id="youtube-mini-player" class="youtube-mini-player" aria-label="Trình phát YouTube thu gọn">
   <img id="youtube-mini-thumb" class="youtube-mini-thumb" src="" alt="">
@@ -9554,16 +9555,27 @@ initializeApp();
     <div id="youtube-mini-channel" class="youtube-mini-channel">YouTube Audio</div>
   </div>
   <div class="youtube-mini-actions">
-    <button type="button" id="youtube-mini-prev" aria-label="Video trước">⏮</button>
-    <button type="button" id="youtube-mini-play" class="primary" aria-label="Phát hoặc tạm dừng">▶</button>
-    <button type="button" id="youtube-mini-next" aria-label="Video tiếp theo">⏭</button>
-    <button type="button" id="youtube-mini-expand" aria-label="Mở YouTube Audio">↗</button>
+    <button type="button" id="youtube-mini-prev" aria-label="Video trước"><span data-yt-icon="prev"></span></button>
+    <button type="button" id="youtube-mini-play" class="primary" aria-label="Phát hoặc tạm dừng"><span data-yt-icon="play"></span></button>
+    <button type="button" id="youtube-mini-next" aria-label="Video tiếp theo"><span data-yt-icon="next"></span></button>
+    <button type="button" id="youtube-mini-expand" aria-label="Mở YouTube Audio"><span data-yt-icon="external"></span></button>
   </div>
   <input id="youtube-mini-progress" class="youtube-mini-progress" type="range" min="0" max="100" value="0" step="0.1" aria-label="Tiến trình phát">
 </div>
 
 
-<script id="youtube-modern-ui-js">
+<style id="youtube-svg-icons-style">
+.youtube-svg-icon{width:18px;height:18px;display:inline-block;flex:0 0 auto;vertical-align:-4px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.youtube-svg-icon.lg{width:24px;height:24px}.youtube-icon-only{display:inline-flex!important;align-items:center;justify-content:center}.youtube-icon-label{display:inline-flex;align-items:center;gap:7px}.youtube-modern-brand-mark .youtube-svg-icon{width:24px;height:24px;stroke-width:2.2}.youtube-empty-icon .youtube-svg-icon{width:34px;height:34px}.youtube-now-actions button,.youtube-mini-actions button,.youtube-result-actions button{display:inline-flex;align-items:center;justify-content:center}
+</style>
+<script id="youtube-svg-icon-system">
+(function(){
+const P={play:'<path d="M8 5.2v13.6L19 12 8 5.2Z"/>',pause:'<path d="M8 6v12M16 6v12"/>',prev:'<path d="M18 6v12M16 12 7 6v12l9-6Z"/>',next:'<path d="M6 6v12M8 12l9-6v12l-9-6Z"/>',external:'<path d="M14 5h5v5M19 5l-8 8"/><path d="M18 13v5H6V6h5"/>',search:'<circle cx="10.8" cy="10.8" r="6.3"/><path d="m16 16 5 5"/>',music:'<path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="3"/><circle cx="16.5" cy="16" r="3"/>',book:'<path d="M5 4.5A2.5 2.5 0 0 1 7.5 2H19v18H7.5A2.5 2.5 0 0 0 5 22V4.5Z"/><path d="M5 4.5V22M9 6h6M9 10h6"/>',mic:'<rect x="8" y="3" width="8" height="12" rx="4"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6"/>',moon:'<path d="M20 15.5A8.5 8.5 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5Z"/>',coffee:'<path d="M5 8h12v6a5 5 0 0 1-5 5h-2a5 5 0 0 1-5-5V8Z"/><path d="M17 10h2a3 3 0 0 1 0 6h-2M8 4v2M12 3v3M16 4v2"/>',brain:'<path d="M9.5 5A3.5 3.5 0 0 0 6 8.5c0 .5.1 1 .3 1.4A4 4 0 0 0 7 17.7V18a3 3 0 0 0 5 2.2A3 3 0 0 0 17 18v-.3a4 4 0 0 0 .7-7.8c.2-.4.3-.9.3-1.4A3.5 3.5 0 0 0 14.5 5c-.9 0-1.8.4-2.5 1-.7-.6-1.6-1-2.5-1Z"/><path d="M12 6v14M8 10h4M12 14h4M8.5 16H12"/>',history:'<path d="M4 12a8 8 0 1 0 2.3-5.7L4 8.5"/><path d="M4 4v4.5h4.5M12 7v5l3.5 2"/>',heart:'<path d="M20.8 8.9c0 5.5-8.8 10.2-8.8 10.2S3.2 14.4 3.2 8.9A4.7 4.7 0 0 1 12 6.2a4.7 4.7 0 0 1 8.8 2.7Z"/>',folder:'<path d="M3 6.5h7l2 2h9v9.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6.5Z"/>',queue:'<path d="M4 6h12M4 12h12M4 18h8"/><path d="M19 14v7M15.5 17.5H22"/>',refresh:'<path d="M20 11a8 8 0 0 0-14.8-3L3 11"/><path d="M3 5v6h6M4 13a8 8 0 0 0 14.8 3L21 13"/><path d="M21 19v-6h-6"/>',headphones:'<path d="M4 13v-1a8 8 0 0 1 16 0v1"/><path d="M4 13h3v6H5a2 2 0 0 1-2-2v-3a2 2 0 0 1 1-1ZM20 13h-3v6h2a2 2 0 0 0 2-2v-3a2 2 0 0 0-1-1Z"/>',volume:'<path d="M4 10h4l5-4v12l-5-4H4Z"/><path d="M17 9a4 4 0 0 1 0 6M19.5 6.5a8 8 0 0 1 0 11"/>',repeat:'<path d="M17 2l3 3-3 3"/><path d="M4 7V6a3 3 0 0 1 3-3h13M7 22l-3-3 3-3"/><path d="M20 17v1a3 3 0 0 1-3 3H4"/>',shuffle:'<path d="M3 7h3c5 0 7 10 12 10h3M18 5l3 2-3 2M18 15l3 2-3 2M3 17h3c1.3 0 2.4-.6 3.3-1.5M12.7 8.5C13.6 7.6 14.7 7 16 7h2"/>',autoplay:'<path d="M5 4.5v15l11-7.5L5 4.5Z"/><path d="M19 7v10M22 9v6"/>',sparkles:'<path d="m12 3 1.2 4.8L18 9l-4.8 1.2L12 15l-1.2-4.8L6 9l4.8-1.2L12 3ZM19 15l.7 2.3L22 18l-2.3.7L19 21l-.7-2.3L16 18l2.3-.7L19 15Z"/>',close:'<path d="m6 6 12 12M18 6 6 18"/>',plus:'<path d="M12 5v14M5 12h14"/>',trash:'<path d="M5 7h14M10 11v6M14 11v6M8 7l1-3h6l1 3M7 7l1 14h8l1-14"/>'};
+window.ytIconMarkup=(n,c)=>'<svg class="youtube-svg-icon '+(c||'')+'" viewBox="0 0 24 24" aria-hidden="true" focusable="false">'+(P[n]||P.play)+'</svg>';
+window.hydrateYtIcons=(root)=>{(root||document).querySelectorAll('[data-yt-icon]').forEach(e=>{if(e.dataset.ytHydrated==='1')return;e.innerHTML=window.ytIconMarkup(e.dataset.ytIcon,e.classList.contains('lg')?'lg':'');e.dataset.ytHydrated='1'})};
+document.addEventListener('DOMContentLoaded',()=>window.hydrateYtIcons());
+})();
+</script>\n<script id="youtube-modern-ui-js">
 (function(){
   function bindYouTubeModernUI(){
     const input=document.getElementById("youtube-search-input");
@@ -9592,6 +9604,9 @@ initializeApp();
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",bindYouTubeModernUI);
   else bindYouTubeModernUI();
 })();
+
+  const ytIconObserver=new MutationObserver(muts=>{for(const m of muts){for(const n of m.addedNodes){if(n.nodeType===1)window.hydrateYtIcons(n)}}});
+  document.addEventListener("DOMContentLoaded",()=>{const r=document.getElementById("page-youtube-audio");if(r)ytIconObserver.observe(r,{childList:true,subtree:true})});
 </script>
 
 </body>
