@@ -192,7 +192,7 @@ function renderChatMessages(){
     list.innerHTML=chatMessages.map(m=>{
         const role=m.role==="user"?"user":"assistant";
         const avatar=role==="assistant"?`<div class="chat-msg-avatar">${chatIcon()}</div>`:"";
-        return `<div class="chat-msg ${role}">${avatar}<div><div class="chat-bubble">${chatEscape(m.content)}</div><div class="chat-meta">${role==="assistant"?"Anh":"Vợ"} · ${chatFormatTime(m.createdAt)}</div></div></div>`;
+        return `<div class="chat-msg ${role}">${avatar}<div><div class="chat-bubble">${chatEscape(m.content)}</div><div class="chat-meta">${role==="assistant"?"Chồng yêu":"Vợ"} · ${chatFormatTime(m.createdAt)}</div></div></div>`;
     }).join("");
     requestAnimationFrame(()=>{body.scrollTop=body.scrollHeight;});
 }
@@ -3485,14 +3485,14 @@ document.addEventListener("DOMContentLoaded",()=>{
     </span>
     <span class="nav-label">Thời tiết</span>
 </button>
-<button class="nav-btn" data-page="chat" type="button" aria-label="Mở Anh, trợ lý riêng của vợ">
+<button class="nav-btn" data-page="chat" type="button" aria-label="Mở Chồng yêu, trợ lý riêng của vợ">
                 <span class="nav-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24" fill="none">
                         <path d="M5 5.5C5 4.4 5.9 3.5 7 3.5H17C18.1 3.5 19 4.4 19 5.5V14C19 15.1 18.1 16 17 16H11L7 20V16H7C5.9 16 5 15.1 5 14V5.5Z"></path>
                         <path d="M8.5 8.5H15.5M8.5 11.5H13"></path>
                     </svg>
                 </span>
-                <span class="nav-label">Anh</span>
+                <span class="nav-label">Chồng yêu</span>
             </button>
 
             <button class="nav-btn" data-page="settings" type="button">
@@ -3722,7 +3722,7 @@ document.addEventListener("DOMContentLoaded",()=>{
                 <div class="chat-avatar" aria-hidden="true">
                     <svg viewBox="0 0 24 24"><path d="M5 5.5C5 4.4 5.9 3.5 7 3.5H17C18.1 3.5 19 4.4 19 5.5V14C19 15.1 18.1 16 17 16H11L7 20V16H7C5.9 16 5 15.1 5 14V5.5Z"/><path d="M8.5 8.5H15.5M8.5 11.5H13"/></svg>
                 </div>
-                <div><strong>Anh</strong><span>Trợ lý riêng của vợ</span></div>
+                <div><strong>Chồng yêu</strong><span>Trợ lý riêng của vợ</span></div>
             </div>
             <button class="chat-menu-btn" id="chat-history-btn" type="button" aria-label="Mở lịch sử trò chuyện" title="Lịch sử trò chuyện">
                 <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -3832,7 +3832,7 @@ document.addEventListener("DOMContentLoaded",()=>{
     <div style="font-size:10px;color:var(--muted);line-height:1.45;padding:0 2px">Lịch sử cũ hơn 30 ngày sẽ được tự động dọn khỏi Supabase và thiết bị.</div>
     <div class="chat-history-list" id="chat-history-list"></div>
 </aside>
-<button class="chat-fab hidden-fab" id="chat-fab" type="button" aria-label="Mở Anh">
+<button class="chat-fab hidden-fab" id="chat-fab" type="button" aria-label="Mở Chồng yêu">
     <svg viewBox="0 0 24 24"><path d="M5 5.5C5 4.4 5.9 3.5 7 3.5H17C18.1 3.5 19 4.4 19 5.5V14C19 15.1 18.1 16 17 16H11L7 20V16H7C5.9 16 5 15.1 5 14V5.5Z"/><path d="M8.5 8.5H15.5M8.5 11.5H13"/></svg>
 </button>
 
