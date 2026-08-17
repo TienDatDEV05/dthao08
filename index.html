@@ -3904,6 +3904,11 @@ document.addEventListener("DOMContentLoaded",()=>{
                 <span class="nav-label">Chồng yêu</span>
             </button>
 
+            <button class="nav-btn" data-page="youtube-audio" type="button" aria-label="Mở YouTube Audio">
+                <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="3.2" y="5.2" width="17.6" height="13.6" rx="4"></rect><path d="M10 9L16 12L10 15V9Z"></path></svg></span>
+                <span class="nav-label">YouTube Audio</span>
+            </button>
+
             <button class="nav-btn" data-page="settings" type="button">
                 <span class="nav-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24" fill="none">
@@ -4064,6 +4069,37 @@ document.addEventListener("DOMContentLoaded",()=>{
 
             </div>
 
+
+
+            <section class="page hidden" id="page-youtube-audio" data-page="youtube-audio">
+                <div class="youtube-audio-page">
+                    <div class="page-title youtube-page-title"><div><h2>🎧 YouTube Audio</h2><p>Tìm video YouTube và nghe ngay trong web của vợ iuu.</p></div><button class="youtube-clear-btn" id="youtube-clear-search" type="button">Xóa</button></div>
+                    <div class="youtube-search-shell">
+                        <form id="youtube-search-form" class="youtube-search-form" autocomplete="off">
+                            <div class="youtube-search-input-wrap"><span>🔎</span><input id="youtube-search-input" type="search" placeholder="Tìm bài hát, nhạc học bài, podcast, chủ đề..." maxlength="100"><button id="youtube-search-submit" type="submit">Tìm</button></div>
+                        </form>
+                        <div class="youtube-filter-row">
+                            <label>Sắp xếp <select id="youtube-search-order"><option value="relevance">Phù hợp nhất</option><option value="date">Mới nhất</option><option value="viewCount">Lượt xem cao</option></select></label>
+                            <label>Thời lượng <select id="youtube-search-duration"><option value="any">Tất cả</option><option value="short">Dưới 4 phút</option><option value="medium">4–20 phút</option><option value="long">Trên 20 phút</option></select></label>
+                        </div>
+                    </div>
+                    <div class="youtube-content-grid">
+                        <div class="youtube-results-panel">
+                            <div class="youtube-section-heading"><div><strong id="youtube-results-title">Khám phá</strong><span id="youtube-results-meta"></span></div><button type="button" class="youtube-load-more hidden" id="youtube-load-more">Xem thêm</button></div>
+                            <div id="youtube-search-state" class="youtube-search-state"><div class="youtube-empty-icon">🎧</div><h3>Tìm nội dung bạn muốn nghe</h3><p>Ví dụ: “nhạc học bài”, “piano relaxing”, “podcast công nghệ”.</p></div>
+                            <div id="youtube-results" class="youtube-results-list"></div>
+                        </div>
+                        <aside class="youtube-now-panel">
+                            <div class="youtube-now-header"><strong>Đang phát</strong><span id="youtube-player-status">Sẵn sàng</span></div>
+                            <div class="youtube-player-frame" id="youtube-player-frame"><div class="youtube-player-placeholder" id="youtube-player-placeholder"><div>▶</div><span>Chọn một video để bắt đầu</span></div></div>
+                            <div class="youtube-now-info"><h3 id="youtube-now-title">Chưa có video</h3><p id="youtube-now-channel">Chọn một kết quả YouTube để phát.</p></div>
+                            <div class="youtube-now-actions"><button type="button" id="youtube-prev-btn">⏮</button><button type="button" class="primary" id="youtube-play-btn">▶</button><button type="button" id="youtube-next-btn">⏭</button><button type="button" id="youtube-open-btn">↗</button></div>
+                            <div class="youtube-progress-row"><span id="youtube-current-time">0:00</span><input id="youtube-progress" type="range" min="0" max="100" value="0" step="0.1"><span id="youtube-duration">0:00</span></div>
+                            <div class="youtube-volume-row"><span>🔊</span><input id="youtube-volume" type="range" min="0" max="100" value="80"><span id="youtube-volume-value">80%</span></div>
+                        </aside>
+                    </div>
+                </div>
+            </section>
 
             <!-- =================================================
                  SETTINGS PAGE
@@ -5980,6 +6016,10 @@ function renderCurrentPage() {
         } else {
             loadWeather();
         }
+    }
+
+    if (currentPage === "youtube-audio") {
+        window.youtubeAudioOpen?.();
     }
 }
 
@@ -8397,6 +8437,160 @@ initializeApp();
 </script>
 
 
+<script>
+/* ===== YouTube Audio — Phase 1 + Phase 2 (FIXED PLAYER CLICK) ===== */
+(function(){
+  const API="https://qwvhudppdoauivpdewin.supabase.co/functions/v1/youtube-search";
+  let player=null, playerReady=false, queue=[], index=-1, token="", timer=null, current=null, loadingApi=null, pendingVideo=null;
+  const videoCache=new Map();
+  const $=id=>document.getElementById(id);
+  const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
+  const time=s=>{s=Math.max(0,Math.floor(Number(s)||0));let h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return h?`${h}:${String(m).padStart(2,"0")}:${String(x).padStart(2,"0")}`:`${m}:${String(x).padStart(2,"0")}`};
+
+  function setStatus(text){const el=$("youtube-player-status");if(el)el.textContent=text}
+
+  function loadAPI(){
+    if(window.YT?.Player)return Promise.resolve();
+    if(loadingApi)return loadingApi;
+    loadingApi=new Promise((res,rej)=>{
+      const previous=window.onYouTubeIframeAPIReady;
+      window.onYouTubeIframeAPIReady=()=>{
+        try{if(typeof previous==='function')previous()}catch(_){ }
+        loadingApi=null;res();
+      };
+      const s=document.createElement("script");
+      s.src="https://www.youtube.com/iframe_api";
+      s.async=true;
+      s.onerror=()=>{loadingApi=null;rej(new Error("Không tải được YouTube Player API. Hãy kiểm tra mạng hoặc trình duyệt."))};
+      document.head.appendChild(s);
+    });
+    return loadingApi;
+  }
+
+  async function ensurePlayer(){
+    await loadAPI();
+    if(player)return player;
+    const f=$("youtube-player-frame");
+    if(!f)throw new Error("Không tìm thấy khu vực YouTube Player.");
+    $("youtube-player-placeholder")?.remove();
+    const d=document.createElement("div");
+    d.id="youtube-player";
+    d.style.width="100%";
+    d.style.height="100%";
+    f.appendChild(d);
+
+    player=new YT.Player("youtube-player",{
+      width:"100%",
+      height:"100%",
+      host:"https://www.youtube.com",
+      playerVars:{playsinline:1,rel:0,modestbranding:1,origin:location.origin},
+      events:{
+        onReady:e=>{
+          playerReady=true;
+          e.target.setVolume(Number($("youtube-volume")?.value||80));
+          if(pendingVideo){
+            const v=pendingVideo;
+            pendingVideo=null;
+            setStatus("Đang tải video…");
+            e.target.loadVideoById(v.videoId);
+          }
+        },
+        onStateChange:e=>{
+          if(e.data===YT.PlayerState.PLAYING){setStatus("Đang phát");startTimer();updatePlayButton(true)}
+          else if(e.data===YT.PlayerState.PAUSED){setStatus("Đã tạm dừng");stopTimer();updatePlayButton(false)}
+          else if(e.data===YT.PlayerState.ENDED){stopTimer();updatePlayButton(false);next()}
+          else if(e.data===YT.PlayerState.BUFFERING){setStatus("Đang tải…")}
+          else if(e.data===YT.PlayerState.CUED){setStatus("Sẵn sàng");updatePlayButton(false)}
+        },
+        onError:e=>{
+          stopTimer();updatePlayButton(false);
+          const codes={2:"Mã video không hợp lệ.",5:"YouTube không thể phát video này trong player.",100:"Video không tồn tại hoặc đã bị xóa.",101:"Chủ video không cho phép phát video được nhúng.",150:"Chủ video không cho phép phát video được nhúng."};
+          setStatus(codes[e.data]||("Video không thể phát (mã "+e.data+")"));
+        }
+      }
+    });
+    return player;
+  }
+
+  function updatePlayButton(isPlaying){const b=$("youtube-play-btn");if(b)b.textContent=isPlaying?"⏸":"▶"}
+  function startTimer(){stopTimer();timer=setInterval(()=>{if(!playerReady||!player?.getCurrentTime)return;try{let c=player.getCurrentTime(),d=player.getDuration();$("youtube-progress").max=Math.max(1,d);$("youtube-progress").value=c;$("youtube-current-time").textContent=time(c);$("youtube-duration").textContent=time(d)}catch(_){ }},500)}
+  function stopTimer(){if(timer){clearInterval(timer);timer=null}}
+
+  async function play(v,i=-1){
+    if(!v?.videoId){setStatus("Không xác định được video.");return}
+    current=v;
+    if(i>=0)index=i;
+    videoCache.set(v.videoId,v);
+    $("youtube-now-title").textContent=v.title||"YouTube video";
+    $("youtube-now-channel").textContent=v.channelName||"";
+    $("youtube-open-btn").dataset.videoId=v.videoId;
+    setStatus("Đang khởi tạo trình phát…");
+    try{
+      const p=await ensurePlayer();
+      if(!playerReady){pendingVideo=v;setStatus("Đang tải trình phát YouTube…");return}
+      p.loadVideoById({videoId:v.videoId,startSeconds:0});
+    }catch(e){
+      console.error("YouTube player error:",e);
+      setStatus(e.message||"Không thể mở video.");
+    }
+  }
+
+  function next(){if(index<queue.length-1)play(queue[++index]);else setStatus("Hết hàng đợi")}
+  function prev(){if(index>0)play(queue[--index]);else setStatus("Đây là video đầu tiên")}
+  function add(v,now=false){
+    if(!v?.videoId){setStatus("Không xác định được video.");return}
+    let i=queue.findIndex(x=>x.videoId===v.videoId);
+    if(i<0){queue.push(v);i=queue.length-1}
+    if(now)play(v,i);else if(typeof window.showToast==='function')window.showToast("Đã thêm vào hàng đợi.");
+  }
+
+  function render(items,append=false){
+    const c=$("youtube-results");
+    if(!c)return;
+    if(!append)c.innerHTML="";
+    if(!items.length&&!append){$("youtube-search-state").innerHTML="<div class='youtube-empty-icon'>🔎</div><h3>Không tìm thấy video</h3><p>Thử một từ khóa khác nhé.</p>";$("youtube-search-state").classList.remove("hidden");return}
+    $("youtube-search-state").classList.add("hidden");
+    items.forEach(v=>videoCache.set(v.videoId,v));
+    c.insertAdjacentHTML(append?"beforeend":"afterbegin",items.map(v=>`<article class="youtube-result-card" data-yt-video="${esc(v.videoId)}" tabindex="0" role="button" aria-label="Phát ${esc(v.title)}"><button type="button" class="youtube-thumb" data-yt-play="${esc(v.videoId)}" aria-label="Phát video"><img src="${esc(v.thumbnail)}" alt="" loading="lazy"><span class="youtube-duration">${esc(v.durationText)}</span></button><div class="youtube-result-main"><div class="youtube-result-title">${esc(v.title)}</div><div class="youtube-result-channel">${esc(v.channelName)}</div><div class="youtube-result-meta">${esc(v.viewCountText)} ${v.publishedAtText?"· "+esc(v.publishedAtText):""}</div></div><div class="youtube-result-actions"><button type="button" class="primary" data-yt-play="${esc(v.videoId)}" aria-label="Phát">▶</button><button type="button" data-yt-queue="${esc(v.videoId)}" aria-label="Thêm vào hàng đợi">＋</button></div></article>`).join(""));
+  }
+
+  async function search(append=false){
+    const q=$("youtube-search-input")?.value.trim();if(!q)return;
+    if(!append)token="";
+    const p=new URLSearchParams({q,order:$("youtube-search-order").value,duration:$("youtube-search-duration").value,maxResults:"12"});
+    if(append&&token)p.set("pageToken",token);
+    $("youtube-search-state").classList.remove("hidden");
+    $("youtube-search-state").innerHTML="<div class='youtube-empty-icon'>⏳</div><h3>Đang tìm kiếm…</h3><p>Đang lấy kết quả từ YouTube.</p>";
+    try{const r=await fetch(API+"?"+p.toString(),{headers:{Accept:"application/json"}});const d=await r.json();if(!r.ok)throw new Error(d.error||"Không thể tìm kiếm YouTube.");token=d.nextPageToken||"";render(d.items||[],append);$("youtube-results-title").textContent=q;$("youtube-results-meta").textContent=(d.items||[]).length+" kết quả";$("youtube-load-more").classList.toggle("hidden",!token)}catch(e){$("youtube-search-state").innerHTML=`<div class="youtube-error">${esc(e.message)}</div>`;$("youtube-search-state").classList.remove("hidden");$("youtube-load-more").classList.add("hidden")}
+  }
+
+  function bind(){
+    $("youtube-search-form")?.addEventListener("submit",e=>{e.preventDefault();search()});
+    $("youtube-load-more")?.addEventListener("click",()=>search(true));
+    $("youtube-clear-search")?.addEventListener("click",()=>{$("youtube-search-input").value="";$("youtube-results").innerHTML=""});
+    $("youtube-play-btn")?.addEventListener("click",async()=>{try{if(!player&&current){await play(current,index);return}if(!playerReady)return;if(player.getPlayerState()===YT.PlayerState.PLAYING){player.pauseVideo()}else{player.playVideo()}}catch(e){setStatus(e.message||"Không thể điều khiển trình phát.")}});
+    $("youtube-prev-btn")?.addEventListener("click",prev);
+    $("youtube-next-btn")?.addEventListener("click",next);
+    $("youtube-open-btn")?.addEventListener("click",()=>{const id=$("youtube-open-btn").dataset.videoId;if(id)window.open("https://www.youtube.com/watch?v="+encodeURIComponent(id),"_blank","noopener,noreferrer")});
+    $("youtube-progress")?.addEventListener("input",e=>player?.seekTo?.(Number(e.target.value),true));
+    $("youtube-volume")?.addEventListener("input",e=>{const v=Number(e.target.value);$("youtube-volume-value").textContent=v+"%";player?.setVolume?.(v)});
+
+    // Event delegation: hoạt động ổn định kể cả khi kết quả được render lại.
+    $("youtube-results")?.addEventListener("click",e=>{
+      const playBtn=e.target.closest("[data-yt-play]");
+      if(playBtn){e.preventDefault();e.stopPropagation();const v=videoCache.get(playBtn.dataset.ytPlay);if(v)play(v,queue.findIndex(x=>x.videoId===v.videoId));return}
+      const queueBtn=e.target.closest("[data-yt-queue]");
+      if(queueBtn){e.preventDefault();e.stopPropagation();const v=videoCache.get(queueBtn.dataset.ytQueue);if(v)add(v,false);return}
+      const card=e.target.closest("[data-yt-video]");
+      if(card){const v=videoCache.get(card.dataset.ytVideo);if(v)play(v,queue.findIndex(x=>x.videoId===v.videoId))}
+    });
+    $("youtube-results")?.addEventListener("keydown",e=>{if(e.key!=="Enter"&&e.key!==" ")return;const card=e.target.closest("[data-yt-video]");if(!card||e.target.closest("button"))return;e.preventDefault();const v=videoCache.get(card.dataset.ytVideo);if(v)play(v,queue.findIndex(x=>x.videoId===v.videoId))});
+  }
+
+  window.youtubeAudioOpen=()=>{loadAPI().catch(e=>console.warn(e))};
+  document.addEventListener("DOMContentLoaded",bind);
+})();
+</script>
 <script>
 
 /* ===== Navigation Sound Studio ===== */
