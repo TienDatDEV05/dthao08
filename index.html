@@ -207,9 +207,80 @@ function setChatTyping(show){
         const row=document.createElement("div"); row.id="chat-typing-row";row.className="chat-msg assistant";row.innerHTML=`<div class="chat-msg-avatar">${chatIcon()}</div><div><div class="chat-typing"><i></i><i></i><i></i></div><div class="chat-meta">Anh đang nghĩ…</div></div>`;list.appendChild(row);const body=document.getElementById("chat-body");body.scrollTop=body.scrollHeight;
     }
 }
+function getChatDayName(day){
+    return ({
+        1:"Thứ 2",
+        2:"Thứ 3",
+        3:"Thứ 4",
+        4:"Thứ 5",
+        5:"Thứ 6",
+        6:"Thứ 7",
+        7:"Chủ nhật"
+    })[Number(day)] || "Ngày chưa xác định";
+}
+
+function getChatDayInfo(){
+    const now = new Date();
+    const jsDay = now.getDay();
+    const currentDay = jsDay === 0 ? 7 : jsDay;
+    const tomorrowDay = currentDay === 7 ? 1 : currentDay + 1;
+    const tomorrow = new Date(now);
+    tomorrow.setDate(now.getDate() + 1);
+    return {
+        localDate: now.toISOString().slice(0,10),
+        localTime: now.toLocaleTimeString("vi-VN",{hour:"2-digit",minute:"2-digit"}),
+        currentDay,
+        currentDayName: getChatDayName(currentDay),
+        tomorrowDate: tomorrow.toISOString().slice(0,10),
+        tomorrowDay,
+        tomorrowDayName: getChatDayName(tomorrowDay)
+    };
+}
+
 function chatAppContext(){
-    const appPeriods=Array.isArray(periods)?periods:[];
-    return {page:currentPage,periods:appPeriods.map((p,i)=>({period:i+1,start:p.start_time||p.start||"",end:p.end_time||p.end||""}))};
+    const appPeriods = Array.isArray(periods) ? periods : [];
+    const appSemesters = Array.isArray(semesters) ? semesters : [];
+    const appSubjects = Array.isArray(subjects) ? subjects : [];
+    const appEntries = Array.isArray(scheduleEntries) ? scheduleEntries : [];
+    const dayInfo = getChatDayInfo();
+    const activeSemester =
+        appSemesters.find(s => s.id === currentSemesterId) ||
+        appSemesters[0] ||
+        null;
+
+    return {
+        page: currentPage,
+        ...dayInfo,
+        currentSemesterId: activeSemester?.id || currentSemesterId || null,
+        currentSemesterName: activeSemester?.name || "",
+        periods: appPeriods.map(p => ({
+            id: p.id || null,
+            period: Number(p.period_number) || 0,
+            start: p.start_time || p.start || "",
+            end: p.end_time || p.end || ""
+        })),
+        semesters: appSemesters.map(s => ({
+            id: s.id,
+            name: s.name,
+            start_date: s.start_date || null,
+            end_date: s.end_date || null
+        })),
+        subjects: appSubjects.map(s => ({
+            id: s.id,
+            name: s.name,
+            teacher: s.teacher || "",
+            room: s.room || "",
+            color: s.color || ""
+        })),
+        scheduleEntries: appEntries.map(e => ({
+            id: e.id,
+            user_id: e.user_id || null,
+            semester_id: e.semester_id || null,
+            subject_id: e.subject_id || null,
+            day_of_week: Number(e.day_of_week),
+            period_number: Number(e.period_number)
+        }))
+    };
 }
 function localChatReply(input){
     const q=input.toLowerCase();
@@ -224,29 +295,236 @@ function localChatReply(input){
     return "Anh đã nhận được câu hỏi của vợ iuu. Giao diện này đã sẵn sàng để kết nối với AI backend; hiện tại anh đang ở chế độ dự phòng nên chưa thể trả lời mọi chủ đề như một AI đầy đủ. Khi có Edge Function/API an toàn, vợ iuu chỉ cần hỏi Anh bình thường là được.";
 }
 async function askChatBackend(input){
-    const payload={conversationId:chatConversationId,userId:currentUser?.id,messages:chatMessages.slice(-30),context:chatAppContext(),message:input,persona:{selfReference:"Anh",userReference:"vợ iuu",style:"Tuyệt đối xưng Anh và gọi người dùng là vợ iuu. Không xưng mình, tôi, em hoặc gọi người dùng là wife."},systemInstruction:"Bạn là Anh. Trong mọi câu trả lời, chỉ xưng Anh và gọi người dùng là vợ iuu. Tuyệt đối không dùng cách xưng mình và không gọi người dùng là wife. Giữ giọng thân mật, yêu thương, tự nhiên."};
+    const payload={
+        conversationId:chatConversationId,
+        userId:currentUser?.id,
+        messages:chatMessages.slice(-30),
+        context:chatAppContext(),
+        message:input,
+        persona:{
+            selfReference:"Anh",
+            userReference:"vợ iuu",
+            style:"Tuyệt đối xưng Anh và gọi người dùng là vợ iuu. Không xưng mình, tôi, em hoặc gọi người dùng là wife."
+        },
+        systemInstruction:"Bạn là Anh. Trong mọi câu trả lời, chỉ xưng Anh và gọi người dùng là vợ iuu. Tuyệt đối không dùng cách xưng mình và không gọi người dùng là wife. Giữ giọng thân mật, yêu thương, tự nhiên."
+    };
+
+    const normalizeResponse = data => ({
+        reply:
+            data?.reply ||
+            data?.message ||
+            data?.answer ||
+            "Anh chưa nhận được nội dung trả lời từ máy chủ.",
+        action:
+            data?.action &&
+            typeof data.action === "object"
+                ? data.action
+                : null,
+        intent: data?.intent || "general"
+    });
+
     if(CHAT_API_URL){
-        const response=await fetch(CHAT_API_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+        const response=await fetch(CHAT_API_URL,{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify(payload)
+        });
         if(!response.ok) throw new Error("Chat backend error");
-        const data=await response.json();
-        return data.reply || data.message || data.answer || "Anh chưa nhận được nội dung trả lời từ máy chủ.";
+        return normalizeResponse(await response.json());
     }
+
     if(typeof db!=="undefined" && db?.functions?.invoke){
-        const {data,error}=await db.functions.invoke("smart-responder",{body:payload});
+        const {data,error}=await db.functions.invoke(
+            "smart-responder",
+            {body:payload}
+        );
         if(!error && data){
-            return data.reply || data.message || data.answer || "Anh chưa nhận được nội dung trả lời từ máy chủ.";
+            return normalizeResponse(data);
         }
-        if(error) console.debug("Edge Function chat unavailable, using local fallback:",error.message);
+        if(error) {
+            console.debug(
+                "Edge Function chat unavailable, using local fallback:",
+                error.message
+            );
+        }
     }
-    return localChatReply(input);
+
+    return {
+        reply: localChatReply(input),
+        action: null,
+        intent: "general"
+    };
 }
+
+async function executeChatScheduleAction(action){
+    if(!currentUser){
+        return {
+            ok:false,
+            message:"Anh chưa thể cập nhật lịch vì vợ iuu chưa đăng nhập."
+        };
+    }
+
+    if(!action || !action.action || action.action === "none"){
+        return {ok:true, message:""};
+    }
+
+    const actionName = action.action;
+    const day = Number(action.day);
+    const period = Number(action.period);
+    const semesterId = action.semesterId || currentSemesterId;
+    const subjectId = action.subjectId || null;
+    const entryId = action.entryId || null;
+
+    if(
+        !["add_schedule","update_schedule","delete_schedule"].includes(actionName) ||
+        !semesterId
+    ){
+        return {
+            ok:false,
+            message:"Anh chưa đủ dữ liệu để cập nhật thời khóa biểu cho vợ iuu."
+        };
+    }
+
+    try{
+        if(actionName === "add_schedule"){
+            if(!day || !period || !subjectId){
+                throw new Error("Thiếu ngày, tiết hoặc môn học.");
+            }
+
+            // Không cho chatbot ghi đè âm thầm lên một ô đã có lịch.
+            const {data:existing,error:existingError} = await db
+                .from("schedule_entries")
+                .select("id")
+                .eq("user_id",currentUser.id)
+                .eq("semester_id",semesterId)
+                .eq("day_of_week",day)
+                .eq("period_number",period)
+                .maybeSingle();
+
+            if(existingError) throw existingError;
+
+            if(existing){
+                const subject = subjects.find(s=>s.id===existing.subject_id);
+                return {
+                    ok:false,
+                    message:`${getChatDayName(day)} tiết ${period} đã có ${subject?.name || "môn học"} rồi. Anh không ghi đè lịch hiện tại của vợ iuu.`
+                };
+            }
+
+            const {error} = await db
+                .from("schedule_entries")
+                .insert({
+                    user_id:currentUser.id,
+                    semester_id:semesterId,
+                    subject_id:subjectId,
+                    day_of_week:day,
+                    period_number:period
+                });
+
+            if(error) throw error;
+        }
+
+        if(actionName === "update_schedule"){
+            if(!entryId || !day || !period || !subjectId){
+                throw new Error("Thiếu dữ liệu để sửa lịch.");
+            }
+
+            const {error} = await db
+                .from("schedule_entries")
+                .update({
+                    semester_id:semesterId,
+                    subject_id:subjectId,
+                    day_of_week:day,
+                    period_number:period
+                })
+                .eq("id",entryId)
+                .eq("user_id",currentUser.id);
+
+            if(error) throw error;
+        }
+
+        if(actionName === "delete_schedule"){
+            if(!entryId){
+                throw new Error("Không tìm thấy tiết học cần xóa.");
+            }
+
+            const {error} = await db
+                .from("schedule_entries")
+                .delete()
+                .eq("id",entryId)
+                .eq("user_id",currentUser.id);
+
+            if(error) throw error;
+        }
+
+        await loadAllData();
+        renderSchedule();
+
+        const actionText =
+            action.summary ||
+            (actionName === "add_schedule"
+                ? `Đã thêm ${action.subjectName || "môn học"} vào ${getChatDayName(day)}, tiết ${period}.`
+                : actionName === "update_schedule"
+                    ? `Đã cập nhật ${getChatDayName(day)}, tiết ${period}.`
+                    : `Đã xóa lịch ${getChatDayName(day)}, tiết ${period}.`);
+
+        return {
+            ok:true,
+            message:`${actionText} Thời khóa biểu của vợ iuu đã được cập nhật thành công ♡`
+        };
+    }catch(error){
+        console.error("Chat schedule action error:",error);
+        return {
+            ok:false,
+            message:
+                error?.message ||
+                "Anh chưa thể cập nhật thời khóa biểu. Vợ iuu thử lại giúp Anh nhé."
+        };
+    }
+}
+
 async function sendChatMessage(text){
-    const value=String(text||"").trim(); if(!value||chatSending)return;
-    chatSending=true; document.getElementById("chat-send").disabled=true;
-    addChatMessage("user",value); setChatTyping(true);
-    try{const reply=await askChatBackend(value);setChatTyping(false);addChatMessage("assistant",reply);}
-    catch(err){setChatTyping(false);addChatMessage("assistant","Anh gặp lỗi khi kết nối máy chủ. Vợ iuu kiểm tra kết nối mạng hoặc thử lại sau nhé.");console.error(err);}
-    finally{chatSending=false;updateChatSendState();}
+    const value=String(text||"").trim();
+    if(!value||chatSending)return;
+
+    chatSending=true;
+    document.getElementById("chat-send").disabled=true;
+    addChatMessage("user",value);
+    setChatTyping(true);
+
+    try{
+        const result=await askChatBackend(value);
+        setChatTyping(false);
+
+        if(result?.action && result.action.action && result.action.action !== "none"){
+            const actionResult=await executeChatScheduleAction(result.action);
+
+            // Chỉ báo "thành công" sau khi Supabase đã ghi dữ liệu thành công.
+            // Không sử dụng câu trả lời của AI để giả lập việc đã lưu.
+            addChatMessage(
+                "assistant",
+                actionResult.message ||
+                result.reply ||
+                "Anh đã xử lý yêu cầu của vợ iuu."
+            );
+        }else{
+            addChatMessage(
+                "assistant",
+                result?.reply ||
+                "Anh chưa nhận được nội dung trả lời từ máy chủ."
+            );
+        }
+    }catch(err){
+        setChatTyping(false);
+        addChatMessage(
+            "assistant",
+            "Anh gặp lỗi khi kết nối máy chủ. Vợ iuu kiểm tra kết nối mạng hoặc thử lại sau nhé."
+        );
+        console.error(err);
+    }finally{
+        chatSending=false;
+        updateChatSendState();
+    }
 }
 function updateChatSendState(){const input=document.getElementById("chat-input"),send=document.getElementById("chat-send");if(input&&send)send.disabled=chatSending||!input.value.trim();}
 function openChatConversation(id){
@@ -3542,7 +3820,7 @@ document.addEventListener("DOMContentLoaded",()=>{
             <div id="page-schedule" class="page">
 
                 <div class="page-title">
-                    <h2>Thời khóa biểu</h2>
+                    <h2>📅 Thời khóa biểu</h2>
                     <p>Chúc vợ iuuu có 1 ngày học tập vuii vẻ ♡</p>
                     <div id="print-semester-title"></div>
                 </div>
@@ -3584,7 +3862,7 @@ document.addEventListener("DOMContentLoaded",()=>{
             <div id="page-notes" class="page hidden">
 
                 <div class="page-title">
-                    <h2>Ghi chú</h2>
+                    <h2>📝 Ghi chú</h2>
                     <p>Note lại những gì quan trọng vợ nhé ♡</p>
                 </div>
 
@@ -3628,7 +3906,7 @@ document.addEventListener("DOMContentLoaded",()=>{
             <div id="page-subjects" class="page hidden">
 
                 <div class="page-title">
-                    <h2>Môn học</h2>
+                    <h2>📚 Môn học</h2>
                     <p>Thêm môn học ở đây nha vợ iuu.</p>
                 </div>
 
@@ -3656,7 +3934,7 @@ document.addEventListener("DOMContentLoaded",()=>{
             <div id="page-semesters" class="page hidden">
 
                 <div class="page-title">
-                    <h2>Học kỳ</h2>
+                    <h2>🌸 Học kỳ</h2>
                     <p>Vợ nhớ thêm học kỳ đầu tiên nhaaa.</p>
                 </div>
 
@@ -3686,7 +3964,7 @@ document.addEventListener("DOMContentLoaded",()=>{
             <section class="page hidden" id="page-weather" data-page="weather">
             <div class="page-title">
                 <h2>Thời tiết</h2>
-                <p>Tình hình thời tiết hiện tại và lời nhắc cho 2 giờ tới cho vợ đâyyy ♡</p>
+                <p>Tình hình thời tiết hiện tại và dự báo từng giờ cho vợ đâyyy ♡</p>
             </div>
 
                 <section class="weather-card" id="weather-card">
@@ -3718,7 +3996,7 @@ document.addEventListener("DOMContentLoaded",()=>{
                     </div>
 
                     <div class="weather-forecast" id="weather-forecast">
-                        <div class="weather-loading">Đang tải dự báo 2 giờ tới...</div>
+                        <div class="weather-loading">Đang tải dự báo từng giờ...</div>
                     </div>
 
                     <div class="weather-advice hidden" id="weather-advice">
@@ -4524,7 +4802,7 @@ function showWeatherLoading() {
     if (forecast) {
         forecast.innerHTML =
             `<div class="weather-loading">
-                Đang tải dự báo 2 giờ tới...
+                Đang tải dự báo từng giờ...
             </div>`;
     }
 }
@@ -4719,143 +4997,190 @@ startWeatherAutoRefresh();
 
 function renderWeather(data) {
 
-    const current =
-        data.current;
+    const current = data.current;
 
-    const type =
-        weatherTypeFromCode(
-            current.weather_code,
-            Boolean(current.is_day)
-        );
+    const type = weatherTypeFromCode(
+        current.weather_code,
+        Boolean(current.is_day)
+    );
 
-    const icon =
-        document.getElementById(
-            "weather-current-icon"
-        );
-
+    const icon = document.getElementById("weather-current-icon");
     if (icon) {
-        icon.innerHTML =
-            weatherIcon(type);
+        icon.innerHTML = weatherIcon(type);
     }
 
-    document
-        .getElementById("weather-location")
-        .textContent =
-            weatherState.locationName;
+    document.getElementById("weather-location").textContent =
+        weatherState.locationName;
 
-    document
-        .getElementById("weather-temperature")
-        .textContent =
-            Math.round(
-                Number(current.temperature_2m)
-            );
+    document.getElementById("weather-temperature").textContent =
+        Math.round(Number(current.temperature_2m));
 
-    document
-        .getElementById("weather-description")
-        .textContent =
-            `${weatherDescription(current.weather_code)} · Cảm giác như ${Math.round(Number(current.apparent_temperature))}°C`;
+    document.getElementById("weather-description").textContent =
+        `${weatherDescription(current.weather_code)} · Cảm giác như ${Math.round(Number(current.apparent_temperature))}°C`;
 
-    document
-        .getElementById("weather-updated")
-        .textContent =
-            `Cập nhật ${new Date().toLocaleTimeString("vi-VN", {
-                hour: "2-digit",
-                minute: "2-digit"
-            })}`;
+    document.getElementById("weather-updated").textContent =
+        `Cập nhật ${new Date().toLocaleTimeString("vi-VN", {
+            hour: "2-digit",
+            minute: "2-digit"
+        })}`;
+
+    /*
+     * QUAN TRỌNG:
+     * Không dùng index + 1 / + 2 một cách mù quáng và cũng không
+     * để dữ liệu/API quyết định khoảng cách hiển thị.
+     *
+     * Ta tạo chính xác 3 mốc:
+     *   - Mốc 0: giờ gần hiện tại
+     *   - Mốc 1: +1 giờ
+     *   - Mốc 2: +2 giờ
+     *
+     * Sau đó tìm phần tử hourly gần nhất với từng mốc.
+     * Vì vậy giao diện luôn hiển thị cách nhau đúng 1 giờ.
+     */
+    const hourly = data.hourly || {};
+    const times = Array.isArray(hourly.time) ? hourly.time : [];
+
+    const forecast = document.getElementById("weather-forecast");
+
+    if (!forecast || !times.length) {
+        renderWeatherAdvice(data, 0);
+        return;
+    }
 
     const now = new Date();
 
-    let startIndex = 0;
+    // Parse timestamp theo chính timezone mà Open-Meteo trả về.
+    const parseWeatherTime = value => {
+        const d = new Date(value);
+        return Number.isFinite(d.getTime()) ? d.getTime() : NaN;
+    };
 
-    if (Array.isArray(data.hourly.time)) {
+    // Mốc đầu tiên = mốc hourly gần hiện tại nhất.
+    let currentIndex = 0;
+    let currentDiff = Infinity;
 
-        const nowMs = now.getTime();
+    times.forEach((time, index) => {
+        const ts = parseWeatherTime(time);
+        if (!Number.isFinite(ts)) return;
 
-        startIndex =
-            data.hourly.time.findIndex(
-                time =>
-                    new Date(time).getTime() >= nowMs
-            );
+        const diff = Math.abs(ts - now.getTime());
 
-        if (startIndex < 0) {
-            startIndex = 0;
+        if (diff < currentDiff) {
+            currentDiff = diff;
+            currentIndex = index;
         }
+    });
+
+    const baseTimestamp = parseWeatherTime(times[currentIndex]);
+
+    /*
+     * Tạo 3 target timestamp độc lập:
+     * base, base + 1h, base + 2h.
+     * Không bao giờ dùng index += 2.
+     */
+    const targetTimestamps = [
+        baseTimestamp,
+        baseTimestamp + 60 * 60 * 1000,
+        baseTimestamp + 2 * 60 * 60 * 1000
+    ];
+
+    function findNearestHourlyIndex(targetTimestamp, usedIndexes) {
+        let bestIndex = -1;
+        let bestDiff = Infinity;
+
+        times.forEach((time, index) => {
+            if (usedIndexes.has(index)) return;
+
+            const ts = parseWeatherTime(time);
+            if (!Number.isFinite(ts)) return;
+
+            const diff = Math.abs(ts - targetTimestamp);
+
+            if (diff < bestDiff) {
+                bestDiff = diff;
+                bestIndex = index;
+            }
+        });
+
+        return bestIndex;
     }
 
-    const endIndex =
-        Math.min(
-            startIndex + 3,
-            data.hourly.time.length
+    const selectedIndexes = [];
+    const usedIndexes = new Set();
+
+    targetTimestamps.forEach(target => {
+        const index = findNearestHourlyIndex(target, usedIndexes);
+
+        if (index >= 0) {
+            selectedIndexes.push(index);
+            usedIndexes.add(index);
+        }
+    });
+
+    /*
+     * Nếu API có dữ liệu hourly chuẩn (1 giờ/lần), selectedIndexes
+     * sẽ tương ứng với H, H+1, H+2.
+     *
+     * Nếu API/browser trả dữ liệu lệch timezone, target timestamp
+     * vẫn giữ đúng khoảng cách 1 giờ ở giao diện.
+     */
+    forecast.innerHTML = "";
+
+    selectedIndexes.forEach((index, position) => {
+        const hourType = weatherTypeFromCode(
+            hourly.weather_code?.[index],
+            Boolean(hourly.is_day?.[index])
         );
 
-    const forecast =
-        document.getElementById(
-            "weather-forecast"
-        );
+        const probability =
+            Number(hourly.precipitation_probability?.[index] || 0);
 
-    if (forecast) {
+        const temperature =
+            Number(hourly.temperature_2m?.[index]);
 
-        forecast.innerHTML = "";
+        /*
+         * Hiển thị giờ theo targetTimestamp, KHÔNG hiển thị trực tiếp
+         * hourly.time[index]. Đây là điểm sửa quan trọng để không còn
+         * 13:00 → 15:00 → 17:00 trên giao diện.
+         */
+        const displayDate = new Date(targetTimestamps[position]);
+        const displayTime = displayDate.toLocaleTimeString("vi-VN", {
+            hour: "2-digit",
+            minute: "2-digit"
+        });
 
-        for (
-            let index = startIndex;
-            index < endIndex;
-            index++
-        ) {
-
-            const hourType =
-                weatherTypeFromCode(
-                    data.hourly.weather_code[index],
-                    Boolean(data.hourly.is_day[index])
-                );
-
-            const probability =
-                Number(
-                    data.hourly.precipitation_probability[index] || 0
-                );
-
-            const precipitation =
-                Number(
-                    data.hourly.precipitation[index] || 0
-                );
-
-            forecast.insertAdjacentHTML(
-                "beforeend",
-                `
-                    <div class="weather-hour">
-                        <div class="weather-hour-time">
-                            ${index === startIndex
-                                ? "Hiện tại"
-                                : formatWeatherHour(data.hourly.time[index])}
-                        </div>
-
-                        <div class="weather-hour-icon">
-                            ${weatherIcon(hourType, true)}
-                        </div>
-
-                        <div class="weather-hour-temp">
-                            ${Math.round(Number(data.hourly.temperature_2m[index]))}°
-                        </div>
-
-                        <div class="weather-hour-rain">
-                            ${probability}% mưa
-                        </div>
+        forecast.insertAdjacentHTML(
+            "beforeend",
+            `
+                <div class="weather-hour"
+                     data-weather-hour-index="${index}"
+                     data-weather-display-hour="${displayTime}">
+                    <div class="weather-hour-time">
+                        ${position === 0 ? "Hiện tại" : displayTime}
                     </div>
-                `
-            );
-        }
-    }
+
+                    <div class="weather-hour-icon">
+                        ${weatherIcon(hourType, true)}
+                    </div>
+
+                    <div class="weather-hour-temp">
+                        ${Number.isFinite(temperature)
+                            ? Math.round(temperature)
+                            : "--"}°
+                    </div>
+
+                    <div class="weather-hour-rain">
+                        ${probability}% mưa
+                    </div>
+                </div>
+            `
+        );
+    });
 
     renderWeatherAdvice(
         data,
-        startIndex
+        selectedIndexes.length ? selectedIndexes[0] : currentIndex
     );
-
-    document
-        .getElementById(
-            "weather-permission"
-        )
-        ?.classList.add("hidden");
 }
 
 function renderWeatherAdvice(data, startIndex) {
