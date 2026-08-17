@@ -3542,7 +3542,7 @@ document.addEventListener("DOMContentLoaded",()=>{
             <div id="page-schedule" class="page">
 
                 <div class="page-title">
-                    <h2>📅 Thời khóa biểu</h2>
+                    <h2>Thời khóa biểu</h2>
                     <p>Chúc vợ iuuu có 1 ngày học tập vuii vẻ ♡</p>
                     <div id="print-semester-title"></div>
                 </div>
@@ -3584,7 +3584,7 @@ document.addEventListener("DOMContentLoaded",()=>{
             <div id="page-notes" class="page hidden">
 
                 <div class="page-title">
-                    <h2>📝 Ghi chú</h2>
+                    <h2>Ghi chú</h2>
                     <p>Note lại những gì quan trọng vợ nhé ♡</p>
                 </div>
 
@@ -3628,7 +3628,7 @@ document.addEventListener("DOMContentLoaded",()=>{
             <div id="page-subjects" class="page hidden">
 
                 <div class="page-title">
-                    <h2>📚 Môn học</h2>
+                    <h2>Môn học</h2>
                     <p>Thêm môn học ở đây nha vợ iuu.</p>
                 </div>
 
@@ -3656,7 +3656,7 @@ document.addEventListener("DOMContentLoaded",()=>{
             <div id="page-semesters" class="page hidden">
 
                 <div class="page-title">
-                    <h2>🌸 Học kỳ</h2>
+                    <h2>Học kỳ</h2>
                     <p>Vợ nhớ thêm học kỳ đầu tiên nhaaa.</p>
                 </div>
 
@@ -5029,7 +5029,18 @@ function renderWeatherAdvice(data, startIndex) {
         return;
     }
 
-    advice.classList.add("hidden");
+    // Thời tiết bình thường: không có mưa đáng kể và không có nắng gắt.
+    // Vẫn hiển thị lời nhắc để người dùng luôn nhận được thông báo thân thiện.
+    title.textContent =
+        "Thời tiết khá ổn định";
+
+    text.textContent =
+        "Thời thiết dự báo khá ổn định, chúc vợ iuu có 1 ngày vuii vẻ ạ";
+
+    adviceIcon.innerHTML =
+        weatherIcon("cloud");
+
+    advice.classList.remove("hidden");
 }
 
 document
