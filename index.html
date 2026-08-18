@@ -4142,6 +4142,19 @@ document.addEventListener("DOMContentLoaded",()=>{
 }
 </style>
 
+
+<style id="fixes-phase6">
+.brand-home-link{appearance:none;-webkit-appearance:none;border:0;margin:0;padding:0;background:transparent;font:inherit;color:inherit;text-align:left;cursor:pointer;}
+.brand-home-link:focus-visible{outline:2px solid rgba(226,103,148,.55);outline-offset:5px;border-radius:12px;}
+@media(max-width:800px){
+  .mobile-menu-backdrop{z-index:9998!important;}
+  .mobile-nav-drawer{z-index:9999!important;}
+  #app>header{z-index:10000!important;}
+  .youtube-global-player-host{z-index:900!important;}
+  .youtube-mini-player{z-index:901!important;}
+  #page-youtube-audio .youtube-now-panel{z-index:1;}
+}
+</style>
 </head>
 
 <!--
@@ -4251,11 +4264,11 @@ document.addEventListener("DOMContentLoaded",()=>{
             </svg>
         </button>
 
-        <div class="brand brand-elegant" aria-label="Đoàn Thảo">
+        <button type="button" class="brand brand-elegant brand-home-link" id="brand-home-link" aria-label="Đoàn Thảo — mở Lịch học">
             <span class="brand-mark" aria-hidden="true">♡</span>
             <span class="brand-name"><strong>Đoàn</strong> <span>Thảo</span></span>
             <span class="brand-subtitle">personal space</span>
-        </div>
+        </button>
 
         <div class="user-area">
             <span class="user-email" id="user-email"></span>
@@ -9100,14 +9113,30 @@ initializeApp();
     c.insertAdjacentHTML(append?"beforeend":"afterbegin",items.map(v=>`<article class="youtube-result-card" data-yt-video="${esc(v.videoId)}" tabindex="0" role="button" aria-label="Phát ${esc(v.title)}"><button type="button" class="youtube-thumb" data-yt-play="${esc(v.videoId)}" aria-label="Phát video"><img src="${esc(v.thumbnail)}" alt="" loading="lazy"><span class="youtube-duration">${esc(v.durationText)}</span></button><div class="youtube-result-main"><div class="youtube-result-title">${esc(v.title)}</div><div class="youtube-result-channel">${esc(v.channelName)}</div><div class="youtube-result-meta">${esc(v.viewCountText)} ${v.publishedAtText?"· "+esc(v.publishedAtText):""}</div></div><div class="youtube-result-actions"><button type="button" class="primary" data-yt-play="${esc(v.videoId)}" aria-label="Phát"><span data-yt-icon="play"></span></button><button type="button" data-yt-queue="${esc(v.videoId)}" aria-label="Thêm vào hàng đợi"><span data-yt-icon="plus"></span></button><button type="button" data-yt-fav="${esc(v.videoId)}" aria-label="Thêm yêu thích"><span data-yt-icon="heart"></span></button><button type="button" data-yt-playlist="${esc(v.videoId)}" aria-label="Thêm vào playlist">📁</button></div></article>`).join(""));
   }
 
+  let searchBusy=false, searchCount=0;
   async function search(append=false){
-    const q=$("youtube-search-input")?.value.trim();if(!q)return;
-    if(!append)token="";
+    const q=$("youtube-search-input")?.value.trim();if(!q||searchBusy)return;
+    if(!append){token="";searchCount=0}
+    const requestedToken=append?token:"";
     const p=new URLSearchParams({q,order:$("youtube-search-order").value,duration:$("youtube-search-duration").value,maxResults:"12"});
-    if(append&&token)p.set("pageToken",token);
-    $("youtube-search-state").classList.remove("hidden");
-    $("youtube-search-state").innerHTML="<div class='youtube-empty-icon'>⏳</div><h3>Đang tìm kiếm…</h3><p>Đang lấy kết quả từ YouTube.</p>";
-    try{const r=await fetch(API+"?"+p.toString(),{headers:{Accept:"application/json"}});const d=await r.json();if(!r.ok)throw new Error(d.error||"Không thể tìm kiếm YouTube.");token=d.nextPageToken||"";render(d.items||[],append);$("youtube-results-title").textContent=q;$("youtube-results-meta").textContent=(d.items||[]).length+" kết quả";$("youtube-load-more").classList.toggle("hidden",!token)}catch(e){$("youtube-search-state").innerHTML=`<div class="youtube-error">${esc(e.message)}</div>`;$("youtube-search-state").classList.remove("hidden");$("youtube-load-more").classList.add("hidden")}
+    if(requestedToken)p.set("pageToken",requestedToken);
+    searchBusy=true;
+    const more=$("youtube-load-more"); if(more){more.disabled=true;more.textContent="Đang tải…"}
+    if(!append){$("youtube-search-state").classList.remove("hidden");$("youtube-search-state").innerHTML="<div class='youtube-empty-icon'><span data-yt-icon='search'></span></div><h3>Đang tìm kiếm…</h3><p>Đang lấy kết quả từ YouTube.</p>";window.hydrateYtIcons?.($("youtube-search-state"))}
+    try{
+      const r=await fetch(API+"?"+p.toString(),{headers:{Accept:"application/json"},cache:"no-store"});
+      const d=await r.json().catch(()=>({}));
+      if(!r.ok)throw new Error(d.error||`YouTube Search lỗi HTTP ${r.status}.`);
+      const batch=Array.isArray(d.items)?d.items:[];
+      token=d.nextPageToken||"";searchCount+=batch.length;
+      render(batch,append);
+      $("youtube-results-title").textContent=q;$("youtube-results-meta").textContent=searchCount+" kết quả";
+      if(more){more.classList.toggle("hidden",!token);more.disabled=false;more.textContent="Xem thêm"}
+    }catch(e){
+      console.error("YouTube search error",e);
+      if(!append){$("youtube-search-state").innerHTML=`<div class="youtube-error">${esc(e.message||"Không thể tìm kiếm YouTube.")}</div>`;$("youtube-search-state").classList.remove("hidden")}
+      if(more){more.disabled=false;more.textContent="Xem thêm";more.classList.toggle("hidden",!token)}
+    }finally{searchBusy=false}
   }
 
   function openYoutubePage(){document.querySelector('.nav-btn[data-page="youtube-audio"]')?.click()}
@@ -9178,22 +9207,26 @@ initializeApp();
   function fmtDate(v){try{return new Date(v).toLocaleString("vi-VN",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"})}catch(_){return ""}}
   function currentUserId(){return user()?.id||null}
 
-  async function loadLibrary(){
-    const u=currentUserId(); if(!u){setSync("Chưa đăng nhập","err");return}
+  async function loadLibrary(options={}){
+    const showErrorToast=!!options.showErrorToast;
+    const u=currentUserId();
+    if(!u){setSync("Đăng nhập để đồng bộ","warn");return false}
+    if(!supa){setSync("Thiếu kết nối Supabase","err");if(showErrorToast)toast("Không thể kết nối thư viện YouTube.",true);return false}
     setSync("Đang đồng bộ…");
     try{
-      const [h,f,p,q]=await Promise.all([
+      const results=await Promise.allSettled([
         supa.from(TABLE.history).select("id,video_id,title,channel_name,thumbnail_url,duration_seconds,position_seconds,last_played_at,updated_at").eq("user_id",u).order("last_played_at",{ascending:false}).limit(50),
         supa.from(TABLE.favorites).select("id,video_id,title,channel_name,thumbnail_url,duration_seconds,created_at").eq("user_id",u).order("created_at",{ascending:false}).limit(100),
         supa.from(TABLE.playlists).select("id,name,description,created_at,updated_at").eq("user_id",u).order("updated_at",{ascending:false}),
         supa.from(TABLE.queue).select("id,video_id,title,channel_name,thumbnail_url,duration_seconds,position,created_at").eq("user_id",u).order("position",{ascending:true})
       ]);
-      if(h.error)throw h.error;if(f.error)throw f.error;if(p.error)throw p.error;if(q.error)throw q.error;
-      historyRows=h.data||[];favoriteRows=f.data||[];playlistRows=p.data||[];queueRows=q.data||[];
+      const names=["lịch sử nghe","yêu thích","playlist","hàng đợi"], rows=[[],[],[],[]], errors=[];
+      results.forEach((r,i)=>{if(r.status!=="fulfilled"){errors.push(`${names[i]}: ${r.reason?.message||"lỗi truy vấn"}`);return} if(r.value?.error){errors.push(`${names[i]}: ${r.value.error.message||r.value.error.code||"lỗi Supabase"}`);return} rows[i]=r.value?.data||[]});
+      historyRows=rows[0];favoriteRows=rows[1];playlistRows=rows[2];queueRows=rows[3];
       if(api()) api().replaceQueue(queueRows.map(rowVideo),queueRows.length?0:-1);
-      setSync("✓ Đã đồng bộ","ok");
-      renderLibrary();
-    }catch(e){console.error("YouTube Phase 4 load error",e);setSync("Lỗi đồng bộ","err");toast("Không thể tải thư viện YouTube: "+(e.message||"Lỗi Supabase"),true)}
+      if(errors.length){console.warn("YouTube library partial sync:",errors);setSync("Đã tải một phần thư viện","warn");if(showErrorToast)toast("Một phần thư viện YouTube chưa tải được. Hãy kiểm tra RLS/bảng Supabase.",true)}else setSync("✓ Đã đồng bộ","ok");
+      renderLibrary();return errors.length===0;
+    }catch(e){console.error("YouTube Phase 4 load error",e);setSync("Chưa đồng bộ được","err");if(showErrorToast)toast("Không thể tải thư viện YouTube: "+(e.message||"Lỗi Supabase"),true);return false}
   }
 
   async function saveHistory(snapshot,force=false){
@@ -9321,7 +9354,7 @@ initializeApp();
   window.youtubePhase4Init=()=>{if(initializedFor===currentUserId())return;if(!currentUserId())return;initializedFor=currentUserId();loadLibrary();clearInterval(syncTimer);syncTimer=setInterval(syncPlayback,5000)};
   document.addEventListener("DOMContentLoaded",()=>{
     document.querySelectorAll("[data-youtube-library]").forEach(b=>b.addEventListener("click",()=>setActiveTab(b.dataset.youtubeLibrary)));
-    $("youtube-library-refresh")?.addEventListener("click",loadLibrary);
+    $("youtube-library-refresh")?.addEventListener("click",()=>loadLibrary({showErrorToast:true}));
     window.youtubePhase4Init?.();
     setTimeout(()=>window.youtubePhase4Init?.(),1000);
   });
@@ -9611,3 +9644,13 @@ document.addEventListener('DOMContentLoaded',()=>window.hydrateYtIcons());
 
 </body>
 </html>
+
+<script id="final-navigation-fixes">
+(function(){
+  function bind(){
+    const brand=document.getElementById('brand-home-link');
+    if(brand && !brand.dataset.bound){brand.dataset.bound='1';brand.addEventListener('click',()=>{document.querySelector('.nav-btn[data-page="schedule"]')?.click();window.scrollTo({top:0,behavior:'smooth'});});}
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
+})();
+</script>
