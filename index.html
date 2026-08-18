@@ -111,11 +111,17 @@ async function deleteChatConversation(id){
     if(!conv)return;
     if(!confirm(`Xóa cuộc trò chuyện "${conv.title||"Cuộc trò chuyện"}"?\n\nToàn bộ tin nhắn sẽ được xóa khỏi Supabase và thiết bị.`))return;
     try{
+        let cloudDeleteError = null;
         if(currentUser){
-            const {error:msgError}=await supa.from("chat_messages").delete().eq("conversation_id",id).eq("user_id",currentUser.id);
-            if(msgError)throw msgError;
-            const {error:convError}=await supa.from("chat_conversations").delete().eq("id",id).eq("user_id",currentUser.id);
-            if(convError)throw convError;
+            try{
+                const {error:msgError}=await supa.from("chat_messages").delete().eq("conversation_id",id).eq("user_id",currentUser.id);
+                if(msgError) throw msgError;
+                const {error:convError}=await supa.from("chat_conversations").delete().eq("id",id).eq("user_id",currentUser.id);
+                if(convError) throw convError;
+            }catch(cloudErr){
+                cloudDeleteError = cloudErr;
+                console.warn("Chat cloud delete failed:", cloudErr?.message || cloudErr);
+            }
         }
         store.conversations=(store.conversations||[]).filter(c=>c.id!==id);
         if(chatConversationId===id){
@@ -130,7 +136,11 @@ async function deleteChatConversation(id){
             }
         }
         saveChatStore(store);renderChatMessages();renderChatHistory();
-        showToast("Đã xóa cuộc trò chuyện.");
+        if(cloudDeleteError){
+            showToast("Đã xóa trên thiết bị, nhưng chưa xóa được bản Supabase: " + (cloudDeleteError.message || "lỗi quyền truy cập"), true);
+        }else{
+            showToast("Đã xóa cuộc trò chuyện.");
+        }
     }catch(e){
         console.error("Delete chat error:",e);
         showToast(e?.message||"Không thể xóa cuộc trò chuyện.",true);
@@ -3496,8 +3506,9 @@ document.addEventListener("DOMContentLoaded",()=>{
             min-width:190px; padding:4px 0 5px;
         }
         .brand-mark { font-family: Georgia, serif; font-size:20px; color:#e26794; line-height:1; }
-        .brand-name { font-family: Georgia, 'Times New Roman', serif; font-size:23px; line-height:1; letter-spacing:-.02em; color:#633e51; }
-        .brand-name strong, .brand-name em { font-weight:700; font-style:normal; color:inherit; }
+        .brand-name { font-family: Georgia, 'Times New Roman', serif; font-size:23px; line-height:1; letter-spacing:-.025em; color:#633e51; font-weight:700; font-style:normal; white-space:nowrap; }
+        .brand-name::first-letter { font-weight:700; }
+        .brand-name { text-rendering:optimizeLegibility; -webkit-font-smoothing:antialiased; }
         .brand-subtitle { position:absolute; left:29px; bottom:-5px; font-size:7px; letter-spacing:.24em; text-transform:uppercase; color:#a77b8e; font-weight:700; }
 
         .logo-elegant { position:relative; }
@@ -3512,10 +3523,10 @@ document.addEventListener("DOMContentLoaded",()=>{
 
         .mobile-menu-toggle { display:none; width:42px; height:42px; border:1px solid rgba(255,255,255,.75); border-radius:13px; background:rgba(255,255,255,.55); color:#633e51; align-items:center; justify-content:center; box-shadow:0 8px 22px rgba(121,76,103,.12); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); }
         .mobile-menu-toggle svg { width:22px; height:22px; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; }
-        .mobile-nav-backdrop { display:none; position:fixed; inset:0; background:rgba(54,28,42,.22); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px); z-index:9990; opacity:0; transition:opacity .25s ease; }
-        .mobile-nav-drawer { display:none; position:fixed; top:0; left:0; bottom:0; width:min(82vw,330px); padding:20px 15px; background:rgba(255,249,252,.88); border-right:1px solid rgba(255,255,255,.8); box-shadow:20px 0 55px rgba(91,52,72,.18); backdrop-filter:blur(25px) saturate(145%); -webkit-backdrop-filter:blur(25px) saturate(145%); transform:translateX(-105%); transition:transform .3s cubic-bezier(.2,.8,.2,1); z-index:9991; overflow:auto; }
-        .mobile-nav-drawer.open { transform:translateX(0); }
-        .mobile-nav-backdrop.open { opacity:1; }
+        .mobile-nav-backdrop { display:none; position:fixed; inset:0; background:rgba(54,28,42,.18); backdrop-filter:blur(2px); -webkit-backdrop-filter:blur(2px); z-index:10001; opacity:0; pointer-events:none; transition:opacity .25s ease; }
+        .mobile-nav-drawer { display:none; position:fixed; top:0; left:0; bottom:0; width:min(82vw,330px); padding:20px 15px; background:rgba(255,249,252,.96); border-right:1px solid rgba(255,255,255,.9); box-shadow:20px 0 55px rgba(91,52,72,.22); backdrop-filter:blur(25px) saturate(145%); -webkit-backdrop-filter:blur(25px) saturate(145%); transform:translateX(-105%); transition:transform .3s cubic-bezier(.2,.8,.2,1); z-index:10002; overflow:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; }
+        .mobile-nav-drawer.open { transform:translateX(0); pointer-events:auto; }
+        .mobile-nav-backdrop.open { opacity:1; pointer-events:auto; }
         .mobile-nav-head { display:flex; align-items:center; justify-content:space-between; padding:5px 5px 18px; border-bottom:1px solid rgba(226,103,148,.12); margin-bottom:13px; }
         .mobile-nav-title { font-family:Georgia,'Times New Roman',serif; font-size:25px; color:#633e51; }
         .mobile-nav-title span { color:#e26794; font-size:20px; }
@@ -4147,8 +4158,10 @@ document.addEventListener("DOMContentLoaded",()=>{
 .brand-home-link{appearance:none;-webkit-appearance:none;border:0;margin:0;padding:0;background:transparent;font:inherit;color:inherit;text-align:left;cursor:pointer;}
 .brand-home-link:focus-visible{outline:2px solid rgba(226,103,148,.55);outline-offset:5px;border-radius:12px;}
 @media(max-width:800px){
-  .mobile-menu-backdrop{z-index:9998!important;}
-  .mobile-nav-drawer{z-index:9999!important;}
+  .mobile-menu-backdrop{z-index:10001!important;pointer-events:none!important;}
+  .mobile-menu-backdrop.open{pointer-events:auto!important;}
+  .mobile-nav-drawer{display:block!important;z-index:10002!important;pointer-events:none;}
+  .mobile-nav-drawer.open{pointer-events:auto!important;}
   #app>header{z-index:10000!important;}
   .youtube-global-player-host{z-index:900!important;}
   .youtube-mini-player{z-index:901!important;}
@@ -4266,7 +4279,7 @@ document.addEventListener("DOMContentLoaded",()=>{
 
         <button type="button" class="brand brand-elegant brand-home-link" id="brand-home-link" aria-label="Đoàn Thảo — mở Lịch học">
             <span class="brand-mark" aria-hidden="true">♡</span>
-            <span class="brand-name"><strong>Đoàn</strong> <span>Thảo</span></span>
+            <span class="brand-name">Đoàn Thảo</span>
             <span class="brand-subtitle">personal space</span>
         </button>
 
@@ -4285,6 +4298,26 @@ document.addEventListener("DOMContentLoaded",()=>{
         id="mobile-menu-backdrop"
         aria-hidden="true"
     ></div>
+
+    <aside
+        class="mobile-nav-drawer"
+        id="mobile-nav-drawer"
+        aria-hidden="true"
+        aria-label="Điều hướng"
+    >
+        <div class="mobile-nav-head">
+            <div>
+                <div class="mobile-nav-title"><span>♡</span> <strong>Đoàn</strong> <em>Thảo</em></div>
+                <div class="mobile-nav-subtitle">PERSONAL SPACE</div>
+            </div>
+            <button type="button" class="mobile-nav-close" id="mobile-nav-close" aria-label="Đóng menu">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M6 6L18 18M18 6L6 18"></path>
+                </svg>
+            </button>
+        </div>
+        <nav class="mobile-nav-list" id="mobile-nav-list" aria-label="Các mục điều hướng"></nav>
+    </aside>
 
     <div class="layout">
 
@@ -4969,6 +5002,9 @@ const db = window.supabase.createClient(
         }
     }
 );
+
+// Global Supabase client alias. Some legacy modules use `supa`; keep both names synchronized.
+const supa = db;
 
 
 /* =========================================================
@@ -8893,7 +8929,7 @@ document
 (function setupMobileNavigation(){
     const toggle = document.getElementById('mobile-menu-toggle');
     const drawer = document.getElementById('mobile-nav-drawer');
-    const backdrop = document.getElementById('mobile-nav-backdrop');
+    const backdrop = document.getElementById('mobile-menu-backdrop');
     const closeBtn = document.getElementById('mobile-nav-close');
     const list = document.getElementById('mobile-nav-list');
     const desktopNav = document.querySelector('#app > .layout > aside');
@@ -8915,6 +8951,7 @@ document
         drawer.classList.add('open');
         backdrop.classList.add('open');
         drawer.setAttribute('aria-hidden','false');
+        backdrop.setAttribute('aria-hidden','false');
         toggle.setAttribute('aria-expanded','true');
         document.body.classList.add('mobile-nav-open');
     }
@@ -8922,6 +8959,7 @@ document
         drawer.classList.remove('open');
         backdrop.classList.remove('open');
         drawer.setAttribute('aria-hidden','true');
+        backdrop.setAttribute('aria-hidden','true');
         toggle.setAttribute('aria-expanded','false');
         document.body.classList.remove('mobile-nav-open');
     }
@@ -9371,7 +9409,7 @@ initializeApp();
   const defaults={playbackRate:1,repeatMode:"off",shuffle:false,autoplay:true,sleepMinutes:0};
   let settings={...defaults},sleepTimer=null,sleepEndAt=0,saveTimer=null,searchTimer=null;
   const $=id=>document.getElementById(id);
-  const supa=(()=>{try{return typeof db!=="undefined"?db:(window.db||window.supabaseClient||null)}catch(_){return window.db||window.supabaseClient||null}})();
+  // Use the global Supabase client alias `supa` declared above.
   const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
   function toast(m,err=false){if(typeof window.showToast==='function')window.showToast(m,err);else console[err?'error':'log'](m)}
   function userId(){try{return (typeof currentUser!=="undefined"?currentUser:(window.currentUser||window.__currentUser||null))?.id||null}catch(_){return (window.currentUser||window.__currentUser||null)?.id||null}}
