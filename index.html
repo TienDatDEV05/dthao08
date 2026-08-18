@@ -3503,13 +3503,13 @@ document.addEventListener("DOMContentLoaded",()=>{
         ========================================================= */
         .brand-elegant {
             display:flex; align-items:center; gap:9px; position:relative;
-            min-width:190px; padding:4px 0 5px;
+            min-width:190px; padding:5px 0 10px;
         }
         .brand-mark { font-family: Georgia, serif; font-size:20px; color:#e26794; line-height:1; }
-        .brand-name { font-family: Georgia, 'Times New Roman', serif; font-size:23px; line-height:1; letter-spacing:-.025em; color:#633e51; font-weight:700; font-style:normal; white-space:nowrap; }
+        .brand-name { font-family: Georgia, 'Times New Roman', serif; font-size:23px; line-height:-10; letter-spacing:-.025em; color:#633e51; font-weight:700; font-style:normal; white-space:nowrap; }
         .brand-name::first-letter { font-weight:700; }
         .brand-name { text-rendering:optimizeLegibility; -webkit-font-smoothing:antialiased; }
-        .brand-subtitle { position:absolute; left:29px; bottom:-5px; font-size:7px; letter-spacing:.24em; text-transform:uppercase; color:#a77b8e; font-weight:700; }
+        .brand-subtitle { position:absolute; left:29px; bottom:-4px; font-size:7px; letter-spacing:.24em; text-transform:uppercase; color:#a77b8e; font-weight:700; white-space:nowrap; }
 
         .logo-elegant { position:relative; }
         .logo-elegant .auth-brand-symbol { font-family:Georgia,serif; color:#e26794; font-size:25px; margin-bottom:2px; }
@@ -3524,10 +3524,10 @@ document.addEventListener("DOMContentLoaded",()=>{
         .mobile-menu-toggle { display:none; width:42px; height:42px; border:1px solid rgba(255,255,255,.75); border-radius:13px; background:rgba(255,255,255,.55); color:#633e51; align-items:center; justify-content:center; box-shadow:0 8px 22px rgba(121,76,103,.12); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); }
         .mobile-menu-toggle svg { width:22px; height:22px; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; }
         .mobile-nav-backdrop { display:none; position:fixed; inset:0; background:rgba(54,28,42,.18); backdrop-filter:blur(2px); -webkit-backdrop-filter:blur(2px); z-index:10001; opacity:0; pointer-events:none; transition:opacity .25s ease; }
-        .mobile-nav-drawer { display:none; position:fixed; top:0; left:0; bottom:0; width:min(82vw,330px); padding:20px 15px; background:rgba(255,249,252,.96); border-right:1px solid rgba(255,255,255,.9); box-shadow:20px 0 55px rgba(91,52,72,.22); backdrop-filter:blur(25px) saturate(145%); -webkit-backdrop-filter:blur(25px) saturate(145%); transform:translateX(-105%); transition:transform .3s cubic-bezier(.2,.8,.2,1); z-index:10002; overflow:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; }
+        .mobile-nav-drawer { display:none; position:fixed; top:0; left:0; bottom:0; width:min(82vw,330px); padding:0 15px 20px; background:rgba(255,249,252,.98); border-right:1px solid rgba(255,255,255,.9); box-shadow:20px 0 55px rgba(91,52,72,.22); backdrop-filter:blur(25px) saturate(145%); -webkit-backdrop-filter:blur(25px) saturate(145%); transform:translateX(-105%); transition:transform .3s cubic-bezier(.2,.8,.2,1); z-index:10002; overflow:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; }
         .mobile-nav-drawer.open { transform:translateX(0); pointer-events:auto; }
         .mobile-nav-backdrop.open { opacity:1; pointer-events:auto; }
-        .mobile-nav-head { display:flex; align-items:center; justify-content:space-between; padding:5px 5px 18px; border-bottom:1px solid rgba(226,103,148,.12); margin-bottom:13px; }
+        .mobile-nav-head { display:flex; align-items:center; justify-content:flex-end; min-height:56px; padding:0 0 0 5px; border-bottom:1px solid rgba(226,103,148,.12); margin-bottom:13px; }
         .mobile-nav-title { font-family:Georgia,'Times New Roman',serif; font-size:25px; color:#633e51; }
         .mobile-nav-title span { color:#e26794; font-size:20px; }
         .mobile-nav-title strong { font-weight:700; }
@@ -4167,6 +4167,15 @@ document.addEventListener("DOMContentLoaded",()=>{
   .youtube-mini-player{z-index:901!important;}
   #page-youtube-audio .youtube-now-panel{z-index:1;}
 }
+
+/* FINAL POLISH — MOBILE DRAWER + BRAND SPACING */
+.brand-elegant { padding-top:5px; padding-bottom:10px; }
+.brand-elegant .brand-subtitle { bottom:-10px; }
+@media(max-width:800px){
+  .mobile-nav-drawer { top:0 !important; padding-top:0 !important; }
+  .mobile-nav-head { min-height:56px !important; padding-top:0 !important; justify-content:flex-end !important; }
+  .mobile-nav-title, .mobile-nav-subtitle { display:none !important; }
+}
 </style>
 </head>
 
@@ -4306,10 +4315,6 @@ document.addEventListener("DOMContentLoaded",()=>{
         aria-label="Điều hướng"
     >
         <div class="mobile-nav-head">
-            <div>
-                <div class="mobile-nav-title"><span>♡</span> <strong>Đoàn</strong> <em>Thảo</em></div>
-                <div class="mobile-nav-subtitle">PERSONAL SPACE</div>
-            </div>
             <button type="button" class="mobile-nav-close" id="mobile-nav-close" aria-label="Đóng menu">
                 <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <path d="M6 6L18 18M18 6L6 18"></path>
@@ -9480,12 +9485,12 @@ initializeApp();
 (function(){
   const STORAGE_KEY = "navigationSoundSettings";
   const defaults = {
-    volume: 75,
-    frequency: 1200,
-    duration: 55,
-    attack: 3,
+    volume: 100,
+    frequency: 600,
+    duration: 77,
+    attack: 1,
     release: 50,
-    wave: "square"
+    wave: "sine"
   };
 
   const $ = id => document.getElementById(id);
@@ -9638,6 +9643,44 @@ initializeApp();
 <style id="youtube-svg-icons-style">
 .youtube-svg-icon{width:18px;height:18px;display:inline-block;flex:0 0 auto;vertical-align:-4px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 .youtube-svg-icon.lg{width:24px;height:24px}.youtube-icon-only{display:inline-flex!important;align-items:center;justify-content:center}.youtube-icon-label{display:inline-flex;align-items:center;gap:7px}.youtube-modern-brand-mark .youtube-svg-icon{width:24px;height:24px;stroke-width:2.2}.youtube-empty-icon .youtube-svg-icon{width:34px;height:34px}.youtube-now-actions button,.youtube-mini-actions button,.youtube-result-actions button{display:inline-flex;align-items:center;justify-content:center}
+
+/* =========================================================
+   FINAL HEADER SPACING — ĐOÀN THẢO / PERSONAL SPACE
+   Giảm khoảng cách vừa phải, không để hai phần dính sát nhau.
+========================================================= */
+
+/* Màn hình đăng nhập */
+#auth-screen .logo-elegant h1 {
+    margin-bottom: 0;
+}
+
+#auth-screen .logo-elegant .auth-brand-line {
+    margin: 4px auto 4px !important;
+}
+
+#auth-screen .logo-elegant p {
+    margin: 0 !important;
+    line-height: 1.2;
+}
+
+/* Header chính sau khi đăng nhập */
+#app > header .brand-elegant {
+    padding-bottom: 6px !important;
+}
+
+#app > header .brand-elegant .brand-subtitle {
+    left: 29px;
+    bottom: -4px !important;
+    line-height: 1;
+}
+
+@media (max-width: 800px) {
+    #app > header .brand-elegant .brand-subtitle {
+        left: 27px;
+        bottom: -3px !important;
+    }
+}
+
 </style>
 <script id="youtube-svg-icon-system">
 (function(){
