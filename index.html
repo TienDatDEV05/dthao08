@@ -3698,21 +3698,6 @@ document.addEventListener("DOMContentLoaded",()=>{
 </style>
 <style>
 
-/* ===== Navigation Sound Studio ===== */
-.nav-sound-studio{margin-top:16px;padding:18px;border-radius:18px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12)}
-.nav-sound-studio h3{margin:0 0 6px;font-size:18px}
-.nav-sound-studio .studio-desc{margin:0 0 16px;opacity:.72;font-size:13px;line-height:1.5}
-.nav-sound-control{display:grid;grid-template-columns:110px 1fr 72px;gap:10px;align-items:center;margin:12px 0}
-.nav-sound-control label{font-size:13px}
-.nav-sound-control input[type=range]{width:100%}
-.nav-sound-value{text-align:right;font-variant-numeric:tabular-nums;font-size:13px;opacity:.8}
-.nav-sound-select{width:100%;padding:9px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.16);background:rgba(0,0,0,.12);color:inherit}
-.nav-sound-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
-.nav-sound-actions button{border:0;border-radius:11px;padding:10px 14px;cursor:pointer;font-weight:600}
-.nav-sound-actions .sound-preview-btn{background:#fff;color:#111}
-.nav-sound-actions .sound-save-btn{background:rgba(255,255,255,.12);color:inherit;border:1px solid rgba(255,255,255,.15)}
-.nav-sound-status{margin-top:10px;font-size:12px;opacity:.7}
-
 </style>
 
 <style id="youtube-phase3-style">
@@ -4770,56 +4755,7 @@ document.addEventListener("DOMContentLoaded",()=>{
 
                 <div class="settings-section">
 
-<div class="nav-sound-studio" id="navSoundStudio">
-  <h3>🎧 Navigation Sound Studio</h3>
-  <p class="studio-desc">Tự chỉnh âm thanh điều hướng, bấm “Nghe thử” để nghe ngay và “Lưu âm thanh” để áp dụng cho các mục NAVIGATION.</p>
 
-  <div class="nav-sound-control">
-    <label for="navSoundVolume">Âm lượng</label>
-    <input id="navSoundVolume" type="range" min="0" max="100" value="75">
-    <span class="nav-sound-value" id="navSoundVolumeValue">75%</span>
-  </div>
-
-  <div class="nav-sound-control">
-    <label for="navSoundFrequency">Tần số</label>
-    <input id="navSoundFrequency" type="range" min="100" max="3000" value="1200">
-    <span class="nav-sound-value" id="navSoundFrequencyValue">1200 Hz</span>
-  </div>
-
-  <div class="nav-sound-control">
-    <label for="navSoundDuration">Độ dài</label>
-    <input id="navSoundDuration" type="range" min="20" max="300" value="55">
-    <span class="nav-sound-value" id="navSoundDurationValue">55 ms</span>
-  </div>
-
-  <div class="nav-sound-control">
-    <label for="navSoundAttack">Attack</label>
-    <input id="navSoundAttack" type="range" min="1" max="50" value="3">
-    <span class="nav-sound-value" id="navSoundAttackValue">3 ms</span>
-  </div>
-
-  <div class="nav-sound-control">
-    <label for="navSoundRelease">Release</label>
-    <input id="navSoundRelease" type="range" min="10" max="300" value="50">
-    <span class="nav-sound-value" id="navSoundReleaseValue">50 ms</span>
-  </div>
-
-  <div class="nav-sound-control">
-    <label for="navSoundWave">Kiểu sóng</label>
-    <select id="navSoundWave" class="nav-sound-select">
-      <option value="sine">Sine</option>
-      <option value="square" selected>Square</option>
-      <option value="triangle">Triangle</option>
-      <option value="sawtooth">Sawtooth</option>
-    </select>
-    <span></span>
-  </div>
-
-  <div class="nav-sound-actions">
-    <button type="button" class="sound-preview-btn" id="navSoundPreview">▶ Nghe thử</button>
-    <button type="button" class="sound-save-btn" id="navSoundSave">💾 Lưu âm thanh</button>
-  </div>
-  <div class="nav-sound-status" id="navSoundStatus">Âm thanh hiện tại dùng cấu hình mặc định.</div>
 </div>
 
 
@@ -9480,144 +9416,72 @@ initializeApp();
 </script>
 
 <script>
-
-/* ===== Navigation Sound Studio ===== */
+/* ===== Navigation Sound — Fixed Default =====
+   Sine • 100% • 600 Hz • 77 ms • Attack 1 ms • Release 50 ms
+   Không còn giao diện chỉnh âm thanh trong Cài đặt.
+*/
 (function(){
-  const STORAGE_KEY = "navigationSoundSettings";
-  const defaults = {
-    volume: 100,
-    frequency: 600,
-    duration: 77,
-    attack: 1,
-    release: 50,
-    wave: "sine"
-  };
+    const NAV_SOUND = Object.freeze({
+        volume: 1.0,
+        frequency: 600,
+        duration: 0.077,
+        attack: 0.001,
+        release: 0.050,
+        wave: "sine"
+    });
 
-  const $ = id => document.getElementById(id);
+    window.playNavigationSound = function(){
+        try{
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if(!AudioCtx) return;
 
-  function loadSettings(){
-    try{
-      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
-      return Object.assign({}, defaults, saved || {});
-    }catch(e){
-      return Object.assign({}, defaults);
-    }
-  }
+            window.__navAudioCtx = window.__navAudioCtx || new AudioCtx();
+            const ctx = window.__navAudioCtx;
 
-  window.navigationSoundSettings = loadSettings();
+            const start = () => {
+                const now = ctx.currentTime;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
 
-  function syncControls(){
-    const s = window.navigationSoundSettings;
-    const map = {
-      navSoundVolume:["volume","%"],
-      navSoundFrequency:["frequency"," Hz"],
-      navSoundDuration:["duration"," ms"],
-      navSoundAttack:["attack"," ms"],
-      navSoundRelease:["release"," ms"]
+                osc.type = NAV_SOUND.wave;
+                osc.frequency.setValueAtTime(NAV_SOUND.frequency, now);
+
+                const releaseStart = Math.max(
+                    NAV_SOUND.attack,
+                    NAV_SOUND.duration - NAV_SOUND.release
+                );
+
+                gain.gain.setValueAtTime(0.0001, now);
+                gain.gain.linearRampToValueAtTime(
+                    NAV_SOUND.volume,
+                    now + NAV_SOUND.attack
+                );
+                gain.gain.setValueAtTime(
+                    NAV_SOUND.volume,
+                    now + releaseStart
+                );
+                gain.gain.linearRampToValueAtTime(
+                    0.0001,
+                    now + NAV_SOUND.duration
+                );
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                osc.start(now);
+                osc.stop(now + NAV_SOUND.duration + 0.005);
+            };
+
+            if(ctx.state === "suspended"){
+                ctx.resume().then(start).catch(()=>{});
+            }else{
+                start();
+            }
+        }catch(e){
+            console.warn("Navigation sound unavailable:", e);
+        }
     };
-    Object.entries(map).forEach(([id,[key,suffix]])=>{
-      const el = $(id), out = $(id+"Value");
-      if(el) el.value = s[key];
-      if(out) out.textContent = s[key] + suffix;
-    });
-    const wave = $("navSoundWave");
-    if(wave) wave.value = s.wave;
-  }
-
-  function readControls(){
-    return {
-      volume: Number($("navSoundVolume")?.value || defaults.volume),
-      frequency: Number($("navSoundFrequency")?.value || defaults.frequency),
-      duration: Number($("navSoundDuration")?.value || defaults.duration),
-      attack: Number($("navSoundAttack")?.value || defaults.attack),
-      release: Number($("navSoundRelease")?.value || defaults.release),
-      wave: $("navSoundWave")?.value || defaults.wave
-    };
-  }
-
-  function updateLabels(){
-    const s = readControls();
-    $("navSoundVolumeValue").textContent = s.volume + "%";
-    $("navSoundFrequencyValue").textContent = s.frequency + " Hz";
-    $("navSoundDurationValue").textContent = s.duration + " ms";
-    $("navSoundAttackValue").textContent = s.attack + " ms";
-    $("navSoundReleaseValue").textContent = s.release + " ms";
-  }
-
-  window.playNavigationSound = function(){
-    try{
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      if(!AudioCtx) return;
-
-      window.__navAudioCtx = window.__navAudioCtx || new AudioCtx();
-      const ctx = window.__navAudioCtx;
-      if(ctx.state === "suspended") ctx.resume().catch(()=>{});
-
-      const s = window.navigationSoundSettings || defaults;
-      const now = ctx.currentTime;
-      const duration = Math.max(0.02, s.duration / 1000);
-      const attack = Math.min(duration * 0.45, Math.max(0.001, s.attack / 1000));
-      const release = Math.min(duration * 0.8, Math.max(0.008, s.release / 1000));
-      const peak = Math.max(0.0001, Math.min(0.95, s.volume / 100));
-
-      const master = ctx.createGain();
-      master.gain.setValueAtTime(0.0001, now);
-      master.gain.linearRampToValueAtTime(peak, now + attack);
-      master.gain.exponentialRampToValueAtTime(0.0001, now + Math.max(attack + 0.005, Math.min(duration, release + attack)));
-      master.connect(ctx.destination);
-
-      const osc = ctx.createOscillator();
-      osc.type = s.wave;
-      osc.frequency.setValueAtTime(s.frequency, now);
-      osc.frequency.exponentialRampToValueAtTime(Math.max(80, s.frequency * 0.42), now + duration);
-      osc.connect(master);
-      osc.start(now);
-      osc.stop(now + duration + 0.01);
-    }catch(e){
-      console.warn("Navigation sound unavailable:", e);
-    }
-  };
-
-  function bindStudio(){
-    if(!$("navSoundStudio")) return;
-
-    ["navSoundVolume","navSoundFrequency","navSoundDuration","navSoundAttack","navSoundRelease"].forEach(id=>{
-      $(id)?.addEventListener("input", updateLabels);
-    });
-
-    $("navSoundPreview")?.addEventListener("click", ()=>{
-      const temp = readControls();
-      const old = window.navigationSoundSettings;
-      window.navigationSoundSettings = temp;
-      window.playNavigationSound();
-      window.navigationSoundSettings = old;
-    });
-
-    $("navSoundSave")?.addEventListener("click", ()=>{
-      const settings = readControls();
-      window.navigationSoundSettings = settings;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-      const status = $("navSoundStatus");
-      if(status) status.textContent = "✓ Đã lưu và áp dụng âm thanh điều hướng.";
-      window.playNavigationSound();
-    });
-
-    syncControls();
-    updateLabels();
-
-    const status = $("navSoundStatus");
-    if(status && localStorage.getItem(STORAGE_KEY)){
-      status.textContent = "✓ Đang dùng cấu hình âm thanh đã lưu.";
-    }
-  }
-
-  if(document.readyState === "loading"){
-    document.addEventListener("DOMContentLoaded", bindStudio);
-  }else{
-    bindStudio();
-  }
 })();
-
 </script>
 
 <!-- ===== YouTube Audio Phase 3: Global Player ===== -->
