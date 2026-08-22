@@ -4273,7 +4273,7 @@ document.addEventListener("DOMContentLoaded",()=>{
 
         <button type="button" class="brand brand-elegant brand-home-link" id="brand-home-link" aria-label="Đoàn Thảo — mở Lịch học">
             <span class="brand-mark" aria-hidden="true">♡</span>
-            <span class="brand-name">Đoàn Thảo</span>
+            <span class="brand-name"><span class="brand-name-text">Đoàn Thảo</span><canvas class="brand-fur-canvas" aria-hidden="true"></canvas></span>
             <span class="brand-subtitle">personal space</span>
         </button>
 
@@ -4408,7 +4408,7 @@ document.addEventListener("DOMContentLoaded",()=>{
             <div id="page-schedule" class="page">
 
                 <div class="page-title">
-                    <h2>📅 Thời khóa biểu</h2>
+                    <h2>Thời khóa biểu</h2>
                     <p>Chúc vợ iuuu có 1 ngày học tập vuii vẻ ♡</p>
                     <div id="print-semester-title"></div>
                 </div>
@@ -4450,7 +4450,7 @@ document.addEventListener("DOMContentLoaded",()=>{
             <div id="page-notes" class="page hidden">
 
                 <div class="page-title">
-                    <h2>📝 Ghi chú</h2>
+                    <h2>Ghi chú</h2>
                     <p>Note lại những gì quan trọng vợ nhé ♡</p>
                 </div>
 
@@ -4494,7 +4494,7 @@ document.addEventListener("DOMContentLoaded",()=>{
             <div id="page-subjects" class="page hidden">
 
                 <div class="page-title">
-                    <h2>📚 Môn học</h2>
+                    <h2>Môn học</h2>
                     <p>Thêm môn học ở đây nha vợ iuu.</p>
                 </div>
 
@@ -4522,7 +4522,7 @@ document.addEventListener("DOMContentLoaded",()=>{
             <div id="page-semesters" class="page hidden">
 
                 <div class="page-title">
-                    <h2>🌸 Học kỳ</h2>
+                    <h2>Học kỳ</h2>
                     <p>Vợ nhớ thêm học kỳ đầu tiên nhaaa.</p>
                 </div>
 
@@ -4551,7 +4551,7 @@ document.addEventListener("DOMContentLoaded",()=>{
                     <div class="youtube-modern-brand">
                         <div class="youtube-modern-brand-mark" aria-hidden="true"><span data-yt-icon="play"></span></div>
                         <div>
-                            <div class="youtube-modern-brand-title">YouTube <span>Audio</span></div>
+                            <div class="youtube-modern-brand-title">YouTube Audio</div>
                             <div class="youtube-modern-brand-subtitle">Khám phá · nghe · lưu lại những nội dung bạn yêu thích</div>
                         </div>
                         <div class="youtube-modern-brand-live"><span></span> Sẵn sàng nghe</div>
@@ -4561,10 +4561,13 @@ document.addEventListener("DOMContentLoaded",()=>{
                         <form id="youtube-search-form" class="youtube-search-form" autocomplete="off">
                             <div class="youtube-search-input-wrap"><span data-yt-icon="search"></span><input id="youtube-search-input" type="search" placeholder="Tìm bài hát, nhạc học bài, podcast, chủ đề..." maxlength="100"><button id="youtube-search-submit" type="submit">Tìm</button></div>
                         </form>
-                        <div class="youtube-filter-row">
-                            <label>Sắp xếp <select id="youtube-search-order"><option value="relevance">Phù hợp nhất</option><option value="date">Mới nhất</option><option value="viewCount">Lượt xem cao</option></select></label>
-                            <label>Thời lượng <select id="youtube-search-duration"><option value="any">Tất cả</option><option value="short">Dưới 4 phút</option><option value="medium">4–20 phút</option><option value="long">Trên 20 phút</option></select></label>
-                        </div>
+                        <details class="youtube-advanced-search">
+                            <summary><span class="youtube-advanced-label"><span data-yt-icon="sparkles"></span>Bộ lọc nâng cao</span><span class="youtube-advanced-hint">Sắp xếp · thời lượng</span></summary>
+                            <div class="youtube-filter-row">
+                                <label>Sắp xếp <select id="youtube-search-order"><option value="relevance">Phù hợp nhất</option><option value="date">Mới nhất</option><option value="viewCount">Lượt xem cao</option></select></label>
+                                <label>Thời lượng <select id="youtube-search-duration"><option value="any">Tất cả</option><option value="short">Dưới 4 phút</option><option value="medium">4–20 phút</option><option value="long">Trên 20 phút</option></select></label>
+                            </div>
+                        </details>
                         <div class="youtube-topic-chips" aria-label="Chủ đề nhanh">
                             <button type="button" class="youtube-topic-chip active" data-topic="Tất cả">Tất cả</button>
                             <button type="button" class="youtube-topic-chip" data-topic="Nhạc"><span class="youtube-icon-label"><span data-yt-icon="music"></span>Nhạc</span></button>
@@ -4602,7 +4605,8 @@ document.addEventListener("DOMContentLoaded",()=>{
                             <div class="youtube-progress-row"><span id="youtube-current-time">0:00</span><input id="youtube-progress" type="range" min="0" max="100" value="0" step="0.1"><span id="youtube-duration">0:00</span></div>
                             <div class="youtube-volume-row"><span data-yt-icon="volume"></span><input id="youtube-volume" type="range" min="0" max="100" value="80"><span id="youtube-volume-value">80%</span></div>
                             <div id="youtube-media-status" class="youtube-media-status">◉ Đang chuẩn bị điều khiển màn hình khóa…</div>
-                            <div class="youtube-phase5-controls" aria-label="Điều khiển nghe thông minh">
+                            <details class="youtube-phase5-controls" aria-label="Điều khiển nghe thông minh">
+                                <summary class="youtube-controls-summary"><span><span data-yt-icon="sparkles"></span>Điều khiển nâng cao</span><small>tốc độ · lặp · trộn · hẹn giờ</small></summary>
                                 <div class="youtube-phase5-row">
                                     <span class="youtube-phase5-label">Tốc độ</span>
                                     <label class="youtube-phase5-control"><select id="youtube-playback-rate" aria-label="Tốc độ phát"><option value="0.5">0.5×</option><option value="0.75">0.75×</option><option value="1" selected>1×</option><option value="1.25">1.25×</option><option value="1.5">1.5×</option><option value="1.75">1.75×</option><option value="2">2×</option></select></label>
@@ -4619,7 +4623,7 @@ document.addEventListener("DOMContentLoaded",()=>{
                                     <div><strong><span class="youtube-icon-label"><span data-yt-icon="sparkles"></span>Smart Mix</span></strong><div><span>Tạo chuỗi video dựa trên lịch sử, yêu thích và nội dung đang nghe.</span></div></div>
                                     <button type="button" class="youtube-phase5-control active" id="youtube-smart-mix-btn">Tạo mix</button>
                                 </div>
-                            </div>
+                            </details>
 
                         </aside>
                     </div>
@@ -8603,7 +8607,7 @@ function() {
     let html = `
         <div class="print-sheet">
             <div class="print-heading">
-                <h1>📅 Thời khóa biểu</h1>
+                <h1>Thời khóa biểu</h1>
                 <p>${escapeHTML(semester?.name || "Học kỳ")}</p>
             </div>
 
@@ -9545,6 +9549,230 @@ initializeApp();
     }
 }
 
+
+
+/* =========================================================
+   YOUTUBE AUDIO — CLEAN / PREMIUM REFINEMENT
+   Keeps every existing control and ID; only changes hierarchy.
+   ========================================================= */
+#page-youtube-audio{
+  --yt-accent:#e26794;
+  --yt-accent-soft:#fff1f6;
+  --yt-ink:#3d3037;
+  --yt-muted:#8d7b84;
+  --yt-line:rgba(112,72,92,.12);
+  --yt-glass:rgba(255,255,255,.72);
+}
+#page-youtube-audio .youtube-audio-page{
+  max-width:1280px;
+  padding:10px 0 118px;
+}
+#page-youtube-audio .youtube-modern-brand{
+  padding:2px 2px 16px;
+  gap:12px;
+}
+#page-youtube-audio .youtube-modern-brand-mark{
+  width:38px;height:38px;border-radius:13px;
+  background:linear-gradient(145deg,#ef8fb2,#d85d8c);
+  box-shadow:0 10px 24px rgba(226,103,148,.22);
+}
+#page-youtube-audio .youtube-modern-brand-title{
+  font-size:21px;letter-spacing:-.5px;color:var(--yt-ink);
+}
+#page-youtube-audio .youtube-modern-brand-title span{color:#8c6577}
+#page-youtube-audio .youtube-modern-brand-subtitle{color:#a08b94;font-size:10px}
+#page-youtube-audio .youtube-modern-brand-live{
+  border-color:var(--yt-line);background:rgba(255,255,255,.52);color:#816b75;
+}
+#page-youtube-audio .youtube-page-title{
+  margin:0 0 12px;padding:0 2px;align-items:center;
+}
+#page-youtube-audio .youtube-page-title h2{font-size:24px;color:var(--yt-ink);letter-spacing:-.6px}
+#page-youtube-audio .youtube-page-title p{color:#9a8790;font-size:11px}
+#page-youtube-audio .youtube-clear-btn{
+  min-height:34px;border-color:var(--yt-line);background:rgba(255,255,255,.58);color:#806a74;border-radius:11px;
+}
+#page-youtube-audio .youtube-search-shell{
+  margin-bottom:12px;padding:13px;
+  border:1px solid var(--yt-line);border-radius:18px;
+  background:rgba(255,255,255,.64);
+  box-shadow:0 14px 35px rgba(91,52,72,.06);
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+}
+#page-youtube-audio .youtube-search-input-wrap{
+  height:48px;border-color:rgba(112,72,92,.16);background:rgba(255,255,255,.84);
+}
+#page-youtube-audio .youtube-search-input-wrap:focus-within{
+  border-color:rgba(226,103,148,.45);box-shadow:0 0 0 3px rgba(226,103,148,.08)
+}
+#page-youtube-audio #youtube-search-input{font-size:13px!important}
+#page-youtube-audio #youtube-search-submit{
+  min-width:76px;background:linear-gradient(135deg,#e879a1,#d85f8d);color:#fff;border-left:0;
+}
+#page-youtube-audio #youtube-search-submit:hover{background:linear-gradient(135deg,#e26794,#cb507f)}
+#page-youtube-audio .youtube-topic-chips{padding:10px 1px 1px;gap:6px}
+#page-youtube-audio .youtube-topic-chip{
+  padding:7px 11px;border:1px solid transparent;border-radius:999px;
+  background:rgba(255,255,255,.68);color:#765f69;font-size:10px;
+}
+#page-youtube-audio .youtube-topic-chip:hover{background:#fff;transform:translateY(-1px)}
+#page-youtube-audio .youtube-topic-chip.active{background:#4a3942;color:#fff;border-color:#4a3942}
+#page-youtube-audio .youtube-advanced-search{margin-top:8px;border-top:1px solid rgba(112,72,92,.08)}
+#page-youtube-audio .youtube-advanced-search summary,
+#page-youtube-audio .youtube-controls-summary{
+  list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:9px 2px 2px;color:#806a74;font-size:10px;font-weight:800;
+}
+#page-youtube-audio .youtube-advanced-search summary::-webkit-details-marker,
+#page-youtube-audio .youtube-phase5-controls summary::-webkit-details-marker{display:none}
+#page-youtube-audio .youtube-advanced-search summary::after,
+#page-youtube-audio .youtube-controls-summary::after{
+  content:'⌄';font-size:14px;line-height:1;transition:transform .2s;color:#a58e98;
+}
+#page-youtube-audio .youtube-advanced-search[open] summary::after,
+#page-youtube-audio .youtube-phase5-controls[open] .youtube-controls-summary::after{transform:rotate(180deg)}
+.youtube-advanced-label{display:inline-flex;align-items:center;gap:6px}
+.youtube-advanced-label svg{width:14px;height:14px}
+.youtube-advanced-hint{color:#b09da5;font-weight:600}
+#page-youtube-audio .youtube-filter-row{margin:6px 0 2px;gap:7px}
+#page-youtube-audio .youtube-filter-row label{background:rgba(255,255,255,.68);border-color:var(--yt-line);border-radius:10px;color:#866f79}
+#page-youtube-audio .youtube-library-bar{
+  padding:0 0 9px;gap:6px;align-items:center;
+}
+#page-youtube-audio .youtube-library-tab{
+  padding:8px 11px;border-color:var(--yt-line);background:rgba(255,255,255,.62);color:#806a74;font-size:10px;
+}
+#page-youtube-audio .youtube-library-tab.active{background:#4a3942;border-color:#4a3942}
+#page-youtube-audio .youtube-sync-status{font-size:9px;color:#aa98a1}
+#page-youtube-audio .youtube-library-panel{
+  margin-bottom:12px;padding:12px;border-radius:16px;
+  border-color:var(--yt-line);background:rgba(255,255,255,.58);
+  box-shadow:0 10px 28px rgba(91,52,72,.045);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+}
+#page-youtube-audio .youtube-library-head{margin-bottom:9px}
+#page-youtube-audio .youtube-library-head strong{font-size:12px;color:var(--yt-ink)}
+#page-youtube-audio .youtube-library-head span{font-size:10px;color:#a28d96}
+#page-youtube-audio .youtube-library-head .youtube-library-tab{padding:7px 9px}
+#page-youtube-audio .youtube-content-grid{
+  grid-template-columns:minmax(0,1fr) 350px;gap:14px;
+}
+#page-youtube-audio .youtube-results-panel{
+  padding:13px;border-radius:17px;border-color:var(--yt-line);background:rgba(255,255,255,.64);
+  box-shadow:0 12px 30px rgba(91,52,72,.055);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+}
+#page-youtube-audio .youtube-section-heading{padding:0 1px 9px;border-bottom-color:var(--yt-line)}
+#page-youtube-audio .youtube-section-heading strong{font-size:14px;color:var(--yt-ink)}
+#page-youtube-audio .youtube-section-heading span{font-size:10px;color:#a18d96}
+#page-youtube-audio .youtube-result-card{
+  grid-template-columns:190px minmax(0,1fr) auto;gap:12px;padding:11px 3px;border-bottom-color:rgba(112,72,92,.09);border-radius:11px;
+}
+#page-youtube-audio .youtube-result-card:hover{background:rgba(255,241,246,.52)}
+#page-youtube-audio .youtube-thumb{width:190px;border-radius:11px}
+#page-youtube-audio .youtube-result-title{font-size:13px;color:#463840;font-weight:800}
+#page-youtube-audio .youtube-result-channel{margin-top:6px;color:#8d7b84;font-size:10px}
+#page-youtube-audio .youtube-result-meta{margin-top:4px;color:#a18f97;font-size:9px}
+#page-youtube-audio .youtube-result-actions button{width:32px;height:32px;color:#806a74}
+#page-youtube-audio .youtube-result-actions button:hover{background:#f7e8ef}
+#page-youtube-audio .youtube-result-actions button.primary{background:#4a3942;color:#fff}
+#page-youtube-audio .youtube-result-actions button.primary:hover{background:#34272e}
+#page-youtube-audio .youtube-now-panel{
+  top:12px;padding:12px;border-radius:17px;background:rgba(54,41,48,.96);
+  border:1px solid rgba(255,255,255,.08);box-shadow:0 20px 45px rgba(54,41,48,.18);
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+}
+#page-youtube-audio .youtube-now-header{padding:2px 2px 9px}
+#page-youtube-audio .youtube-now-header strong{font-size:12px}
+#page-youtube-audio .youtube-player-frame{border-radius:11px}
+#page-youtube-audio .youtube-player-placeholder{min-height:198px;padding:16px}
+#page-youtube-audio .youtube-now-info h3{font-size:14px;margin-top:10px}
+#page-youtube-audio .youtube-now-info p{font-size:10px;color:#b7a8ae}
+#page-youtube-audio .youtube-now-actions{margin-top:10px;gap:5px}
+#page-youtube-audio .youtube-now-actions button{height:36px;border-radius:10px;background:#4b3a43}
+#page-youtube-audio .youtube-now-actions button.primary{background:#fff;color:#3d3037}
+#page-youtube-audio .youtube-progress-row{margin-top:9px}
+#page-youtube-audio .youtube-volume-row{margin-top:3px}
+#page-youtube-audio .youtube-media-status{margin-top:8px;padding:7px 8px;background:rgba(255,255,255,.06);border-radius:8px}
+#page-youtube-audio .youtube-phase5-controls{
+  margin-top:8px;padding:0 9px 8px;border:1px solid rgba(255,255,255,.08);border-radius:11px;background:rgba(255,255,255,.035);
+}
+#page-youtube-audio .youtube-controls-summary{padding:9px 0 8px;color:#eee}
+.youtube-controls-summary>span{display:inline-flex;align-items:center;gap:6px}
+.youtube-controls-summary svg{width:14px;height:14px}
+.youtube-controls-summary small{color:#9f9097;font-size:8px;font-weight:650}
+#page-youtube-audio .youtube-phase5-row{gap:5px}
+#page-youtube-audio .youtube-phase5-row+.youtube-phase5-row{margin-top:6px}
+#page-youtube-audio .youtube-phase5-control{min-height:31px;padding:6px 8px;border-radius:9px;font-size:9px;background:#46363f;border-color:rgba(255,255,255,.08);color:#f4edf0}
+#page-youtube-audio .youtube-phase5-control.active{background:#fff;color:#3d3037;border-color:#fff}
+#page-youtube-audio .youtube-smart-mix{margin-top:7px;padding:8px;border-radius:10px}
+#page-youtube-audio .youtube-smart-mix span{font-size:9px}
+#page-youtube-audio .youtube-smart-mix strong{font-size:10px}
+
+/* Header Fur — vanilla recreation of the supplied Fur text idea. */
+#app > header .brand-name{
+  position:relative;display:inline-block;min-width:118px;height:29px;line-height:29px;
+  font-family:Georgia,'Times New Roman',serif;font-size:23px;letter-spacing:-.025em;font-weight:700;
+  color:#633e51;overflow:visible;
+}
+#app > header .brand-name-text{position:relative;z-index:1;color:#633e51;white-space:nowrap}
+#app > header .brand-fur-canvas{
+  position:absolute;inset:-7px -9px -7px -9px;width:calc(100% + 18px);height:calc(100% + 14px);
+  z-index:2;pointer-events:none;overflow:visible;
+}
+#app > header .brand-name:hover .brand-name-text{color:#8a4e6b}
+#app > header .brand-name:hover .brand-fur-canvas{filter:drop-shadow(0 2px 4px rgba(226,103,148,.12))}
+
+@media(max-width:1050px){
+  #page-youtube-audio .youtube-content-grid{grid-template-columns:minmax(0,1fr) 320px}
+  #page-youtube-audio .youtube-result-card{grid-template-columns:165px minmax(0,1fr) auto}
+  #page-youtube-audio .youtube-thumb{width:165px}
+}
+@media(max-width:800px){
+  #page-youtube-audio .youtube-audio-page{padding:2px 0 110px}
+  #page-youtube-audio .youtube-modern-brand{padding-bottom:10px}
+  #page-youtube-audio .youtube-modern-brand-mark{width:34px;height:34px;border-radius:11px}
+  #page-youtube-audio .youtube-modern-brand-title{font-size:18px}
+  #page-youtube-audio .youtube-modern-brand-subtitle{font-size:9px}
+  #page-youtube-audio .youtube-page-title h2{font-size:20px}
+  #page-youtube-audio .youtube-page-title p{font-size:9px}
+  #page-youtube-audio .youtube-search-shell{padding:10px;border-radius:15px}
+  #page-youtube-audio .youtube-search-input-wrap{height:45px}
+  #page-youtube-audio #youtube-search-submit{min-width:62px;padding:0 12px}
+  #page-youtube-audio .youtube-topic-chips{padding-top:8px}
+  #page-youtube-audio .youtube-topic-chip{padding:6px 10px;font-size:9px}
+  #page-youtube-audio .youtube-content-grid{grid-template-columns:1fr;gap:10px}
+  #page-youtube-audio .youtube-now-panel{position:relative;top:auto;order:0;padding:10px;border-radius:15px}
+  #page-youtube-audio .youtube-results-panel{order:1;padding:9px;border-radius:15px}
+  #page-youtube-audio .youtube-player-placeholder{min-height:176px}
+  #page-youtube-audio .youtube-result-card{grid-template-columns:116px minmax(0,1fr);gap:9px;padding:9px 2px}
+  #page-youtube-audio .youtube-thumb{width:116px;border-radius:9px}
+  #page-youtube-audio .youtube-result-title{font-size:11px;line-height:1.3}
+  #page-youtube-audio .youtube-result-channel{font-size:8px;margin-top:4px}
+  #page-youtube-audio .youtube-result-meta{font-size:8px}
+  #page-youtube-audio .youtube-result-actions{grid-column:2;margin-top:-2px;justify-content:flex-start}
+  #page-youtube-audio .youtube-result-actions button{width:29px;height:29px}
+  #page-youtube-audio .youtube-library-bar{padding-bottom:7px}
+  #page-youtube-audio .youtube-library-tab{padding:7px 9px;font-size:9px}
+  #page-youtube-audio .youtube-sync-status{display:none}
+  #page-youtube-audio .youtube-library-panel{padding:9px;margin-bottom:9px}
+  #page-youtube-audio .youtube-library-head{margin-bottom:7px}
+  #page-youtube-audio .youtube-phase5-controls{padding-left:8px;padding-right:8px}
+  #page-youtube-audio .youtube-controls-summary small{display:none}
+  #page-youtube-audio .youtube-phase5-row{flex-wrap:wrap}
+  #page-youtube-audio .youtube-smart-mix{display:flex;align-items:center;gap:8px}
+  #page-youtube-audio .youtube-smart-mix>div{min-width:0;flex:1}
+  #page-youtube-audio .youtube-smart-mix>button{flex:0 0 auto}
+  #app > header .brand-name{font-size:20px;min-width:103px;height:25px;line-height:25px}
+  #app > header .brand-fur-canvas{inset:-6px -7px;width:calc(100% + 14px);height:calc(100% + 12px)}
+}
+@media(max-width:420px){
+  #page-youtube-audio .youtube-result-card{grid-template-columns:104px minmax(0,1fr)}
+  #page-youtube-audio .youtube-thumb{width:104px}
+  #page-youtube-audio .youtube-result-title{font-size:10.5px}
+  #page-youtube-audio .youtube-topic-chip{padding:6px 9px}
+}
+
 </style>
 <script id="youtube-svg-icon-system">
 (function(){
@@ -9553,7 +9781,8 @@ window.ytIconMarkup=(n,c)=>'<svg class="youtube-svg-icon '+(c||'')+'" viewBox="0
 window.hydrateYtIcons=(root)=>{(root||document).querySelectorAll('[data-yt-icon]').forEach(e=>{if(e.dataset.ytHydrated==='1')return;e.innerHTML=window.ytIconMarkup(e.dataset.ytIcon,e.classList.contains('lg')?'lg':'');e.dataset.ytHydrated='1'})};
 document.addEventListener('DOMContentLoaded',()=>window.hydrateYtIcons());
 })();
-</script>\n<script id="youtube-modern-ui-js">
+</script>
+<script id="youtube-modern-ui-js">
 (function(){
   function bindYouTubeModernUI(){
     const input=document.getElementById("youtube-search-input");
@@ -9585,6 +9814,95 @@ document.addEventListener('DOMContentLoaded',()=>window.hydrateYtIcons());
 
   const ytIconObserver=new MutationObserver(muts=>{for(const m of muts){for(const n of m.addedNodes){if(n.nodeType===1)window.hydrateYtIcons(n)}}});
   document.addEventListener("DOMContentLoaded",()=>{const r=document.getElementById("page-youtube-audio");if(r)ytIconObserver.observe(r,{childList:true,subtree:true})});
+</script>
+
+
+<script id="brand-fur-renderer">
+(function(){
+  'use strict';
+  const COLOR = '#f5a8c9';
+  let raf = 0;
+  let last = 0;
+  let seed = 17;
+
+  function mulberry32(a){return function(){let t=a+=0x6D2B79F5;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return ((t^t>>>14)>>>0)/4294967296}}
+
+  function renderFur(){
+    const wrap=document.querySelector('#app > header .brand-name');
+    const text=wrap?.querySelector('.brand-name-text');
+    const canvas=wrap?.querySelector('.brand-fur-canvas');
+    if(!wrap||!text||!canvas) return;
+    const rect=text.getBoundingClientRect();
+    if(!rect.width||!rect.height) return;
+
+    const dpr=Math.min(window.devicePixelRatio||1,2);
+    const w=Math.max(1,Math.ceil(rect.width+18));
+    const h=Math.max(1,Math.ceil(rect.height+14));
+    const pxW=Math.ceil(w*dpr), pxH=Math.ceil(h*dpr);
+    if(canvas.width!==pxW||canvas.height!==pxH){canvas.width=pxW;canvas.height=pxH;}
+    canvas.style.width=w+'px';canvas.style.height=h+'px';
+    const ctx=canvas.getContext('2d');
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.clearRect(0,0,w,h);
+
+    const off=document.createElement('canvas');
+    off.width=pxW;off.height=pxH;
+    const oc=off.getContext('2d',{willReadFrequently:true});
+    oc.setTransform(dpr,0,0,dpr,0,0);
+    const cs=getComputedStyle(text);
+    oc.font=[cs.fontStyle,cs.fontVariant,cs.fontWeight,cs.fontSize,cs.fontFamily].join(' ');
+    oc.textBaseline='middle';
+    oc.fillStyle='#000';
+    oc.fillText(text.textContent.trim(),9,h/2+0.5);
+    const data=oc.getImageData(0,0,pxW,pxH).data;
+    const step=Math.max(1,Math.round(dpr));
+    const edge=[];
+    const alphaAt=(x,y)=>{
+      if(x<0||y<0||x>=pxW||y>=pxH)return 0;
+      return data[(y*pxW+x)*4+3];
+    };
+    for(let y=step;y<pxH-step;y+=step){
+      for(let x=step;x<pxW-step;x+=step){
+        const a=alphaAt(x,y);
+        if(a<100)continue;
+        const boundary=alphaAt(x-step,y)<80||alphaAt(x+step,y)<80||alphaAt(x,y-step)<80||alphaAt(x,y+step)<80;
+        if(boundary) edge.push([x/dpr,y/dpr]);
+      }
+    }
+
+    const rand=mulberry32(seed++);
+    ctx.lineCap='round';
+    // Dense enough to read as soft fur, restrained enough for a header.
+    const stride=Math.max(1,Math.floor(edge.length/520));
+    for(let i=0;i<edge.length;i+=stride){
+      const [x,y]=edge[i];
+      const ang=rand()*Math.PI*2;
+      const len=1.8+rand()*3.8;
+      const curl=(rand()-.5)*1.4;
+      const x2=x+Math.cos(ang)*len;
+      const y2=y+Math.sin(ang)*len;
+      ctx.strokeStyle=COLOR;
+      ctx.globalAlpha=.22+rand()*.55;
+      ctx.lineWidth=.45+rand()*.75;
+      ctx.beginPath();
+      ctx.moveTo(x,y);
+      ctx.quadraticCurveTo(x+Math.cos(ang+curl)*len*.48,y+Math.sin(ang+curl)*len*.48,x2,y2);
+      ctx.stroke();
+    }
+    ctx.globalAlpha=1;
+  }
+
+  function tick(t){
+    if(t-last>120){last=t;renderFur();}
+    raf=requestAnimationFrame(tick);
+  }
+  function start(){
+    cancelAnimationFrame(raf); renderFur(); raf=requestAnimationFrame(tick);
+  }
+  window.addEventListener('resize',renderFur,{passive:true});
+  window.addEventListener('load',start,{once:true});
+  document.addEventListener('DOMContentLoaded',start,{once:true});
+})();
 </script>
 
 </body>
