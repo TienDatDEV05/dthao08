@@ -14,6 +14,10 @@
     <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
     <link rel="manifest" href="manifest.json">
+    <!-- Google Fonts: Great Vibes & Manrope -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
 
     <!-- Supabase -->
@@ -90,19 +94,54 @@ function persistChat(){
     if(firstUser && conv.title==="Cuộc trò chuyện mới") conv.title=firstUser.content.slice(0,42)+(firstUser.content.length>42?"…":"");
     saveChatStore(store); renderChatHistory(); syncMobileChatHistory(); syncChatToSupabase();
 }
+function formatChatTime(timestamp){
+  if(!timestamp) return "Vừa xong";
+  const now = Date.now();
+  const diff = now - timestamp;
+  const minute = 60 * 1000;
+  const hour = 60 * minute;
+  const day = 24 * hour;
+  if(diff < minute) return "Vừa xong";
+  if(diff < hour) return Math.floor(diff/minute) + " phút trước";
+  if(diff < day){
+    const d = new Date(timestamp);
+    return "Hôm nay " + d.getHours().toString().padStart(2,'0') + ":" + d.getMinutes().toString().padStart(2,'0');
+  }
+  if(diff < 2 * day) return "Hôm qua";
+  if(diff < 7 * day) return Math.floor(diff/day) + " ngày trước";
+  return new Date(timestamp).toLocaleDateString("vi-VN");
+}
+
 function renderChatHistory(){
     const el=document.getElementById("chat-history-list"); if(!el)return;
     const store=loadChatStore();
     const items=(store.conversations||[]).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+    const countBadge = document.getElementById("desktop-chat-count");
+    if(countBadge) countBadge.textContent = items.length ? (items.length + " đoạn chat") : "";
+    
     el.innerHTML=items.length?items.map(c=>`<div class="chat-history-row ${c.id===chatConversationId?'active':''}">
         <button class="chat-history-item" type="button" data-chat-conversation="${chatEscape(c.id)}">
-            <strong>${chatEscape(c.title)}</strong>
-            <small>${new Date(c.updatedAt||Date.now()).toLocaleDateString("vi-VN")} · ${(c.messages||[]).length} tin nhắn</small>
+            <div class="chat-history-icon-bubble">💬</div>
+            <div class="chat-history-info">
+              <div class="chat-history-title-row">
+                <strong class="chat-history-title">${chatEscape(c.title || "Cuộc trò chuyện")}</strong>
+                ${c.id===chatConversationId ? '<span class="chat-active-badge">Đang mở</span>' : ''}
+              </div>
+              <small class="chat-history-meta">
+                <span>${formatChatTime(c.updatedAt)}</span>
+                <span>•</span>
+                <span>${(c.messages||[]).length} tin nhắn</span>
+              </small>
+            </div>
         </button>
         <button class="chat-history-delete" type="button" data-delete-chat="${chatEscape(c.id)}" aria-label="Xóa cuộc trò chuyện" title="Xóa cuộc trò chuyện">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7H19"/><path d="M9 7V5H15V7"/><path d="M8 10V18"/><path d="M12 10V18"/><path d="M16 10V18"/><path d="M7 7L8 20H16L17 7"/></svg>
         </button>
-    </div>`).join(""):"<div style=\"color:var(--muted);font-size:12px;padding:10px\">Chưa có cuộc trò chuyện nào.</div>";
+    </div>`).join(""):`<div class="chat-history-empty">
+        <div class="chat-empty-icon">💭</div>
+        <strong>Chưa có cuộc trò chuyện nào</strong>
+        <p>Hãy bắt đầu trò chuyện để tâm sự cùng Chồng yêu nhé ♡</p>
+    </div>`;
     el.querySelectorAll("[data-chat-conversation]").forEach(btn=>btn.addEventListener("click",()=>{openChatConversation(btn.dataset.chatConversation);closeChatDrawer();}));
     el.querySelectorAll("[data-delete-chat]").forEach(btn=>btn.addEventListener("click",e=>{e.stopPropagation();deleteChatConversation(btn.dataset.deleteChat);}));
 }
@@ -734,7 +773,7 @@ async function sendChatMessage(text){
     const value=String(text||'').trim();
     if(!value||chatSending)return;
 
-    chatSending=true;
+    chatSending=true; window.dthaoChatAvatarMascot?.setState('thinking'); window.dthaoChatStageMascot?.setState('thinking');
     document.getElementById('chat-send').disabled=true;
     addChatMessage('user',value);
     setChatTyping(true);
@@ -781,7 +820,7 @@ async function sendChatMessage(text){
         console.error('Chat send error:',err);
         addChatMessage('assistant','Anh gặp lỗi khi xử lý yêu cầu. Vợ iuu thử lại giúp Anh nhé.');
     }finally{
-        chatSending=false;
+        chatSending=false; window.dthaoChatAvatarMascot?.setState('love'); window.dthaoChatStageMascot?.setState('love'); setTimeout(()=>{ window.dthaoChatAvatarMascot?.setState('idle'); window.dthaoChatStageMascot?.setState('idle'); }, 2200);
         updateChatSendState();
     }
 }
@@ -824,15 +863,32 @@ function syncMobileChatHistory(){
   if(!target) return;
   const store=loadChatStore();
   const items=(store.conversations||[]).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+  const countBadge = document.getElementById("mobile-chat-count");
+  if(countBadge) countBadge.textContent = items.length ? (items.length + " đoạn chat") : "";
+  
   target.innerHTML=items.length?items.map(c=>`<div class="chat-history-row ${c.id===chatConversationId?'active':''}">
     <button class="chat-history-item" type="button" data-mobile-chat-conversation="${chatEscape(c.id)}">
-      <strong>${chatEscape(c.title)}</strong>
-      <small>${new Date(c.updatedAt||Date.now()).toLocaleDateString("vi-VN")} · ${(c.messages||[]).length} tin nhắn</small>
+      <div class="chat-history-icon-bubble">💬</div>
+      <div class="chat-history-info">
+        <div class="chat-history-title-row">
+          <strong class="chat-history-title">${chatEscape(c.title || "Cuộc trò chuyện")}</strong>
+          ${c.id===chatConversationId ? '<span class="chat-active-badge">Đang mở</span>' : ''}
+        </div>
+        <small class="chat-history-meta">
+          <span>${formatChatTime(c.updatedAt)}</span>
+          <span>•</span>
+          <span>${(c.messages||[]).length} tin nhắn</span>
+        </small>
+      </div>
     </button>
     <button class="chat-history-delete" type="button" data-mobile-delete-chat="${chatEscape(c.id)}" aria-label="Xóa cuộc trò chuyện" title="Xóa cuộc trò chuyện">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7H19"/><path d="M9 7V5H15V7"/><path d="M8 10V18"/><path d="M12 10V18"/><path d="M16 10V18"/><path d="M7 7L8 20H16L17 7"/></svg>
     </button>
-  </div>`).join(""):"<div style=\"color:var(--muted);font-size:12px;padding:10px\">Chưa có cuộc trò chuyện nào.</div>";
+  </div>`).join(""):`<div class="chat-history-empty">
+      <div class="chat-empty-icon">💭</div>
+      <strong>Chưa có cuộc trò chuyện nào</strong>
+      <p>Hãy bắt đầu trò chuyện để tâm sự cùng Chồng yêu nhé ♡</p>
+  </div>`;
   target.querySelectorAll("[data-mobile-chat-conversation]").forEach(btn=>btn.addEventListener("click",()=>{
     openChatConversation(btn.dataset.mobileChatConversation);closeMobileChatHistory();
   }));
@@ -972,7 +1028,7 @@ document.addEventListener("DOMContentLoaded",()=>{
         }
 
         body {
-            font-family: "Segoe UI", Arial, sans-serif;
+            font-family: 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
             background: linear-gradient(135deg, #fff7fa, #fff0f6);
             color: var(--text);
             min-height: 100vh;
@@ -982,7 +1038,7 @@ document.addEventListener("DOMContentLoaded",()=>{
         input,
         textarea,
         select {
-            font: inherit;
+            font-family: 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
         }
 
         button {
@@ -1826,6 +1882,74 @@ document.addEventListener("DOMContentLoaded",()=>{
         textarea {
             resize: vertical;
             min-height: 140px;
+        }
+
+        .remember-login {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin: 12px 0 18px;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            font-size: 13.5px;
+            font-weight: 600;
+            color: #6a4a5c;
+            transition: color .2s ease;
+        }
+
+        .remember-login:hover {
+            color: #3d3037;
+        }
+
+        .remember-login input[type="checkbox"] {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+            pointer-events: none;
+            margin: 0;
+        }
+
+        .remember-check {
+            width: 20px;
+            height: 20px;
+            flex: 0 0 20px;
+            border-radius: 7px;
+            border: 1.5px solid rgba(226, 103, 148, 0.45);
+            background: rgba(255, 255, 255, 0.9);
+            display: grid;
+            place-items: center;
+            transition: all .2s cubic-bezier(0.2, 0.8, 0.2, 1);
+            box-shadow: 0 2px 6px rgba(112, 72, 92, 0.08);
+            position: relative;
+            box-sizing: border-box;
+        }
+
+        .remember-check::after {
+            content: '';
+            width: 5px;
+            height: 9px;
+            border: solid #fff;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg) scale(0);
+            transition: transform .18s cubic-bezier(0.2, 0.9, 0.2, 1.2);
+            margin-bottom: 2px;
+        }
+
+        .remember-login input[type="checkbox"]:checked + .remember-check {
+            background: linear-gradient(135deg, #e26794, #cb507f);
+            border-color: #e26794;
+            box-shadow: 0 4px 12px rgba(226, 103, 148, 0.35);
+        }
+
+        .remember-login input[type="checkbox"]:checked + .remember-check::after {
+            transform: rotate(45deg) scale(1);
+        }
+
+        .remember-login:hover .remember-check {
+            border-color: #e26794;
+            transform: scale(1.06);
         }
 
         .primary-btn {
@@ -3181,10 +3305,16 @@ document.addEventListener("DOMContentLoaded",()=>{
 
             header {
                 gap: 10px;
+                justify-content: flex-start;
+                padding: 0 14px;
             }
 
             .brand {
-                flex: 1;
+                flex: 0 0 auto;
+            }
+
+            .user-area {
+                margin-left: auto;
             }
 
             .mobile-menu-backdrop {
@@ -3660,21 +3790,34 @@ document.addEventListener("DOMContentLoaded",()=>{
         /* =========================================================
            ĐOÀN THẢO — ELEGANT BRAND + MOBILE DRAWER
         ========================================================= */
+        /* Luxury Brand Lockup */
         .brand-elegant {
-            display:flex; align-items:center; gap:9px; position:relative;
-            min-width:190px; padding:5px 0 10px;
+            display:inline-flex !important; align-items:center !important; gap:10px !important;
+            padding:5px 14px 5px 8px !important; border-radius:999px !important;
+            background:rgba(255,255,255,.55) !important; border:1px solid rgba(226,103,148,.22) !important;
+            backdrop-filter:blur(14px) !important; -webkit-backdrop-filter:blur(14px) !important;
+            box-shadow:0 4px 16px rgba(112,72,92,.06) !important;
+            transition:all .22s cubic-bezier(0.2,0.8,0.2,1) !important;
+            text-align:left !important; cursor:pointer !important; min-width:auto !important;
         }
-        .brand-mark { font-family: Georgia, serif; font-size:20px; color:#e26794; line-height:1; }
-        .brand-name { font-family: Georgia, 'Times New Roman', serif; font-size:23px; line-height:-10; letter-spacing:-.025em; color:#633e51; font-weight:700; font-style:normal; white-space:nowrap; }
-        .brand-name::first-letter { font-weight:700; }
-        .brand-name { text-rendering:optimizeLegibility; -webkit-font-smoothing:antialiased; }
-        .brand-subtitle { position:absolute; left:29px; bottom:-4px; font-size:7px; letter-spacing:.24em; text-transform:uppercase; color:#a77b8e; font-weight:700; white-space:nowrap; }
+        .brand-elegant:hover {
+            background:rgba(255,255,255,.85) !important; border-color:rgba(226,103,148,.4) !important;
+            transform:translateY(-1px) !important; box-shadow:0 8px 24px rgba(226,103,148,.16) !important;
+        }
+        .brand-mark-wrap {
+            width:32px; height:32px; flex:0 0 32px; border-radius:50%;
+            background:rgba(226,103,148,.12); display:flex; align-items:center; justify-content:center;
+        }
+        .brand-mark { display:grid; place-items:center; width:32px; height:32px; color:#e26794; font-size:18px; line-height:1; }
+        .brand-mark canvas { display:block; width:30px !important; height:30px !important; margin:0 auto; filter:drop-shadow(0 3px 6px rgba(226,103,148,.35)); }
+        .brand-text-block { display:flex; flex-direction:column; align-items:flex-start; justify-content:center; gap:1px; min-width:0; }
+        .brand-name { font-family:'Great Vibes', cursive, serif !important; font-size:26px !important; font-weight:400 !important; line-height:1.1 !important; letter-spacing:0.02em !important; color:#4a2838 !important; margin:0 !important; white-space:nowrap !important; }
+        .brand-subtitle { position:static !important; font-family:system-ui,-apple-system,sans-serif !important; font-size:8px !important; font-weight:800 !important; letter-spacing:.18em !important; text-transform:uppercase !important; color:#c44d7d !important; line-height:1 !important; margin:0 !important; opacity:.85 !important; white-space:nowrap !important; }
 
         .logo-elegant { position:relative; }
         .logo-elegant .auth-brand-symbol { font-family:Georgia,serif; color:#e26794; font-size:25px; margin-bottom:2px; }
-        .logo-elegant h1 { font-family:Georgia,'Times New Roman',serif; font-size:40px; letter-spacing:-.03em; margin:0; color:#633e51; }
-        .logo-elegant h1 strong { font-weight:700; }
-        .logo-elegant h1 em { font-weight:400; font-style:italic; color:#b94f79; }
+        .logo-elegant h1 { font-family:'Great Vibes', cursive, serif !important; font-size:54px !important; letter-spacing:0.02em !important; margin:0 !important; color:#4a2838 !important; font-weight:400 !important; line-height:1.1 !important; }
+        .logo-elegant h1 strong, .logo-elegant h1 span { font-weight:400 !important; font-family:inherit !important; font-style:normal !important; color:inherit !important; }
         .logo-elegant .logo-image { width:64px; height:64px; object-fit:contain; border-radius:20px; margin-bottom:7px; }
         .auth-brand-line { display:block; width:56px; height:1px; margin:10px auto 7px; background:linear-gradient(90deg,transparent,#e26794,transparent); }
         .logo-elegant p { font-size:9px; letter-spacing:.28em; color:#a0647c; font-weight:700; margin:0; }
@@ -3686,8 +3829,9 @@ document.addEventListener("DOMContentLoaded",()=>{
         .mobile-nav-drawer { display:none; position:fixed; top:0; left:0; bottom:0; width:min(82vw,330px); padding:0 15px 20px; background:rgba(255,249,252,.98); border-right:1px solid rgba(255,255,255,.9); box-shadow:20px 0 55px rgba(91,52,72,.22); backdrop-filter:blur(25px) saturate(145%); -webkit-backdrop-filter:blur(25px) saturate(145%); transform:translateX(-105%); transition:transform .3s cubic-bezier(.2,.8,.2,1); z-index:10002; overflow:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; }
         .mobile-nav-drawer.open { transform:translateX(0); pointer-events:auto; }
         .mobile-nav-backdrop.open { opacity:1; pointer-events:auto; }
-        .mobile-nav-head { display:flex; align-items:center; justify-content:flex-end; min-height:56px; padding:0 0 0 5px; border-bottom:1px solid rgba(226,103,148,.12); margin-bottom:13px; }
-        .mobile-nav-title { font-family:Georgia,'Times New Roman',serif; font-size:25px; color:#633e51; }
+        .mobile-nav-head { display:flex; align-items:center; justify-content:space-between; min-height:56px; padding:0 0 0 5px; border-bottom:1px solid rgba(226,103,148,.12); margin-bottom:13px; }
+        .mobile-nav-title { font-family:'Great Vibes', cursive, serif !important; font-size:30px !important; color:#4a2838 !important; font-weight:400 !important; line-height:1.1 !important; }
+        .mobile-nav-title strong { font-family:'Great Vibes', cursive, serif !important; font-weight:400 !important; font-size:inherit !important; color:inherit !important; }
         .mobile-nav-title span { color:#e26794; font-size:20px; }
         .mobile-nav-title strong { font-weight:700; }
         .mobile-nav-title em { font-weight:400; font-style:italic; color:#b94f79; }
@@ -3702,21 +3846,27 @@ document.addEventListener("DOMContentLoaded",()=>{
         .mobile-nav-list .nav-btn.active { box-shadow:0 8px 22px rgba(226,103,148,.12); }
 
         @media (max-width:800px) {
-            .mobile-menu-toggle { display:inline-flex; order:-2; flex:0 0 42px; }
-            .brand-elegant { min-width:0; flex:1; }
-            .brand-elegant .brand-mark { font-size:18px; }
-            .brand-elegant .brand-name { font-size:20px; }
-            .brand-elegant .brand-subtitle { left:27px; font-size:6px; bottom:-4px; }
-            .mobile-nav-backdrop, .mobile-nav-drawer { display:block; }
-            #app > header { position:sticky; top:0; z-index:1000; }
-            #app > .layout > aside { display:none; }
-            .logo-elegant h1 { font-size:35px; }
+            header { padding: 0 14px !important; gap: 12px !important; justify-content: flex-start !important; }
+            .mobile-menu-toggle { display: inline-flex !important; order: -2; flex: 0 0 38px !important; width: 38px !important; height: 38px !important; margin: 0 !important; }
+            .brand-elegant { margin-left: 2px !important; flex: 0 0 auto !important; padding: 4px 10px 4px 6px !important; gap: 8px !important; }
+            .brand-mark-wrap { width: 28px !important; height: 28px !important; flex: 0 0 28px !important; }
+            .brand-mark canvas { width: 26px !important; height: 26px !important; }
+            .brand-name { font-size: 22px !important; }
+            .brand-subtitle { font-size: 7px !important; letter-spacing: .16em !important; }
+            .user-area { margin-left: auto !important; }
+            .mobile-nav-backdrop, .mobile-nav-drawer { display: block; }
+            #app > header { position: sticky; top: 0; z-index: 1000; }
+            #app > .layout > aside { display: none; }
+            .logo-elegant h1 { font-size: 35px; }
         }
 
         @media (max-width:420px) {
-            .brand-elegant .brand-name { font-size:18px; }
-            .mobile-menu-toggle { width:40px; height:40px; flex-basis:40px; }
-            .mobile-nav-drawer { width:min(86vw,320px); }
+            header { padding: 0 10px !important; gap: 8px !important; }
+            .mobile-menu-toggle { width: 36px !important; height: 36px !important; flex: 0 0 36px !important; }
+            .brand-elegant { padding: 3px 8px 3px 5px !important; gap: 6px !important; }
+            .brand-name { font-size: 20px !important; }
+            .brand-subtitle { font-size: 6.5px !important; }
+            .mobile-nav-drawer { width: min(86vw, 320px); }
         }
     
 /* =========================================================
@@ -3760,13 +3910,48 @@ document.addEventListener("DOMContentLoaded",()=>{
 .chat-input{flex:1;min-width:0;border:0!important;outline:0!important;background:transparent!important;box-shadow:none!important;padding:9px 3px!important;min-height:38px;max-height:120px;resize:none;font:inherit;font-size:13px;line-height:1.45;color:var(--text)}
 .chat-send{width:40px;height:40px;flex:0 0 40px;border:0;border-radius:14px;background:var(--primary,#b97e9e);color:white;display:grid;place-items:center;cursor:pointer;box-shadow:0 7px 16px rgba(121,76,103,.18)}.chat-send:disabled{opacity:.42;cursor:not-allowed;box-shadow:none}
 .chat-hint{text-align:center;color:var(--muted);font-size:9px;margin-top:6px}
-.chat-drawer-backdrop{position:fixed;inset:0;background:rgba(45,31,39,.18);z-index:1400;opacity:0;pointer-events:none;transition:opacity .2s}.chat-drawer-backdrop.open{opacity:1;pointer-events:auto}
-.chat-drawer{position:fixed;top:0;right:0;bottom:0;width:min(360px,88vw);z-index:1401;background:rgba(255,255,255,.92);backdrop-filter:blur(20px);box-shadow:-18px 0 45px rgba(45,31,39,.14);transform:translateX(100%);transition:transform .24s ease,padding .2s ease; padding:18px;display:flex;flex-direction:column;gap:14px}.chat-drawer.open{transform:translateX(0)}
-.chat-drawer-head{display:flex;align-items:center;justify-content:space-between}.chat-drawer-head strong{font-size:15px}.chat-drawer-close{border:0;background:rgba(120,80,105,.07);border-radius:10px;width:34px;height:34px;cursor:pointer}.chat-new-btn{border:0;border-radius:14px;padding:11px 13px;background:rgba(185,126,158,.12);color:var(--text);font-weight:700;cursor:pointer}.chat-history-list{overflow:auto;display:flex;flex-direction:column;gap:6px}.chat-history-item{border:0;background:transparent;text-align:left;padding:11px;border-radius:13px;cursor:pointer;color:var(--text)}.chat-history-item:hover,.chat-history-item.active{background:rgba(120,80,105,.07)}.chat-history-item strong{display:block;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.chat-history-item small{display:block;color:var(--muted);font-size:9px;margin-top:3px}
-.chat-history-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.chat-delete-all-btn{border:1px solid rgba(232,91,112,.22);border-radius:14px;padding:10px 12px;background:rgba(232,91,112,.07);color:var(--danger);font-weight:700;cursor:pointer}.chat-delete-all-btn:hover{background:rgba(232,91,112,.12)}.chat-history-row{display:flex;align-items:stretch;gap:4px;border-radius:13px}.chat-history-row.active{background:rgba(120,80,105,.07)}.chat-history-row .chat-history-item{flex:1;min-width:0}.chat-history-row .chat-history-item:hover{background:rgba(120,80,105,.07)}.chat-history-delete{flex:0 0 38px;display:grid;place-items:center;background:transparent;color:var(--muted);border-radius:10px}.chat-history-delete:hover{color:var(--danger);background:rgba(232,91,112,.08)}.chat-history-delete svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+/* Luxury Chat History Redesign */
+.chat-drawer-backdrop{position:fixed;inset:0;background:rgba(50,30,40,.28);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:1400;opacity:0;pointer-events:none;transition:opacity .25s ease}.chat-drawer-backdrop.open{opacity:1;pointer-events:auto}
+.chat-drawer{position:fixed;top:0;right:0;bottom:0;width:min(380px,90vw);z-index:1401;background:rgba(255,248,251,.96);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);box-shadow:-20px 0 60px rgba(70,30,52,.18);border-left:1px solid rgba(226,103,148,.22);transform:translateX(100%);transition:transform .28s cubic-bezier(0.2,0.9,0.2,1);padding:20px 18px;display:flex;flex-direction:column;gap:12px}.chat-drawer.open{transform:translateX(0)}
+.chat-drawer-head{display:flex;align-items:center;justify-content:space-between;padding-bottom:8px;border-bottom:1px solid rgba(112,72,92,.08)}
+.chat-drawer-title-wrap{display:flex;align-items:center;gap:8px}
+.chat-drawer-head strong{font-size:16px;font-weight:800;color:var(--text,#3d3037);letter-spacing:-0.2px}
+.chat-history-count{font-size:11px;font-weight:700;color:#e26794;background:rgba(226,103,148,.12);padding:3px 9px;border-radius:999px}
+.chat-drawer-close{width:32px;height:32px;border-radius:50%;border:1px solid rgba(112,72,92,.12);background:rgba(255,255,255,.85);color:#725663;display:grid;place-items:center;font-size:13px;cursor:pointer;transition:all .18s ease}
+.chat-drawer-close:hover{background:#fff1f6;color:#e26794;border-color:#e26794;transform:scale(1.06)}
+.chat-history-hero-action{margin-top:2px}
+.chat-new-hero-btn{width:100%;height:44px;border-radius:14px;border:none;background:linear-gradient(135deg,#e26794,#cb507f);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;box-shadow:0 6px 18px rgba(226,103,148,.32);transition:all .2s ease}
+.chat-new-hero-btn:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(226,103,148,.42)}
+.chat-new-hero-btn:active{transform:scale(0.98)}
+.chat-btn-icon{font-size:15px}
+.chat-history-sub-bar{display:flex;align-items:center;justify-content:space-between;padding:0 2px;font-size:11px}
+.chat-history-auto-clean{color:#9a848f;font-size:10.5px}
+.chat-delete-all-link{background:transparent;border:none;color:#d1566a;font-size:11px;font-weight:700;cursor:pointer;padding:3px 6px;border-radius:6px;transition:all .15s ease}
+.chat-delete-all-link:hover{background:rgba(209,86,106,.1);text-decoration:underline}
+.chat-history-list{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:7px;padding-right:2px}
+.chat-history-list::-webkit-scrollbar{width:4px}
+.chat-history-list::-webkit-scrollbar-thumb{background:rgba(226,103,148,.25);border-radius:999px}
+.chat-history-row{display:flex;align-items:center;gap:6px;padding:8px 10px;border-radius:16px;background:rgba(255,255,255,.75);border:1px solid rgba(226,103,148,.14);transition:all .18s ease;cursor:pointer}
+.chat-history-row:hover{background:rgba(255,245,249,.95);border-color:rgba(226,103,148,.35);transform:translateY(-1px);box-shadow:0 4px 12px rgba(112,72,92,.06)}
+.chat-history-row.active{background:rgba(255,238,245,.95);border-color:#e26794;box-shadow:0 4px 14px rgba(226,103,148,.16)}
+.chat-history-item{flex:1;min-width:0;display:flex;align-items:center;gap:10px;background:transparent;border:none;padding:0;text-align:left;cursor:pointer;color:inherit}
+.chat-history-icon-bubble{width:34px;height:34px;flex:0 0 34px;border-radius:10px;background:rgba(226,103,148,.12);display:grid;place-items:center;font-size:15px}
+.chat-history-row.active .chat-history-icon-bubble{background:linear-gradient(135deg,#e26794,#cb507f);color:#fff}
+.chat-history-info{flex:1;min-width:0}
+.chat-history-title-row{display:flex;align-items:center;gap:6px}
+.chat-history-title{flex:1;font-size:13px;font-weight:700;color:var(--text,#3d3037);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chat-active-badge{font-size:9px;font-weight:800;color:#e26794;background:rgba(226,103,148,.15);padding:2px 6px;border-radius:999px;white-space:nowrap}
+.chat-history-meta{display:flex;align-items:center;gap:4px;font-size:10.5px;color:#9a848f;margin-top:2px}
+.chat-history-delete{width:30px;height:30px;flex:0 0 30px;border-radius:8px;border:none;background:transparent;color:#b59ea9;display:grid;place-items:center;cursor:pointer;transition:all .15s ease}
+.chat-history-delete:hover{background:rgba(209,86,106,.12);color:#d1566a;transform:scale(1.08)}
+.chat-history-delete svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.chat-history-empty{padding:36px 16px;text-align:center;color:#9a848f}
+.chat-empty-icon{font-size:36px;margin-bottom:8px}
+.chat-history-empty strong{display:block;font-size:14px;color:var(--text,#3d3037);margin-bottom:4px}
+.chat-history-empty p{font-size:11.5px;line-height:1.4;margin:0}
 .chat-action-card{margin-top:10px;border-radius:16px;border:1px solid rgba(185,126,158,.20);padding:12px;background:rgba(250,241,246,.55)}.chat-action-title{font-size:11px;font-weight:800;margin-bottom:7px}.chat-action-buttons{display:flex;gap:7px}.chat-action-buttons button{flex:1;border:0;border-radius:11px;padding:9px 7px;font-size:10px;font-weight:700;cursor:pointer}.chat-action-confirm{background:rgba(185,126,158,.18)}.chat-action-cancel{background:rgba(120,80,105,.06)}
 .chat-fab{position:fixed;right:18px;bottom:20px;z-index:1100;width:54px;height:54px;border:0;border-radius:19px;background:linear-gradient(145deg,#c28aaa,#ad7394);color:#fff;display:grid;place-items:center;box-shadow:0 13px 30px rgba(121,76,103,.28);cursor:pointer}.chat-fab svg{width:24px;height:24px;stroke:currentColor;stroke-width:1.7;fill:none;stroke-linecap:round;stroke-linejoin:round}.chat-fab.hidden-fab{display:none}
-.chat-history-btn-mobile{display:none!important}.chat-history-btn-pc{display:grid}.chat-menu-btn{width:42px;height:42px;flex:0 0 42px;border:1px solid rgba(255,255,255,.86);border-radius:14px;background:rgba(255,255,255,.62);color:var(--text);display:grid;place-items:center;cursor:pointer;box-shadow:0 7px 18px rgba(121,76,103,.10);transition:transform .2s ease,background .2s ease,box-shadow .2s ease}.chat-menu-btn svg{width:21px;height:21px;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}.chat-menu-btn:hover{transform:translateY(-1px);background:rgba(255,255,255,.82);box-shadow:0 10px 22px rgba(121,76,103,.14)}
+.chat-history-btn-mobile{display:none!important}.chat-history-btn-pc{display:grid}.mobile-chat-history-modal{display:none!important}.chat-menu-btn{width:42px;height:42px;flex:0 0 42px;border:1px solid rgba(255,255,255,.86);border-radius:14px;background:rgba(255,255,255,.62);color:var(--text);display:grid;place-items:center;cursor:pointer;box-shadow:0 7px 18px rgba(121,76,103,.10);transition:transform .2s ease,background .2s ease,box-shadow .2s ease}.chat-menu-btn svg{width:21px;height:21px;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}.chat-menu-btn:hover{transform:translateY(-1px);background:rgba(255,255,255,.82);box-shadow:0 10px 22px rgba(121,76,103,.14)}
 @media(max-width:800px){
 .chat-shell{height:calc(100dvh - 90px);min-height:0;max-height:calc(100dvh - 90px);border-radius:22px;overscroll-behavior:contain}
 .chat-body{flex:1 1 auto;min-height:0;height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;padding:15px 12px 24px}
@@ -3811,41 +3996,21 @@ document.addEventListener("DOMContentLoaded",()=>{
     .mobile-chat-history-panel{
         position:relative !important;
         z-index:1;
-        width:min(100%,400px) !important;
-        height:min(78dvh,620px) !important;
-        max-height:78dvh !important;
+        width:min(100%,420px) !important;
+        max-height:82dvh !important;
+        min-height:260px;
         margin:0 !important;
         box-sizing:border-box;
         display:flex;flex-direction:column;gap:12px;
-        padding:16px !important;
-        border:1px solid rgba(255,255,255,.88);
-        border-radius:24px;
-        background:rgba(255,255,255,.95);
-        backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
-        box-shadow:0 24px 70px rgba(45,31,39,.24);
+        padding:18px 16px !important;
+        border:1px solid rgba(226,103,148,.28);
+        border-radius:28px;
+        background:rgba(255,248,251,.98);
+        backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);
+        box-shadow:0 24px 70px rgba(70,30,52,.25);
         transform:none !important;
         overflow:hidden;
     }
-    .mobile-chat-history-panel .chat-drawer-head{
-        min-height:40px;display:flex;align-items:center;
-        justify-content:space-between;flex:0 0 auto;
-    }
-    .mobile-chat-history-panel .chat-history-actions{
-        grid-template-columns:1fr 1fr;gap:7px;flex:0 0 auto;
-    }
-    .mobile-chat-history-panel .chat-new-btn,
-    .mobile-chat-history-panel .chat-delete-all-btn{
-        min-height:42px;padding:9px 8px;font-size:11px;
-    }
-    .mobile-chat-history-panel .chat-history-list{
-        min-height:0;flex:1;padding-right:2px;
-        overflow-y:auto;overscroll-behavior:contain;
-    }
-    .mobile-chat-history-panel .chat-history-row{gap:4px}
-    .mobile-chat-history-panel .chat-history-item{padding:10px 9px}
-    .mobile-chat-history-panel .chat-history-item strong{font-size:12px}
-    .mobile-chat-history-panel .chat-history-item small{font-size:9px}
-    .mobile-chat-history-panel .chat-history-delete{flex-basis:38px}
     body.mobile-chat-history-open{overflow:hidden !important}
 }
 @media(max-width:380px){.chat-quick{padding:11px}.chat-bubble{font-size:12px}.chat-avatar{width:38px;height:38px;flex-basis:38px}.chat-identity strong{font-size:14px}.chat-identity span{font-size:10px}}
@@ -4837,8 +5002,7 @@ document.addEventListener("DOMContentLoaded",()=>{
 }
 
 /* FINAL POLISH — MOBILE DRAWER + BRAND SPACING */
-.brand-elegant { padding-top:5px; padding-bottom:10px; }
-.brand-elegant .brand-subtitle { bottom:-10px; }
+
 @media(max-width:800px){
   .mobile-nav-drawer { top:0 !important; padding-top:0 !important; }
   .mobile-nav-head { min-height:56px !important; padding-top:0 !important; justify-content:flex-end !important; }
@@ -5298,6 +5462,413 @@ input:checked + .slider:before {
     color: var(--danger);
 }
 </style>
+<style id="dthao-3d-styles">
+/* 3D Declarative Component Enhancements */
+#brand-home-link .brand-mark canvas,
+#auth-screen .auth-brand-symbol canvas {
+  display: block;
+  margin: 0 auto;
+  filter: drop-shadow(0 4px 10px rgba(255, 119, 168, 0.35));
+}
+#page-chat .chat-avatar {
+  background: transparent !important;
+  box-shadow: none !important;
+  display: grid;
+  place-items: center;
+  overflow: visible !important;
+}
+#page-chat .chat-empty-orb {
+  background: transparent !important;
+  box-shadow: none !important;
+  width: 120px !important;
+  height: 120px !important;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 10px !important;
+}
+</style>
+<style id="dthao-daily-schedule-styles">
+/* =========================================================
+   DAILY SCHEDULE VIEW & VIEW SWITCHER STYLES
+   ========================================================= */
+.schedule-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.schedule-view-switcher {
+    display: inline-flex;
+    background: rgba(255, 255, 255, 0.65);
+    border: 1px solid rgba(226, 103, 148, 0.22);
+    border-radius: 999px;
+    padding: 3px;
+    box-shadow: 0 4px 14px rgba(112, 72, 92, 0.05);
+}
+
+.view-switch-btn {
+    border: none;
+    background: transparent;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--muted, #7a5e6c);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.view-switch-btn.active {
+    background: linear-gradient(135deg, #e26794, #cb507f);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(226, 103, 148, 0.32);
+}
+
+/* Daily View Layout */
+.daily-schedule-view {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    max-width: 820px;
+    margin: 0 auto;
+}
+
+/* Day Selector Pills Bar */
+.daily-day-selector {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+    padding: 4px;
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-radius: 20px;
+    border: 1px solid rgba(226, 103, 148, 0.16);
+    box-shadow: 0 6px 20px rgba(112, 72, 92, 0.04);
+}
+
+.daily-day-pill {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 10px 4px;
+    border-radius: 15px;
+    border: 1px solid transparent;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    position: relative;
+}
+
+.daily-day-pill:hover {
+    background: rgba(255, 240, 246, 0.8);
+    transform: translateY(-1px);
+}
+
+.daily-day-pill.active {
+    background: linear-gradient(135deg, #e26794, #cb507f);
+    color: #fff !important;
+    box-shadow: 0 6px 18px rgba(226, 103, 148, 0.35);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.daily-pill-name {
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.daily-pill-badge {
+    font-size: 8.5px;
+    font-weight: 700;
+    opacity: 0.85;
+}
+
+.daily-day-pill.is-today:not(.active) {
+    border-color: rgba(226, 103, 148, 0.4);
+    background: rgba(255, 238, 245, 0.6);
+}
+.daily-day-pill.is-today:not(.active) .daily-pill-name {
+    color: #e26794;
+}
+
+.daily-pill-dot {
+    position: absolute;
+    bottom: 4px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #e26794;
+}
+.daily-day-pill.active .daily-pill-dot {
+    background: #fff;
+}
+
+/* Day Summary Card */
+.daily-summary-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.75);
+    border: 1px solid rgba(226, 103, 148, 0.18);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow: 0 6px 22px rgba(112, 72, 92, 0.05);
+}
+
+.daily-summary-left h3 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 800;
+    color: var(--text, #3d3037);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.daily-today-tag {
+    font-size: 10px;
+    font-weight: 800;
+    background: rgba(226, 103, 148, 0.14);
+    color: #e26794;
+    padding: 2px 8px;
+    border-radius: 999px;
+}
+
+.daily-summary-left p {
+    margin: 3px 0 0;
+    font-size: 12px;
+    color: var(--muted, #856a77);
+}
+
+/* Timeline Cards */
+.daily-timeline-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.daily-card-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 18px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.85);
+    border: 1px solid rgba(226, 103, 148, 0.16);
+    border-left: 6px solid #e26794;
+    box-shadow: 0 4px 16px rgba(112, 72, 92, 0.04);
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.daily-card-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 26px rgba(112, 72, 92, 0.08);
+    border-color: rgba(226, 103, 148, 0.35);
+}
+
+.daily-card-item.status-current {
+    background: rgba(255, 240, 247, 0.96);
+    box-shadow: 0 6px 24px rgba(226, 103, 148, 0.2);
+    animation: pulseBorder 2s infinite ease-in-out;
+}
+
+.daily-card-time {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    min-width: 105px;
+    flex: 0 0 105px;
+}
+
+.daily-period-badge {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--text, #3d3037);
+}
+
+.daily-time-range {
+    font-size: 11px;
+    color: var(--muted, #856a77);
+    font-weight: 600;
+}
+
+.daily-status-badge {
+    font-size: 9.5px;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 6px;
+    margin-top: 2px;
+}
+.daily-status-badge.status-current {
+    background: rgba(76, 175, 80, 0.15);
+    color: #2e7d32;
+}
+.daily-status-badge.status-upcoming {
+    background: rgba(255, 152, 0, 0.15);
+    color: #e65100;
+}
+.daily-status-badge.status-passed {
+    background: rgba(120, 120, 120, 0.12);
+    color: #777;
+}
+
+.daily-card-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.daily-subject-title {
+    margin: 0 0 5px;
+    font-size: 15px;
+    font-weight: 800;
+    line-height: 1.25;
+}
+
+.daily-subject-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.daily-detail-pill {
+    font-size: 11px;
+    font-weight: 600;
+    color: #6d4b5b;
+    background: rgba(255, 255, 255, 0.65);
+    padding: 3px 8px;
+    border-radius: 8px;
+    border: 1px solid rgba(226, 103, 148, 0.14);
+}
+
+.daily-card-edit-btn {
+    width: 32px;
+    height: 32px;
+    flex: 0 0 32px;
+    border-radius: 10px;
+    border: 1px solid rgba(226, 103, 148, 0.15);
+    background: rgba(255, 255, 255, 0.7);
+    color: #9d7587;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.daily-card-edit-btn svg {
+    width: 15px;
+    height: 15px;
+}
+.daily-card-edit-btn:hover {
+    background: #fff0f5;
+    color: #e26794;
+    border-color: #e26794;
+}
+
+/* Empty Card Item */
+.daily-card-item.empty {
+    border-left: 6px solid #e0ccd5;
+    background: rgba(255, 255, 255, 0.45);
+    opacity: 0.85;
+}
+.daily-card-item.empty:hover {
+    opacity: 1;
+    background: rgba(255, 245, 249, 0.85);
+    border-left-color: #e26794;
+}
+.daily-card-empty-label {
+    flex: 1;
+    font-size: 13px;
+    color: #a48b97;
+    font-style: italic;
+}
+.daily-add-slot-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 1px dashed rgba(226, 103, 148, 0.4);
+    background: transparent;
+    color: #e26794;
+    font-size: 16px;
+    font-weight: 700;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    transition: all 0.18s ease;
+}
+.daily-card-item.empty:hover .daily-add-slot-btn {
+    background: #e26794;
+    color: #fff;
+    border-style: solid;
+}
+
+/* Daily Empty Hero */
+.daily-empty-hero {
+    text-align: center;
+    padding: 30px 16px;
+    background: rgba(255, 255, 255, 0.65);
+    border-radius: 24px;
+    border: 1px solid rgba(226, 103, 148, 0.16);
+    margin-bottom: 6px;
+}
+.daily-empty-icon {
+    font-size: 38px;
+    margin-bottom: 8px;
+}
+.daily-empty-hero h3 {
+    margin: 0 0 6px;
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--text, #3d3037);
+}
+.daily-empty-hero p {
+    margin: 0 0 14px;
+    font-size: 12px;
+    color: var(--muted, #856a77);
+}
+
+@media (max-width: 600px) {
+    .daily-day-selector {
+        gap: 4px;
+        padding: 3px;
+    }
+    .daily-day-pill {
+        padding: 8px 2px;
+    }
+    .daily-pill-name {
+        font-size: 12.5px;
+    }
+    .daily-pill-badge {
+        font-size: 7.5px;
+    }
+    .daily-card-item {
+        padding: 12px 14px;
+        gap: 12px;
+    }
+    .daily-card-time {
+        min-width: 85px;
+        flex: 0 0 85px;
+    }
+    .daily-period-badge {
+        font-size: 12px;
+    }
+    .daily-time-range {
+        font-size: 10px;
+    }
+    .daily-subject-title {
+        font-size: 14px;
+    }
+}
+</style>
 </head>
 
 <!--
@@ -5326,7 +5897,7 @@ input:checked + .slider:before {
                 src="assets/logo.png"
                 alt="Logo Đoàn Thảo"
             >
-            <h1><strong>Đoàn</strong> <span>Thảo</span></h1>
+            <h1>Đoàn Thảo</h1>
             <span class="auth-brand-line"></span>
             <p>PERSONAL SPACE</p>
             <small>Một góc nhỏ dành riêng cho những điều thân thương.</small>
@@ -5408,9 +5979,13 @@ input:checked + .slider:before {
         </button>
 
         <button type="button" class="brand brand-elegant brand-home-link" id="brand-home-link" aria-label="Đoàn Thảo — mở Lịch học">
-            <span class="brand-mark" aria-hidden="true">♡</span>
-            <span class="brand-name">Đoàn Thảo</span>
-            <span class="brand-subtitle">personal space</span>
+            <div class="brand-mark-wrap">
+                <span class="brand-mark" aria-hidden="true">♡</span>
+            </div>
+            <div class="brand-text-block">
+                <span class="brand-name">Đoàn Thảo</span>
+                <span class="brand-subtitle">personal space</span>
+            </div>
         </button>
 
         <div class="user-area">
@@ -5436,13 +6011,101 @@ input:checked + .slider:before {
         aria-label="Điều hướng"
     >
         <div class="mobile-nav-head">
-            <button type="button" class="mobile-nav-close" id="mobile-nav-close" aria-label="Đóng menu">
+            <div class="mobile-nav-title">
+                <strong>Đoàn Thảo</strong>
+                <span class="mobile-nav-subtitle">personal space</span>
+            </div>
+            <button type="button" class="mobile-nav-close" id="mobile-nav-close" aria-label="Đóng menu" onclick="setMobileMenu(false)">
                 <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <path d="M6 6L18 18M18 6L6 18"></path>
                 </svg>
             </button>
         </div>
-        <nav class="mobile-nav-list" id="mobile-nav-list" aria-label="Các mục điều hướng"></nav>
+        <nav class="mobile-nav-list" id="mobile-nav-list" aria-label="Các mục điều hướng">
+            <button class="nav-btn active" data-page="schedule" type="button">
+                <span class="nav-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <rect x="3.5" y="5" width="17" height="15" rx="4"></rect>
+                        <path d="M7.5 3.5V7M16.5 3.5V7M3.5 9H20.5"></path>
+                        <path d="M8 13H10M14 13H16M8 16.5H10M14 16.5H16"></path>
+                    </svg>
+                </span>
+                <span class="nav-label">Lịch học</span>
+            </button>
+
+            <button class="nav-btn" data-page="notes" type="button">
+                <span class="nav-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M6 3.8H15.2L19 7.6V20.2H6C4.9 20.2 4 19.3 4 18.2V5.8C4 4.7 4.9 3.8 6 3.8Z"></path>
+                        <path d="M15 3.8V8H19M8 12H16M8 15.5H14"></path>
+                    </svg>
+                </span>
+                <span class="nav-label">Ghi chú</span>
+            </button>
+
+            <button class="nav-btn" data-page="subjects" type="button">
+                <span class="nav-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <rect x="4" y="4" width="7" height="7" rx="2"></rect>
+                        <rect x="13" y="4" width="7" height="7" rx="2"></rect>
+                        <rect x="4" y="13" width="7" height="7" rx="2"></rect>
+                        <rect x="13" y="13" width="7" height="7" rx="2"></rect>
+                    </svg>
+                </span>
+                <span class="nav-label">Môn học</span>
+            </button>
+
+            <button class="nav-btn" data-page="semesters" type="button">
+                <span class="nav-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M12 4.2V19.8M4.7 8.1L19.3 15.9M19.3 8.1L4.7 15.9"></path>
+                        <circle cx="12" cy="12" r="3.2"></circle>
+                        <circle cx="5" cy="8.1" r="1.4"></circle>
+                        <circle cx="19" cy="8.1" r="1.4"></circle>
+                        <circle cx="5" cy="15.9" r="1.4"></circle>
+                        <circle cx="19" cy="15.9" r="1.4"></circle>
+                    </svg>
+                </span>
+                <span class="nav-label">Học kỳ</span>
+            </button>
+
+            <button class="nav-btn" data-page="weather" type="button">
+                <span class="nav-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M7.5 18.5H17C19.8 18.5 21.5 16.7 21.5 14.3C21.5 12 19.7 10.2 17.5 10.2C16.8 7.1 14.3 5.3 11.3 5.3C8.2 5.3 5.8 7.4 5.6 10.5C3.4 10.7 2 12.2 2 14.3C2 16.7 4 18.5 7.5 18.5Z"></path>
+                        <path d="M8 21L7 23M13 21L12 23M18 21L17 23"></path>
+                    </svg>
+                </span>
+                <span class="nav-label">Thời tiết</span>
+            </button>
+
+            <button class="nav-btn" data-page="chat" type="button" aria-label="Mở Chồng yêu, trợ lý riêng của vợ">
+                <span class="nav-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M5 5.5C5 4.4 5.9 3.5 7 3.5H17C18.1 3.5 19 4.4 19 5.5V14C19 15.1 18.1 16 17 16H11L7 20V16H7C5.9 16 5 15.1 5 14V5.5Z"></path>
+                        <path d="M8.5 8.5H15.5M8.5 11.5H13"></path>
+                    </svg>
+                </span>
+                <span class="nav-label">Chồng yêu</span>
+            </button>
+
+            <button class="nav-btn" data-page="youtube-audio" type="button" aria-label="Mở YouTube Audio">
+                <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="3.2" y="5.2" width="17.6" height="13.6" rx="4"></rect><path d="M10 9L16 12L10 15V9Z"></path></svg></span>
+                <span class="nav-label">YouTube Audio</span>
+            </button>
+
+            <button class="nav-btn" data-page="settings" type="button">
+                <span class="nav-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M5 6.5H19M5 12H19M5 17.5H19"></path>
+                        <circle cx="9" cy="6.5" r="2"></circle>
+                        <circle cx="15" cy="12" r="2"></circle>
+                        <circle cx="10.5" cy="17.5" r="2"></circle>
+                    </svg>
+                </span>
+                <span class="nav-label">Cài đặt</span>
+            </button>
+        </nav>
     </aside>
 
     <div class="layout">
@@ -5549,7 +6212,16 @@ input:checked + .slider:before {
                     <div id="print-semester-title"></div>
                 </div>
 
-                <div class="toolbar">
+                <div class="toolbar schedule-toolbar">
+
+                    <div class="schedule-view-switcher">
+                        <button class="view-switch-btn active" id="view-mode-day" type="button" onclick="setScheduleViewMode('day')">
+                            <span>☀️ Theo ngày</span>
+                        </button>
+                        <button class="view-switch-btn" id="view-mode-week" type="button" onclick="setScheduleViewMode('week')">
+                            <span>🗓️ Cả tuần</span>
+                        </button>
+                    </div>
 
                     <select id="semester-select">
                         <option value="">
@@ -5562,14 +6234,6 @@ input:checked + .slider:before {
                         id="add-schedule-btn"
                     >
                         + Thêm môn
-                    </button>
-
-                    <button
-                        class="small-btn"
-                        id="print-schedule-btn"
-                        type="button"
-                    >
-                        🖨️ In lịch học
                     </button>
 
                 </div>
@@ -6071,24 +6735,44 @@ input:checked + .slider:before {
   <div class="mobile-chat-history-overlay" data-mobile-chat-history-close></div>
   <section class="mobile-chat-history-panel" role="dialog" aria-modal="true" aria-labelledby="mobile-chat-history-title">
     <div class="chat-drawer-head">
-      <strong id="mobile-chat-history-title">Lịch sử trò chuyện</strong>
-      <button type="button" class="chat-drawer-close" id="mobile-chat-history-close" aria-label="Đóng lịch sử">×</button>
+      <div class="chat-drawer-title-wrap">
+        <strong id="mobile-chat-history-title">💬 Lịch sử trò chuyện</strong>
+        <span class="chat-history-count" id="mobile-chat-count"></span>
+      </div>
+      <button type="button" class="chat-drawer-close" id="mobile-chat-history-close" aria-label="Đóng lịch sử">✕</button>
     </div>
-    <div class="chat-history-actions">
-      <button type="button" class="chat-new-btn" id="mobile-chat-new-btn">+ Cuộc trò chuyện mới</button>
-      <button type="button" class="chat-delete-all-btn" id="mobile-chat-delete-all-btn">Xóa tất cả</button>
+    <div class="chat-history-hero-action">
+      <button type="button" class="chat-new-hero-btn" id="mobile-chat-new-btn">
+        <span class="chat-btn-icon">✨</span>
+        <span>Bắt đầu cuộc trò chuyện mới</span>
+      </button>
+    </div>
+    <div class="chat-history-sub-bar">
+      <span class="chat-history-auto-clean">🕒 Tự động lưu 30 ngày</span>
+      <button type="button" class="chat-delete-all-link" id="mobile-chat-delete-all-btn">Xóa tất cả</button>
     </div>
     <div id="mobile-chat-history-list" class="chat-history-list" aria-live="polite"></div>
   </section>
 </div>
 
 <aside class="chat-drawer" id="chat-drawer" aria-hidden="true">
-    <div class="chat-drawer-head"><strong>Lịch sử trò chuyện</strong><button class="chat-drawer-close" id="chat-drawer-close" type="button" aria-label="Đóng">×</button></div>
-    <div class="chat-history-actions">
-        <button class="chat-new-btn" id="chat-new-btn" type="button">＋ Cuộc trò chuyện mới</button>
-        <button class="chat-delete-all-btn" id="chat-delete-all-btn" type="button">🗑 Xóa tất cả</button>
+    <div class="chat-drawer-head">
+      <div class="chat-drawer-title-wrap">
+        <strong>💬 Lịch sử trò chuyện</strong>
+        <span class="chat-history-count" id="desktop-chat-count"></span>
+      </div>
+      <button class="chat-drawer-close" id="chat-drawer-close" type="button" aria-label="Đóng">✕</button>
     </div>
-    <div style="font-size:10px;color:var(--muted);line-height:1.45;padding:0 2px">Lịch sử cũ hơn 30 ngày sẽ được tự động dọn khỏi Supabase và thiết bị.</div>
+    <div class="chat-history-hero-action">
+      <button class="chat-new-hero-btn" id="chat-new-btn" type="button">
+        <span class="chat-btn-icon">✨</span>
+        <span>Bắt đầu cuộc trò chuyện mới</span>
+      </button>
+    </div>
+    <div class="chat-history-sub-bar">
+      <span class="chat-history-auto-clean">🕒 Tự động lưu 30 ngày</span>
+      <button class="chat-delete-all-link" id="chat-delete-all-btn" type="button">Xóa tất cả</button>
+    </div>
     <div class="chat-history-list" id="chat-history-list"></div>
 </aside>
 <button class="chat-fab hidden-fab" id="chat-fab" type="button" aria-label="Mở Chồng yêu">
@@ -8023,37 +8707,33 @@ function defaultEndTime(period) {
    MOBILE HAMBURGER MENU
 ========================================================= */
 function setMobileMenu(open) {
-    // Mobile navigation and chatbot history drawer must never be open
-    // at the same time. Otherwise the chat drawer can cover the left menu.
+    const drawer = document.getElementById("mobile-nav-drawer");
+    const backdrop = document.getElementById("mobile-menu-backdrop");
+    const toggle = document.getElementById("mobile-menu-toggle");
+
     if (open && typeof closeChatDrawer === "function") {
         closeChatDrawer();
     }
 
     document.body.classList.toggle("mobile-nav-open", open);
 
-    const toggle =
-        document.getElementById("mobile-menu-toggle");
-
-    const backdrop =
-        document.getElementById("mobile-menu-backdrop");
-
-    if (toggle) {
-        toggle.setAttribute(
-            "aria-expanded",
-            String(open)
-        );
-        toggle.setAttribute(
-            "aria-label",
-            open ? "Đóng menu điều hướng" : "Mở menu điều hướng"
-        );
+    if (drawer) {
+        drawer.classList.toggle("open", open);
+        drawer.setAttribute("aria-hidden", String(!open));
     }
-
     if (backdrop) {
-        backdrop.setAttribute(
-            "aria-hidden",
-            String(!open)
-        );
+        backdrop.classList.toggle("open", open);
+        backdrop.setAttribute("aria-hidden", String(!open));
     }
+    if (toggle) {
+        toggle.setAttribute("aria-expanded", String(open));
+        toggle.setAttribute("aria-label", open ? "Đóng menu điều hướng" : "Mở menu điều hướng");
+    }
+
+    // Sync active state to both desktop & mobile nav buttons
+    document.querySelectorAll(".nav-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.page === currentPage);
+    });
 }
 
 document
@@ -8271,17 +8951,42 @@ const DAYS = [
 ];
 
 
-function renderSchedule() {
+let scheduleViewMode = localStorage.getItem("dthao_schedule_view_mode") || "day";
+let selectedScheduleDay = getTodayDayOfWeek();
 
+function getTodayDayOfWeek() {
+    const d = new Date().getDay();
+    return d === 0 ? 7 : d;
+}
+
+function setScheduleViewMode(mode) {
+    scheduleViewMode = mode;
+    localStorage.setItem("dthao_schedule_view_mode", mode);
+    const dayBtn = document.getElementById("view-mode-day");
+    const weekBtn = document.getElementById("view-mode-week");
+    if (dayBtn) dayBtn.classList.toggle("active", mode === "day");
+    if (weekBtn) weekBtn.classList.toggle("active", mode === "week");
+    renderSchedule();
+}
+
+function selectScheduleDay(day) {
+    selectedScheduleDay = Number(day);
+    renderSchedule();
+}
+
+function renderSchedule() {
     renderSemesterSelect();
 
-    const container =
-        document.getElementById(
-            "schedule-container"
-        );
+    // Sync view switcher buttons
+    const dayBtn = document.getElementById("view-mode-day");
+    const weekBtn = document.getElementById("view-mode-week");
+    if (dayBtn) dayBtn.classList.toggle("active", scheduleViewMode === "day");
+    if (weekBtn) weekBtn.classList.toggle("active", scheduleViewMode === "week");
+
+    const container = document.getElementById("schedule-container");
+    if (!container) return;
 
     if (!semesters.length) {
-
         container.innerHTML = `
             <div class="empty-modern">
                 <div class="empty-modern-icon">
@@ -8292,135 +8997,237 @@ function renderSchedule() {
                 <button class="empty-action-btn" onclick="document.querySelector('[data-page=semesters]').click()">+ Tạo học kỳ</button>
             </div>
         `;
-
         return;
     }
 
     if (!currentSemesterId) {
-        currentSemesterId =
-            semesters[0].id;
+        currentSemesterId = semesters[0].id;
     }
 
+    if (scheduleViewMode === "day") {
+        renderDailySchedule(container);
+    } else {
+        renderWeeklySchedule(container);
+    }
+}
+
+function renderDailySchedule(container) {
+    const todayDay = getTodayDayOfWeek();
+    const dayNamesShort = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
+    
+    // Count entries per day for notification dots
+    const dayEntryCounts = {};
+    for (let d = 1; d <= 7; d++) {
+        dayEntryCounts[d] = scheduleEntries.filter(e => e.semester_id === currentSemesterId && Number(e.day_of_week) === d).length;
+    }
+
+    // 1. Day Selector Pills
+    let html = `<div class="daily-schedule-view">
+        <div class="daily-day-selector">
+    `;
+
+    for (let d = 1; d <= 7; d++) {
+        const isSelected = d === selectedScheduleDay;
+        const isToday = d === todayDay;
+        const hasClasses = dayEntryCounts[d] > 0;
+
+        html += `
+            <button class="daily-day-pill ${isSelected ? 'active' : ''} ${isToday ? 'is-today' : ''}" 
+                    type="button" onclick="selectScheduleDay(${d})" 
+                    aria-label="${DAYS[d-1]}">
+                <span class="daily-pill-name">${dayNamesShort[d-1]}</span>
+                <span class="daily-pill-badge">${isToday ? 'Hôm nay' : DAYS[d-1]}</span>
+                ${hasClasses ? '<span class="daily-pill-dot" title="Có môn học"></span>' : ''}
+            </button>
+        `;
+    }
+
+    html += `</div>`;
+
+    // 2. Day Header Summary
+    const currentDayEntries = scheduleEntries
+        .filter(e => e.semester_id === currentSemesterId && Number(e.day_of_week) === selectedScheduleDay)
+        .sort((a, b) => Number(a.period_number) - Number(b.period_number));
+
+    const isTodaySelected = selectedScheduleDay === todayDay;
+    const dayTitle = DAYS[selectedScheduleDay - 1];
+    
+    html += `
+        <div class="daily-summary-card">
+            <div class="daily-summary-left">
+                <h3>${dayTitle} ${isTodaySelected ? '<span class="daily-today-tag">Hôm nay</span>' : ''}</h3>
+                <p>${currentDayEntries.length ? ('Có ' + currentDayEntries.length + ' tiết học đã xếp lịch') : 'Hôm nay không có lịch học nào'}</p>
+            </div>
+            <button class="small-btn pink" type="button" onclick="openScheduleModal(${selectedScheduleDay}, 1)">
+                + Thêm môn
+            </button>
+        </div>
+    `;
+
+    // 3. Daily Timeline List
+    const visiblePeriods = [...periods].sort((a, b) => Number(a.period_number) - Number(b.period_number));
+
+    if (!visiblePeriods.length) {
+        html += `<div class="empty-modern">
+            <h3>Chưa cấu hình tiết học</h3>
+            <p>Vui lòng vào Cài đặt để thêm khung giờ tiết học nhé vợ ♡</p>
+        </div></div>`;
+        container.innerHTML = html;
+        return;
+    }
+
+    const now = new Date();
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+    let hasAnyClass = false;
+    let listHtml = `<div class="daily-timeline-list">`;
+
+    visiblePeriods.forEach(pInfo => {
+        const periodNum = Number(pInfo.period_number);
+        const startTimeStr = timeToDisplay(pInfo?.start_time);
+        const endTimeStr = timeToDisplay(pInfo?.end_time);
+
+        // Parse start & end minutes for status check
+        let startMin = 0, endMin = 1440;
+        if (pInfo?.start_time) {
+            const parts = pInfo.start_time.split(':').map(Number);
+            startMin = (parts[0] || 0) * 60 + (parts[1] || 0);
+        }
+        if (pInfo?.end_time) {
+            const parts = pInfo.end_time.split(':').map(Number);
+            endMin = (parts[0] || 0) * 60 + (parts[1] || 0);
+        }
+
+        let timeStatus = '';
+        let timeStatusText = '';
+        if (isTodaySelected) {
+            if (nowMinutes >= startMin && nowMinutes <= endMin) {
+                timeStatus = 'status-current';
+                timeStatusText = '🟢 Đang diễn ra';
+            } else if (nowMinutes < startMin) {
+                timeStatus = 'status-upcoming';
+                timeStatusText = '⏳ Sắp tới';
+            } else {
+                timeStatus = 'status-passed';
+                timeStatusText = '✓ Đã xong';
+            }
+        }
+
+        const entry = currentDayEntries.find(e => Number(e.period_number) === periodNum);
+
+        if (entry) {
+            hasAnyClass = true;
+            const subject = subjects.find(s => s.id === entry.subject_id);
+            const color = subject?.color || "#ffd6e7";
+
+            listHtml += `
+                <div class="daily-card-item scheduled ${timeStatus}" style="border-left-color:${escapeHTML(color)}" 
+                     onclick="openScheduleModal(${selectedScheduleDay}, ${periodNum}, '${entry.id}')">
+                    <div class="daily-card-time">
+                        <span class="daily-period-badge">Tiết ${periodNum}</span>
+                        <span class="daily-time-range">${startTimeStr} - ${endTimeStr}</span>
+                        ${timeStatusText ? `<span class="daily-status-badge ${timeStatus}">${timeStatusText}</span>` : ''}
+                    </div>
+                    <div class="daily-card-body">
+                        <h4 class="daily-subject-title" style="color:var(--text)">${escapeHTML(subject ? subject.name : 'Môn học')}</h4>
+                        <div class="daily-subject-details">
+                            ${entry.room ? `<span class="daily-detail-pill">📍 Phòng ${escapeHTML(entry.room)}</span>` : ''}
+                            ${subject?.teacher ? `<span class="daily-detail-pill">👨‍🏫 ${escapeHTML(subject.teacher)}</span>` : ''}
+                            ${subject?.credits ? `<span class="daily-detail-pill">⭐ ${escapeHTML(subject.credits)} TC</span>` : ''}
+                        </div>
+                    </div>
+                    <button class="daily-card-edit-btn" type="button" aria-label="Chỉnh sửa">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                    </button>
+                </div>
+            `;
+        } else {
+            listHtml += `
+                <div class="daily-card-item empty" onclick="openScheduleModal(${selectedScheduleDay}, ${periodNum})">
+                    <div class="daily-card-time">
+                        <span class="daily-period-badge">Tiết ${periodNum}</span>
+                        <span class="daily-time-range">${startTimeStr} - ${endTimeStr}</span>
+                    </div>
+                    <div class="daily-card-empty-label">
+                        <span>Trống</span>
+                    </div>
+                    <button class="daily-add-slot-btn" type="button" aria-label="Thêm môn vào tiết này">
+                        +
+                    </button>
+                </div>
+            `;
+        }
+    });
+
+    listHtml += `</div>`;
+
+    if (!hasAnyClass) {
+        html += `
+            <div class="daily-empty-hero">
+                <div class="daily-empty-icon">🌸</div>
+                <h3>Ngày thảnh thơi không có lịch học</h3>
+                <p>Hôm nay vợ yêu được nghỉ ngơi, hãy nạp lại năng lượng thật tốt nhé ♡</p>
+                <button class="empty-action-btn" type="button" onclick="openScheduleModal(${selectedScheduleDay}, 1)">+ Thêm môn học vào ${dayTitle}</button>
+            </div>
+        `;
+    }
+
+    html += listHtml + `</div>`;
+    container.innerHTML = html;
+}
+
+function renderWeeklySchedule(container) {
     let html = `
         <div class="schedule-wrapper">
             <div class="schedule-grid">
-
-                <div class="grid-header">
-                    Tiết
-                </div>
+                <div class="grid-header">Tiết</div>
     `;
 
     DAYS.forEach(day => {
-        html += `
-            <div class="grid-header">
-                ${day}
-            </div>
-        `;
+        html += `<div class="grid-header">${day}</div>`;
     });
 
-    const visiblePeriods =
-        [...periods]
-            .sort((a, b) =>
-                Number(a.period_number) -
-                Number(b.period_number)
-            );
+    const visiblePeriods = [...periods].sort((a, b) => Number(a.period_number) - Number(b.period_number));
 
     visiblePeriods.forEach(periodInfo => {
-
-        const period =
-            Number(periodInfo.period_number);
-
+        const period = Number(periodInfo.period_number);
         html += `
             <div class="period-cell period-label">
                 Tiết ${period}
-                <span>
-                    ${timeToDisplay(
-                        periodInfo?.start_time
-                    )}
-                    -
-                    ${timeToDisplay(
-                        periodInfo?.end_time
-                    )}
-                </span>
+                <span>${timeToDisplay(periodInfo?.start_time)} - ${timeToDisplay(periodInfo?.end_time)}</span>
             </div>
         `;
 
-        for (
-            let day = 1;
-            day <= 7;
-            day++
-        ) {
-            const entry =
-                scheduleEntries.find(
-                    item =>
-                        item.semester_id ===
-                            currentSemesterId &&
-                        item.day_of_week ===
-                            day &&
-                        item.period_number ===
-                            period
-                );
+        for (let day = 1; day <= 7; day++) {
+            const entry = scheduleEntries.find(item =>
+                item.semester_id === currentSemesterId &&
+                item.day_of_week === day &&
+                item.period_number === period
+            );
 
             if (!entry) {
-
                 html += `
                     <div class="period-cell">
-                        <button
-                            class="empty-slot"
-                            onclick="openScheduleModal(${day}, ${period})"
-                        >
-                            +
-                        </button>
+                        <button class="empty-slot" onclick="openScheduleModal(${day}, ${period})">+</button>
                     </div>
                 `;
-
             } else {
-
-                const subject =
-                    subjects.find(
-                        s =>
-                            s.id ===
-                            entry.subject_id
-                    );
-
+                const subject = subjects.find(s => s.id === entry.subject_id);
                 if (!subject) {
-
                     html += `
                         <div class="period-cell">
-                            <button
-                                class="empty-slot"
-                                onclick="openScheduleModal(${day}, ${period})"
-                            >
-                                +
-                            </button>
+                            <button class="empty-slot" onclick="openScheduleModal(${day}, ${period})">+</button>
                         </div>
                     `;
-
                 } else {
-
                     html += `
                         <div class="period-cell">
-
-                            <div
-                                class="subject-card"
-                                style="background:${escapeHTML(subject.color || "#ffd6e7")}"
-                                onclick="openScheduleModal(${day}, ${period}, '${entry.id}')"
-                            >
-
-                                <strong>
-                                    ${escapeHTML(subject.name)}
-                                </strong>
-
-                                <small>
-                                    ${escapeHTML(subject.teacher || "")}
-                                </small>
-
-                                <small>
-                                    ${escapeHTML(subject.room || "")}
-                                </small>
-
+                            <div class="subject-card" style="background:${escapeHTML(subject.color || "#ffd6e7")}"
+                                 onclick="openScheduleModal(${day}, ${period}, '${entry.id}')">
+                                <strong>${escapeHTML(subject.name)}</strong>
+                                <small>${escapeHTML(subject.teacher || "")}</small>
+                                <small>${escapeHTML(entry.room || subject.room || "")}</small>
                             </div>
-
                         </div>
                     `;
                 }
@@ -8428,11 +9235,7 @@ function renderSchedule() {
         }
     });
 
-    html += `
-            </div>
-        </div>
-    `;
-
+    html += `</div></div>`;
     container.innerHTML = html;
 }
 
@@ -10563,50 +11366,15 @@ document
 
 
 /* =========================================================
-   MOBILE NAVIGATION DRAWER
+   MOBILE NAVIGATION DRAWER INITIALIZER
 ========================================================= */
 (function setupMobileNavigation(){
-    const toggle = document.getElementById('mobile-menu-toggle');
-    const drawer = document.getElementById('mobile-nav-drawer');
     const backdrop = document.getElementById('mobile-menu-backdrop');
     const closeBtn = document.getElementById('mobile-nav-close');
-    const list = document.getElementById('mobile-nav-list');
-    const desktopNav = document.querySelector('#app > .layout > aside');
-    if (!toggle || !drawer || !backdrop || !closeBtn || !list || !desktopNav) return;
-
-    function syncNav(){
-        list.innerHTML = '';
-        desktopNav.querySelectorAll('.nav-btn').forEach(btn => {
-            const clone = btn.cloneNode(true);
-            clone.addEventListener('click', () => {
-                btn.click();
-                closeMenu();
-            });
-            list.appendChild(clone);
-        });
-    }
-    function openMenu(){
-        syncNav();
-        drawer.classList.add('open');
-        backdrop.classList.add('open');
-        drawer.setAttribute('aria-hidden','false');
-        backdrop.setAttribute('aria-hidden','false');
-        toggle.setAttribute('aria-expanded','true');
-        document.body.classList.add('mobile-nav-open');
-    }
-    function closeMenu(){
-        drawer.classList.remove('open');
-        backdrop.classList.remove('open');
-        drawer.setAttribute('aria-hidden','true');
-        backdrop.setAttribute('aria-hidden','true');
-        toggle.setAttribute('aria-expanded','false');
-        document.body.classList.remove('mobile-nav-open');
-    }
-    toggle.addEventListener('click', openMenu);
-    closeBtn.addEventListener('click', closeMenu);
-    backdrop.addEventListener('click', closeMenu);
-    document.addEventListener('keydown', e => { if(e.key === 'Escape') closeMenu(); });
-    window.addEventListener('resize', () => { if(window.innerWidth > 800) closeMenu(); });
+    if (backdrop) backdrop.addEventListener('click', () => setMobileMenu(false));
+    if (closeBtn) closeBtn.addEventListener('click', () => setMobileMenu(false));
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') setMobileMenu(false); });
+    window.addEventListener('resize', () => { if (window.innerWidth > 800) setMobileMenu(false); });
 })();
 
 /* =========================================================
@@ -11348,23 +12116,7 @@ initializeApp();
     line-height: 1.2;
 }
 
-/* Header chính sau khi đăng nhập */
-#app > header .brand-elegant {
-    padding-bottom: 6px !important;
-}
 
-#app > header .brand-elegant .brand-subtitle {
-    left: 29px;
-    bottom: -4px !important;
-    line-height: 1;
-}
-
-@media (max-width: 800px) {
-    #app > header .brand-elegant .brand-subtitle {
-        left: 27px;
-        bottom: -3px !important;
-    }
-}
 
 
 
@@ -11413,6 +12165,608 @@ document.addEventListener('DOMContentLoaded',()=>window.hydrateYtIcons());
 
 
 
+<script id="dthao-declarative-3d-engine">
+/**
+ * DTHAO DECLARATIVE 3D ENGINE
+ * Ultra-lightweight, 60fps WebGL/Canvas 3D System
+ * Features: 3D Crystal Glass Heart (Header/Auth) & 3D Interactive Chat Mascot (Chồng yêu)
+ */
+(function(){
+  window.DThao3D = window.DThao3D || {};
+
+  // --- Utility: Vector3 & Matrix Operations ---
+  const V = {
+    create: (x=0,y=0,z=0) => ({x,y,z}),
+    sub: (a,b) => ({x: a.x-b.x, y: a.y-b.y, z: a.z-b.z}),
+    dot: (a,b) => a.x*b.x + a.y*b.y + a.z*b.z,
+    cross: (a,b) => ({x: a.y*b.z - a.z*b.y, y: a.z*b.x - a.x*b.z, z: a.x*b.y - a.y*b.x}),
+    norm: (a) => {
+      const len = Math.hypot(a.x, a.y, a.z) || 1;
+      return {x: a.x/len, y: a.y/len, z: a.z/len};
+    }
+  };
+
+  // =========================================================
+  // 1. 3D CRYSTAL HEART (HEADER & AUTH SCREEN)
+  // =========================================================
+  class CrystalHeart3D {
+    constructor(canvas, options = {}) {
+      this.canvas = canvas;
+      this.ctx = canvas.getContext('2d');
+      this.size = options.size || 40;
+      this.scale = options.scale || 1;
+      this.color = options.color || '#ff77a8';
+      this.rotX = 0.2;
+      this.rotY = 0;
+      this.rotZ = 0;
+      this.targetRotX = 0.2;
+      this.targetRotY = 0;
+      this.speedY = 0.015;
+      this.scalePulse = 1;
+      this.isHovered = false;
+      this.isRunning = false;
+      this.sparkles = [];
+
+      this.initMesh();
+      this.bindEvents();
+      this.start();
+    }
+
+    initMesh() {
+      // Generate 3D Heart Polyhedron facets
+      this.vertices = [];
+      this.faces = [];
+      const steps = 18;
+      for (let i = 0; i < steps; i++) {
+        const u = (i / steps) * Math.PI * 2;
+        // 3D Heart curve formula
+        const hx = 16 * Math.pow(Math.sin(u), 3);
+        const hy = -(13 * Math.cos(u) - 5 * Math.cos(2*u) - 2 * Math.cos(3*u) - Math.cos(4*u));
+        
+        // Front & back layered depth
+        this.vertices.push(
+          {x: hx * 0.055, y: hy * 0.055, z: 0.25},  // Front peak
+          {x: hx * 0.048, y: hy * 0.048, z: 0.0},   // Mid ring
+          {x: hx * 0.038, y: hy * 0.038, z: -0.22}  // Back peak
+        );
+      }
+
+      // Center vertices for crystal faceting
+      this.vertices.push({x: 0, y: -0.15, z: 0.45}); // 0: Front center jewel
+      this.vertices.push({x: 0, y: -0.15, z: -0.45});// 1: Back center jewel
+      const frontCenter = this.vertices.length - 2;
+      const backCenter = this.vertices.length - 1;
+
+      for (let i = 0; i < steps; i++) {
+        const next = (i + 1) % steps;
+        const f0 = i * 3, f1 = i * 3 + 1, f2 = i * 3 + 2;
+        const nf0 = next * 3, nf1 = next * 3 + 1, nf2 = next * 3 + 2;
+
+        // Front crystal facets
+        this.faces.push({verts: [frontCenter, f0, nf0], color: 'rgba(255, 185, 215, 0.85)'});
+        this.faces.push({verts: [f0, f1, nf1, nf0], color: 'rgba(255, 119, 168, 0.72)'});
+        // Side crystal facets
+        this.faces.push({verts: [f1, f2, nf2, nf1], color: 'rgba(226, 103, 148, 0.78)'});
+        // Back crystal facets
+        this.faces.push({verts: [backCenter, nf2, f2], color: 'rgba(185, 80, 120, 0.65)'});
+      }
+    }
+
+    bindEvents() {
+      const parent = this.canvas.parentElement || this.canvas;
+      parent.addEventListener('mouseenter', () => {
+        this.isHovered = true;
+        this.speedY = 0.045;
+        this.addSparkles();
+      });
+      parent.addEventListener('mouseleave', () => {
+        this.isHovered = false;
+        this.speedY = 0.015;
+      });
+      parent.addEventListener('pointerdown', () => {
+        this.scalePulse = 1.25;
+        this.addSparkles(6);
+      });
+      window.addEventListener('pointermove', (e) => {
+        if (!this.isHovered) return;
+        const rect = this.canvas.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        this.targetRotY = ((e.clientX - cx) / (rect.width || 1)) * 1.2;
+        this.targetRotX = 0.2 - ((e.clientY - cy) / (rect.height || 1)) * 0.8;
+      });
+    }
+
+    addSparkles(count = 3) {
+      for (let i = 0; i < count; i++) {
+        this.sparkles.push({
+          x: (Math.random() - 0.5) * this.size * 0.8,
+          y: (Math.random() - 0.5) * this.size * 0.8,
+          size: Math.random() * 3 + 1.5,
+          alpha: 1,
+          vx: (Math.random() - 0.5) * 0.8,
+          vy: -Math.random() * 1.2 - 0.3
+        });
+      }
+    }
+
+    start() {
+      if (this.isRunning) return;
+      this.isRunning = true;
+      const loop = () => {
+        if (!this.isRunning) return;
+        this.render();
+        requestAnimationFrame(loop);
+      };
+      requestAnimationFrame(loop);
+    }
+
+    stop() {
+      this.isRunning = false;
+    }
+
+    render() {
+      const ctx = this.ctx;
+      const w = this.canvas.width;
+      const h = this.canvas.height;
+      ctx.clearRect(0, 0, w, h);
+
+      // Rotation interpolation
+      if (!this.isHovered) {
+        this.rotY += this.speedY;
+        this.rotX += (0.2 - this.rotX) * 0.05;
+      } else {
+        this.rotY += (this.targetRotY - this.rotY) * 0.1;
+        this.rotX += (this.targetRotX - this.rotX) * 0.1;
+      }
+
+      this.scalePulse += (1 - this.scalePulse) * 0.08;
+
+      const cosX = Math.cos(this.rotX), sinX = Math.sin(this.rotX);
+      const cosY = Math.cos(this.rotY), sinY = Math.sin(this.rotY);
+
+      const cx = w / 2;
+      const cy = h / 2 + 1;
+      const currentScale = (this.size * 0.46) * this.scale * this.scalePulse;
+
+      // Project vertices to 2D screen space
+      const projected = this.vertices.map(v => {
+        // Rotate Y
+        let x1 = v.x * cosY + v.z * sinY;
+        let y1 = v.y;
+        let z1 = -v.x * sinY + v.z * cosY;
+
+        // Rotate X
+        let y2 = y1 * cosX - z1 * sinX;
+        let z2 = y1 * sinX + z1 * cosX;
+
+        const fov = 3.5;
+        const pers = fov / (fov + z2);
+
+        return {
+          x: cx + x1 * currentScale * pers,
+          y: cy + y2 * currentScale * pers,
+          z: z2
+        };
+      });
+
+      // Sort faces by depth (Painter's algorithm)
+      const sortedFaces = this.faces.map(f => {
+        const avgZ = f.verts.reduce((sum, vi) => sum + projected[vi].z, 0) / f.verts.length;
+        return { face: f, avgZ };
+      }).sort((a, b) => b.avgZ - a.avgZ);
+
+      // Draw crystal heart facets
+      sortedFaces.forEach(({face}) => {
+        const pts = face.verts.map(vi => projected[vi]);
+        // Backface culling calculation
+        const v0 = pts[0], v1 = pts[1], v2 = pts[2];
+        const normalZ = (v1.x - v0.x) * (v2.y - v0.y) - (v1.y - v0.y) * (v2.x - v0.x);
+        if (normalZ > 0) return; // Hide culled faces
+
+        ctx.beginPath();
+        ctx.moveTo(pts[0].x, pts[0].y);
+        for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+        ctx.closePath();
+
+        // Shading with light normal
+        const lightIntensity = Math.max(0.25, Math.min(1.0, 0.65 - normalZ * 0.0035));
+        ctx.fillStyle = face.color;
+        ctx.fill();
+
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+        ctx.lineWidth = 0.75;
+        ctx.stroke();
+      });
+
+      // Draw inner glow & specular highlight
+      const grad = ctx.createRadialGradient(cx - currentScale*0.2, cy - currentScale*0.3, 1, cx, cy, currentScale*0.9);
+      grad.addColorStop(0, 'rgba(255, 255, 255, 0.6)');
+      grad.addColorStop(0.4, 'rgba(255, 180, 215, 0.2)');
+      grad.addColorStop(1, 'rgba(255, 119, 168, 0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(cx, cy, currentScale * 0.85, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Render sparkles
+      for (let i = this.sparkles.length - 1; i >= 0; i--) {
+        const s = this.sparkles[i];
+        s.x += s.vx;
+        s.y += s.vy;
+        s.alpha -= 0.025;
+        if (s.alpha <= 0) {
+          this.sparkles.splice(i, 1);
+          continue;
+        }
+        ctx.save();
+        ctx.globalAlpha = s.alpha;
+        ctx.fillStyle = '#ffffff';
+        ctx.shadowColor = '#ff77a8';
+        ctx.shadowBlur = 6;
+        ctx.beginPath();
+        ctx.arc(cx + s.x, cy + s.y, s.size * 0.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+  }
+
+  // =========================================================
+  // 2. 3D INTERACTIVE CHAT MASCOT (CHỒNG YÊU ASSISTANT)
+  // =========================================================
+  class ChatMascot3D {
+    constructor(canvas, options = {}) {
+      this.canvas = canvas;
+      this.ctx = canvas.getContext('2d');
+      this.isLarge = !!options.isLarge;
+      this.state = 'idle'; // 'idle' | 'listening' | 'thinking' | 'love'
+      this.rotX = 0;
+      this.rotY = 0;
+      this.targetLookX = 0;
+      this.targetLookY = 0;
+      this.lookX = 0;
+      this.lookY = 0;
+      this.time = 0;
+      this.blinkTimer = 0;
+      this.isBlinking = false;
+      this.particles = [];
+      this.floatingHearts = [];
+      this.isRunning = false;
+
+      this.initParticles();
+      this.bindEvents();
+      this.start();
+    }
+
+    initParticles() {
+      const count = this.isLarge ? 24 : 12;
+      for (let i = 0; i < count; i++) {
+        this.particles.push({
+          angle: (i / count) * Math.PI * 2,
+          radius: (this.isLarge ? 48 : 18) + (Math.random() - 0.5) * 8,
+          speed: 0.02 + Math.random() * 0.015,
+          yOffset: (Math.random() - 0.5) * 12,
+          size: Math.random() * 2 + 1.2,
+          color: Math.random() > 0.5 ? '#ff77a8' : '#ffffff'
+        });
+      }
+    }
+
+    bindEvents() {
+      const onMove = (clientX, clientY) => {
+        const rect = this.canvas.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        this.targetLookX = Math.max(-1, Math.min(1, (clientX - cx) / (window.innerWidth * 0.35)));
+        this.targetLookY = Math.max(-1, Math.min(1, (clientY - cy) / (window.innerHeight * 0.35)));
+      };
+
+      window.addEventListener('pointermove', e => onMove(e.clientX, e.clientY));
+      window.addEventListener('touchmove', e => {
+        if (e.touches && e.touches[0]) onMove(e.touches[0].clientX, e.touches[0].clientY);
+      }, {passive: true});
+
+      this.canvas.addEventListener('click', () => {
+        this.triggerLove();
+      });
+    }
+
+    setState(newState) {
+      if (this.state === newState) return;
+      this.state = newState;
+      if (newState === 'love') {
+        this.triggerLove();
+      }
+    }
+
+    triggerLove() {
+      const count = this.isLarge ? 8 : 4;
+      for (let i = 0; i < count; i++) {
+        this.floatingHearts.push({
+          x: (Math.random() - 0.5) * (this.isLarge ? 40 : 16),
+          y: (this.isLarge ? 10 : 4),
+          vx: (Math.random() - 0.5) * 1.5,
+          vy: -Math.random() * 2.2 - 1.2,
+          scale: Math.random() * 0.6 + 0.6,
+          alpha: 1,
+          rot: (Math.random() - 0.5) * 0.6
+        });
+      }
+    }
+
+    start() {
+      if (this.isRunning) return;
+      this.isRunning = true;
+      const loop = () => {
+        if (!this.isRunning) return;
+        this.render();
+        requestAnimationFrame(loop);
+      };
+      requestAnimationFrame(loop);
+    }
+
+    stop() {
+      this.isRunning = false;
+    }
+
+    render() {
+      const ctx = this.ctx;
+      const w = this.canvas.width;
+      const h = this.canvas.height;
+      ctx.clearRect(0, 0, w, h);
+
+      this.time += 0.03;
+      this.lookX += (this.targetLookX - this.lookX) * 0.08;
+      this.lookY += (this.targetLookY - this.lookY) * 0.08;
+
+      // Handle natural eye blinking
+      this.blinkTimer += 0.016;
+      if (this.blinkTimer > 3.8) {
+        this.isBlinking = true;
+        if (this.blinkTimer > 4.0) {
+          this.isBlinking = false;
+          this.blinkTimer = 0;
+        }
+      }
+
+      const cx = w / 2;
+      const cy = h / 2 + Math.sin(this.time * 2) * (this.isLarge ? 4 : 1.5);
+      const radius = this.isLarge ? 42 : 14;
+
+      // --- 1. Orbiting 3D Particle Ring ---
+      const ringTilt = 0.45;
+      const speedMult = this.state === 'thinking' ? 3.5 : (this.state === 'listening' ? 1.4 : 1.0);
+
+      this.particles.forEach(p => {
+        p.angle += p.speed * speedMult;
+        const px = cx + Math.cos(p.angle) * p.radius;
+        const py = cy + Math.sin(p.angle) * p.radius * ringTilt + p.yOffset;
+        const isBack = Math.sin(p.angle) < 0;
+
+        if (isBack) {
+          ctx.beginPath();
+          ctx.arc(px, py, p.size * 0.7, 0, Math.PI * 2);
+          ctx.fillStyle = p.color;
+          ctx.globalAlpha = 0.4;
+          ctx.fill();
+          ctx.globalAlpha = 1.0;
+        }
+      });
+
+      // --- 2. 3D Glowing Core / Hologram Orb ---
+      ctx.save();
+      // Outer aura
+      const auraGrad = ctx.createRadialGradient(cx, cy, radius * 0.5, cx, cy, radius * 1.5);
+      const auraColor = this.state === 'thinking' ? 'rgba(255, 90, 150, 0.45)' : (this.state === 'listening' ? 'rgba(255, 180, 215, 0.4)' : 'rgba(255, 119, 168, 0.28)');
+      auraGrad.addColorStop(0, auraColor);
+      auraGrad.addColorStop(1, 'rgba(255, 119, 168, 0)');
+      ctx.fillStyle = auraGrad;
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius * 1.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Main Glass Orb Sphere
+      const sphereGrad = ctx.createRadialGradient(
+        cx - radius * 0.35 + this.lookX * radius * 0.15,
+        cy - radius * 0.4 + this.lookY * radius * 0.15,
+        radius * 0.1,
+        cx, cy, radius
+      );
+      sphereGrad.addColorStop(0, '#ffffff');
+      sphereGrad.addColorStop(0.35, '#ffcfe3');
+      sphereGrad.addColorStop(0.75, '#e26794');
+      sphereGrad.addColorStop(1, '#8e3458');
+
+      ctx.fillStyle = sphereGrad;
+      ctx.shadowColor = 'rgba(226, 103, 148, 0.4)';
+      ctx.shadowBlur = this.isLarge ? 16 : 8;
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // --- 3. Expressive 3D Eyes & Cheeks ---
+      const eyeOffsetX = radius * 0.38;
+      const eyeY = cy - radius * 0.08 + this.lookY * (radius * 0.25);
+      const eyeXLeft = cx - eyeOffsetX + this.lookX * (radius * 0.25);
+      const eyeXRight = cx + eyeOffsetX + this.lookX * (radius * 0.25);
+      const eyeRadius = this.isLarge ? 4.5 : 1.8;
+
+      ctx.fillStyle = '#3a1b29';
+      if (this.isBlinking) {
+        // Closed eye curved line
+        ctx.lineWidth = this.isLarge ? 2.2 : 1.2;
+        ctx.strokeStyle = '#3a1b29';
+        ctx.beginPath();
+        ctx.arc(eyeXLeft, eyeY, eyeRadius, 0.1, Math.PI - 0.1);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(eyeXRight, eyeY, eyeRadius, 0.1, Math.PI - 0.1);
+        ctx.stroke();
+      } else if (this.state === 'love') {
+        // Happy arch eyes ^^
+        ctx.lineWidth = this.isLarge ? 2.5 : 1.3;
+        ctx.strokeStyle = '#e26794';
+        ctx.beginPath();
+        ctx.arc(eyeXLeft, eyeY + 1, eyeRadius * 1.2, Math.PI * 1.1, Math.PI * 1.9);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(eyeXRight, eyeY + 1, eyeRadius * 1.2, Math.PI * 1.1, Math.PI * 1.9);
+        ctx.stroke();
+      } else {
+        // Round open eyes with specular glint
+        ctx.beginPath();
+        ctx.arc(eyeXLeft, eyeY, eyeRadius, 0, Math.PI * 2);
+        ctx.arc(eyeXRight, eyeY, eyeRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Eye specular catchlights
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(eyeXLeft - eyeRadius*0.35, eyeY - eyeRadius*0.35, eyeRadius * 0.4, 0, Math.PI * 2);
+        ctx.arc(eyeXRight - eyeRadius*0.35, eyeY - eyeRadius*0.35, eyeRadius * 0.4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Cute Pink Blush Cheeks
+      ctx.fillStyle = 'rgba(255, 80, 140, 0.45)';
+      ctx.beginPath();
+      ctx.arc(eyeXLeft - (this.isLarge ? 3 : 1), eyeY + (this.isLarge ? 7 : 3), this.isLarge ? 4.5 : 2, 0, Math.PI * 2);
+      ctx.arc(eyeXRight + (this.isLarge ? 3 : 1), eyeY + (this.isLarge ? 7 : 3), this.isLarge ? 4.5 : 2, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Front Ring Particles
+      this.particles.forEach(p => {
+        const isFront = Math.sin(p.angle) >= 0;
+        if (isFront) {
+          const px = cx + Math.cos(p.angle) * p.radius;
+          const py = cy + Math.sin(p.angle) * p.radius * ringTilt + p.yOffset;
+          ctx.beginPath();
+          ctx.arc(px, py, p.size, 0, Math.PI * 2);
+          ctx.fillStyle = p.color;
+          ctx.shadowColor = '#ff77a8';
+          ctx.shadowBlur = 5;
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        }
+      });
+
+      // Floating Hearts from 'love' state
+      for (let i = this.floatingHearts.length - 1; i >= 0; i--) {
+        const hObj = this.floatingHearts[i];
+        hObj.x += hObj.vx;
+        hObj.y += hObj.vy;
+        hObj.alpha -= 0.02;
+        if (hObj.alpha <= 0) {
+          this.floatingHearts.splice(i, 1);
+          continue;
+        }
+        ctx.save();
+        ctx.globalAlpha = hObj.alpha;
+        ctx.translate(cx + hObj.x, cy + hObj.y);
+        ctx.scale(hObj.scale, hObj.scale);
+        ctx.rotate(hObj.rot);
+        ctx.fillStyle = '#ff4b8b';
+        ctx.font = (this.isLarge ? '16px' : '10px') + ' sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('♡', 0, 0);
+        ctx.restore();
+      }
+
+      ctx.restore();
+    }
+  }
+
+  // --- Global Initializers ---
+  window.DThao3D.initCrystalHeart = function(containerOrCanvas, options = {}) {
+    if (!containerOrCanvas) return null;
+    let canvas = containerOrCanvas;
+    if (containerOrCanvas.tagName !== 'CANVAS') {
+      canvas = document.createElement('canvas');
+      canvas.width = options.width || 44;
+      canvas.height = options.height || 44;
+      canvas.style.width = (options.width || 44) + 'px';
+      canvas.style.height = (options.height || 44) + 'px';
+      canvas.style.display = 'block';
+      canvas.style.pointerEvents = 'auto';
+      containerOrCanvas.innerHTML = '';
+      containerOrCanvas.appendChild(canvas);
+    }
+    return new CrystalHeart3D(canvas, options);
+  };
+
+  window.DThao3D.initChatMascot = function(container, options = {}) {
+    if (!container) return null;
+    const isLarge = !!options.isLarge;
+    const w = options.width || (isLarge ? 120 : 42);
+    const h = options.height || (isLarge ? 120 : 42);
+    const canvas = document.createElement('canvas');
+    canvas.width = w * (window.devicePixelRatio > 1 ? 2 : 1);
+    canvas.height = h * (window.devicePixelRatio > 1 ? 2 : 1);
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    canvas.style.display = 'block';
+    canvas.style.margin = '0 auto';
+    container.innerHTML = '';
+    container.appendChild(canvas);
+    return new ChatMascot3D(canvas, { isLarge, ...options });
+  };
+
+  // Auto-mount on DOM Ready
+  function autoMount3D() {
+    // 1. Header 3D Crystal Heart
+    const headerMark = document.querySelector('#brand-home-link .brand-mark');
+    if (headerMark) {
+      window.dthaoHeaderHeart = window.DThao3D.initCrystalHeart(headerMark, { width: 34, height: 34, size: 30 });
+    }
+
+    // 2. Auth Screen 3D Crystal Heart
+    const authSymbol = document.querySelector('#auth-screen .auth-brand-symbol');
+    if (authSymbol) {
+      window.dthaoAuthHeart = window.DThao3D.initCrystalHeart(authSymbol, { width: 54, height: 54, size: 48 });
+    }
+
+    // 3. Chat Topbar 3D Mascot Avatar
+    const chatAvatar = document.querySelector('#page-chat .chat-avatar');
+    if (chatAvatar) {
+      window.dthaoChatAvatarMascot = window.DThao3D.initChatMascot(chatAvatar, { isLarge: false, width: 40, height: 40 });
+    }
+
+    // 4. Chat Empty Stage 3D Mascot
+    const chatEmptyOrb = document.querySelector('#page-chat .chat-empty-orb');
+    if (chatEmptyOrb) {
+      window.dthaoChatStageMascot = window.DThao3D.initChatMascot(chatEmptyOrb, { isLarge: true, width: 110, height: 110 });
+    }
+
+    // Hook Chat Events into 3D Mascot
+    const chatInput = document.getElementById('chat-input');
+    if (chatInput) {
+      chatInput.addEventListener('focus', () => {
+        window.dthaoChatAvatarMascot?.setState('listening');
+        window.dthaoChatStageMascot?.setState('listening');
+      });
+      chatInput.addEventListener('blur', () => {
+        if (!window.chatSending) {
+          window.dthaoChatAvatarMascot?.setState('idle');
+          window.dthaoChatStageMascot?.setState('idle');
+        }
+      });
+      chatInput.addEventListener('input', () => {
+        window.dthaoChatAvatarMascot?.setState('listening');
+        window.dthaoChatStageMascot?.setState('listening');
+      });
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', autoMount3D);
+  } else {
+    autoMount3D();
+  }
+})();
+</script>
 </body>
 </html>
 
