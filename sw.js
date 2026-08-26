@@ -1,4 +1,4 @@
-const CACHE_NAME = 'doan-thao-v1';
+const CACHE_NAME = 'doan-thao-v8';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -11,24 +11,26 @@ const ASSETS_TO_CACHE = [
   'https://cdn.jsdelivr.net/npm/marked@9/marked.min.js'
 ];
 
-// Install: Cache essential app shell assets
+// Install: Cache essential app shell assets and skip waiting immediately
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(ASSETS_TO_CACHE).catch((err) => {
         console.warn('PWA: Một số tài nguyên không thể lưu vào cache:', err);
       });
-    }).then(() => self.skipWaiting())
+    })
   );
 });
 
-// Activate: Clean up old caches
+// Activate: Clean up all old caches immediately and claim clients
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(
         keys.map((key) => {
           if (key !== CACHE_NAME) {
+            console.log('PWA: Xóa cache cũ:', key);
             return caches.delete(key);
           }
         })
@@ -47,13 +49,15 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // For HTML navigation: Network first, fallback to cache
+  // For HTML navigation: Always Network-first to ensure latest updates
   if (request.mode === 'navigate' || request.headers.get('accept')?.includes('text/html')) {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          if (response && response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          }
           return response;
         })
         .catch(() => caches.match('./index.html') || caches.match(request))

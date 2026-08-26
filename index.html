@@ -72,7 +72,7 @@ async function syncChatToSupabase(){
     try {
         const conv = getChatConversation();
         const { error: convError } = await supa.from("chat_conversations").upsert({
-            id: conv.id, user_id: currentUser.id, title: conv.title, updated_at: new Date(conv.updatedAt).toISOString()
+            id: conv.id, user_id: getCurrentUserId(), title: conv.title, updated_at: new Date(conv.updatedAt).toISOString()
         }, { onConflict: "id" });
         if(convError) return;
         const rows = chatMessages.slice(-100).map(m => ({
@@ -1982,14 +1982,14 @@ document.addEventListener("DOMContentLoaded",()=>{
         }
 
         header {
-            height: 72px;
+            height: 56px;
             background: rgba(255,255,255,.92);
             backdrop-filter: blur(15px);
             border-bottom: 1px solid #ffe1ec;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 25px;
+            padding: 0 20px;
             position: sticky;
             top: 0;
             z-index: 100;
@@ -3064,8 +3064,6 @@ document.addEventListener("DOMContentLoaded",()=>{
             #page-settings .period-settings-actions {
                 grid-template-columns: 1fr 1.15fr;
             }
-
-        }
             .user-area { gap: 5px; }
             .brand { font-size: 16px; }
 
@@ -3406,13 +3404,6 @@ document.addEventListener("DOMContentLoaded",()=>{
 
             .layout {
                 padding-bottom: 0;
-            }
-
-            main {
-                padding-bottom: 30px;
-            }
-
-
             }
 
             main {
@@ -3790,29 +3781,29 @@ document.addEventListener("DOMContentLoaded",()=>{
         /* =========================================================
            ĐOÀN THẢO — ELEGANT BRAND + MOBILE DRAWER
         ========================================================= */
-        /* Luxury Brand Lockup */
+        /* Luxury Brand Lockup — Compact & Proportional */
         .brand-elegant {
-            display:inline-flex !important; align-items:center !important; gap:10px !important;
-            padding:5px 14px 5px 8px !important; border-radius:999px !important;
-            background:rgba(255,255,255,.55) !important; border:1px solid rgba(226,103,148,.22) !important;
+            display:inline-flex !important; align-items:center !important; gap:7px !important;
+            padding:3px 10px 3px 5px !important; border-radius:999px !important;
+            background:rgba(255,255,255,.62) !important; border:1px solid rgba(226,103,148,.2) !important;
             backdrop-filter:blur(14px) !important; -webkit-backdrop-filter:blur(14px) !important;
-            box-shadow:0 4px 16px rgba(112,72,92,.06) !important;
+            box-shadow:0 2px 10px rgba(112,72,92,.05) !important;
             transition:all .22s cubic-bezier(0.2,0.8,0.2,1) !important;
             text-align:left !important; cursor:pointer !important; min-width:auto !important;
         }
         .brand-elegant:hover {
-            background:rgba(255,255,255,.85) !important; border-color:rgba(226,103,148,.4) !important;
-            transform:translateY(-1px) !important; box-shadow:0 8px 24px rgba(226,103,148,.16) !important;
+            background:rgba(255,255,255,.88) !important; border-color:rgba(226,103,148,.35) !important;
+            transform:translateY(-1px) !important; box-shadow:0 4px 14px rgba(226,103,148,.12) !important;
         }
         .brand-mark-wrap {
-            width:32px; height:32px; flex:0 0 32px; border-radius:50%;
+            width:22px !important; height:22px !important; flex:0 0 22px !important; border-radius:50% !important;
             background:rgba(226,103,148,.12); display:flex; align-items:center; justify-content:center;
         }
-        .brand-mark { display:grid; place-items:center; width:32px; height:32px; color:#e26794; font-size:18px; line-height:1; }
-        .brand-mark canvas { display:block; width:30px !important; height:30px !important; margin:0 auto; filter:drop-shadow(0 3px 6px rgba(226,103,148,.35)); }
-        .brand-text-block { display:flex; flex-direction:column; align-items:flex-start; justify-content:center; gap:1px; min-width:0; }
-        .brand-name { font-family:'Great Vibes', cursive, serif !important; font-size:26px !important; font-weight:400 !important; line-height:1.1 !important; letter-spacing:0.02em !important; color:#4a2838 !important; margin:0 !important; white-space:nowrap !important; }
-        .brand-subtitle { position:static !important; font-family:system-ui,-apple-system,sans-serif !important; font-size:8px !important; font-weight:800 !important; letter-spacing:.18em !important; text-transform:uppercase !important; color:#c44d7d !important; line-height:1 !important; margin:0 !important; opacity:.85 !important; white-space:nowrap !important; }
+        .brand-mark { display:grid; place-items:center; width:22px; height:22px; color:#e26794; font-size:12px; line-height:1; }
+        .brand-mark canvas { display:block; width:20px !important; height:20px !important; margin:0 auto; filter:drop-shadow(0 2px 4px rgba(226,103,148,.3)); }
+        .brand-text-block { display:flex; flex-direction:column; align-items:flex-start; justify-content:center; gap:0 !important; min-width:0; }
+        .brand-name { font-family:'Great Vibes', cursive, serif !important; font-size:20px !important; font-weight:400 !important; line-height:1 !important; letter-spacing:0.01em !important; color:#4a2838 !important; margin:0 !important; white-space:nowrap !important; }
+        .brand-subtitle { position:static !important; font-family:system-ui,-apple-system,sans-serif !important; font-size:6px !important; font-weight:800 !important; letter-spacing:.14em !important; text-transform:uppercase !important; color:#c44d7d !important; line-height:1 !important; margin:0 !important; opacity:.85 !important; white-space:nowrap !important; }
 
         .logo-elegant { position:relative; }
         .logo-elegant .auth-brand-symbol { font-family:Georgia,serif; color:#e26794; font-size:25px; margin-bottom:2px; }
@@ -3846,13 +3837,13 @@ document.addEventListener("DOMContentLoaded",()=>{
         .mobile-nav-list .nav-btn.active { box-shadow:0 8px 22px rgba(226,103,148,.12); }
 
         @media (max-width:800px) {
-            header { padding: 0 14px !important; gap: 12px !important; justify-content: flex-start !important; }
-            .mobile-menu-toggle { display: inline-flex !important; order: -2; flex: 0 0 38px !important; width: 38px !important; height: 38px !important; margin: 0 !important; }
-            .brand-elegant { margin-left: 2px !important; flex: 0 0 auto !important; padding: 4px 10px 4px 6px !important; gap: 8px !important; }
-            .brand-mark-wrap { width: 28px !important; height: 28px !important; flex: 0 0 28px !important; }
-            .brand-mark canvas { width: 26px !important; height: 26px !important; }
-            .brand-name { font-size: 22px !important; }
-            .brand-subtitle { font-size: 7px !important; letter-spacing: .16em !important; }
+            header { height: 50px !important; padding: 0 12px !important; gap: 8px !important; justify-content: flex-start !important; }
+            .mobile-menu-toggle { display: inline-flex !important; order: -2; flex: 0 0 34px !important; width: 34px !important; height: 34px !important; margin: 0 !important; border-radius: 10px !important; }
+            .brand-elegant { margin-left: 2px !important; flex: 0 0 auto !important; padding: 2px 8px 2px 4px !important; gap: 5px !important; }
+            .brand-mark-wrap { width: 20px !important; height: 20px !important; flex: 0 0 20px !important; }
+            .brand-mark canvas { width: 18px !important; height: 18px !important; }
+            .brand-name { font-size: 18px !important; }
+            .brand-subtitle { font-size: 5.5px !important; letter-spacing: .12em !important; }
             .user-area { margin-left: auto !important; }
             .mobile-nav-backdrop, .mobile-nav-drawer { display: block; }
             #app > header { position: sticky; top: 0; z-index: 1000; }
@@ -3861,11 +3852,11 @@ document.addEventListener("DOMContentLoaded",()=>{
         }
 
         @media (max-width:420px) {
-            header { padding: 0 10px !important; gap: 8px !important; }
-            .mobile-menu-toggle { width: 36px !important; height: 36px !important; flex: 0 0 36px !important; }
-            .brand-elegant { padding: 3px 8px 3px 5px !important; gap: 6px !important; }
-            .brand-name { font-size: 20px !important; }
-            .brand-subtitle { font-size: 6.5px !important; }
+            header { height: 48px !important; padding: 0 8px !important; gap: 6px !important; }
+            .mobile-menu-toggle { width: 32px !important; height: 32px !important; flex: 0 0 32px !important; }
+            .brand-elegant { padding: 2px 6px 2px 3px !important; gap: 4px !important; }
+            .brand-name { font-size: 16.5px !important; }
+            .brand-subtitle { font-size: 5px !important; }
             .mobile-nav-drawer { width: min(86vw, 320px); }
         }
     
@@ -4019,6 +4010,67 @@ document.addEventListener("DOMContentLoaded",()=>{
 @media(max-width:800px){
   body #chat-drawer,body #chat-drawer-backdrop{display:none !important}
 }
+
+.brand-name, .brand-text-block .brand-name {
+    font-family: 'Great Vibes', cursive !important;
+    font-size: 21px !important;
+    font-weight: normal !important;
+    line-height: 1.05 !important;
+    color: #4a2838 !important;
+}
+
+.logo h1, .auth-header h1, .logo-elegant h1 {
+    font-family: 'Great Vibes', cursive !important;
+    font-size: 48px !important;
+    font-weight: normal !important;
+    line-height: 1.1 !important;
+    color: #4a2838 !important;
+}
+
+body {
+    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+}
+
+
+/* =========================================================
+   CLEAN MODAL SYSTEM FIX
+========================================================= */
+.modal {
+    position: fixed !important;
+    inset: 0 !important;
+    background: rgba(45, 20, 32, 0.55) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 20px !important;
+    z-index: 999999 !important;
+    pointer-events: auto !important;
+}
+.modal.hidden {
+    display: none !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+}
+.modal-content {
+    position: relative !important;
+    z-index: 1000000 !important;
+    pointer-events: auto !important;
+    background: #ffffff !important;
+    border-radius: 24px !important;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3) !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+}
+.modal-content input, .modal-content select, .modal-content textarea, .modal-content button {
+    pointer-events: auto !important;
+}
+.mobile-menu-backdrop:not(.open), .mobile-nav-backdrop:not(.open), .chat-drawer-backdrop:not(.open) {
+    display: none !important;
+    pointer-events: none !important;
+}
+
 </style>
 <style>
 
@@ -6798,7 +6850,7 @@ input:checked + .slider:before {
 
             <button
                 class="close-modal"
-                id="close-modal"
+                id="close-modal" type="button" onclick="closeModal()"
             >
                 ×
             </button>
@@ -6811,7 +6863,7 @@ input:checked + .slider:before {
 
             <button
                 class="small-btn"
-                id="modal-cancel"
+                id="modal-cancel" type="button" onclick="closeModal()"
             >
                 Hủy
             </button>
@@ -6819,6 +6871,8 @@ input:checked + .slider:before {
             <button
                 class="small-btn pink"
                 id="modal-save"
+                type="button"
+                onclick="executeModalSave()"
             >
                 Lưu
             </button>
@@ -7430,6 +7484,12 @@ document.addEventListener('DOMContentLoaded', () => {
 ========================================================= */
 
 let currentUser = null;
+window.currentUser = null;
+
+function getCurrentUserId() {
+    return (typeof currentUser !== 'undefined' && currentUser?.id) || window.currentUser?.id || null;
+}
+window.getCurrentUserId = getCurrentUserId;
 
 let semesters = [];
 let subjects = [];
@@ -8008,7 +8068,7 @@ async function requestWeatherLocation() {
     if (!navigator.geolocation) {
 
         setWeatherError(
-            "Trình duyệt không hỗ trợ định vị."
+            "Trình duy��t không hỗ trợ định vị."
         );
 
         return;
@@ -8608,6 +8668,7 @@ function showAuth() {
 async function enterApp(user) {
 
     currentUser = user;
+    window.currentUser = user;
 
     document
         .getElementById("auth-screen")
@@ -8768,7 +8829,7 @@ async function ensurePeriods() {
             .from("periods")
             .insert({
                 user_id:
-                    currentUser.id,
+                    getCurrentUserId(),
                 period_number:
                     1,
                 start_time:
@@ -8894,6 +8955,32 @@ let navigationAudioContext = null;
 /* =========================================================
    NAVIGATION
 ========================================================= */
+
+window.switchPage = function(pageName) {
+    if (!pageName) return;
+    try { playNavigationSound(); } catch(_) {}
+    currentPage = pageName;
+
+    document.querySelectorAll(".nav-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.page === pageName);
+    });
+
+    document.querySelectorAll(".page").forEach(page => {
+        page.classList.add("hidden");
+    });
+
+    const targetPage = document.getElementById("page-" + pageName);
+    if (targetPage) {
+        targetPage.classList.remove("hidden");
+    }
+
+    if (typeof renderCurrentPage === "function") {
+        renderCurrentPage();
+    }
+    window.youtubeAudioVisibility?.(pageName === "youtube-audio");
+    if (typeof setMobileMenu === "function") setMobileMenu(false);
+};
+
 
 document
     .querySelectorAll(".nav-btn")
@@ -9358,6 +9445,82 @@ function renderWeeklySchedule(container) {
 }
 
 
+
+/* =========================================================
+   MODAL CORE ENGINE (Declared early for all modals)
+========================================================= */
+
+function closeModal() {
+    const modal = document.getElementById("modal");
+    if (modal) {
+        modal.classList.add("hidden");
+        modal.style.display = "none";
+    }
+    const modalFooter = document.querySelector("#modal .modal-footer");
+    if (modalFooter) {
+        modalFooter.querySelectorAll(".schedule-delete-btn, .subject-delete-btn, .note-delete-btn, .semester-delete-btn").forEach(button => button.remove());
+    }
+    modalSaveHandler = null;
+}
+window.closeModal = closeModal;
+
+function openModal(title, body, saveHandler, saveText = "Lưu") {
+    const modalFooter = document.querySelector("#modal .modal-footer");
+    if (modalFooter) {
+        modalFooter.querySelectorAll(".schedule-delete-btn, .subject-delete-btn, .note-delete-btn, .semester-delete-btn").forEach(button => button.remove());
+    }
+    const titleEl = document.getElementById("modal-title");
+    const bodyEl = document.getElementById("modal-body");
+    const saveBtn = document.getElementById("modal-save");
+    const modal = document.getElementById("modal");
+
+    if (titleEl) titleEl.textContent = title;
+    if (bodyEl) bodyEl.innerHTML = body;
+    if (saveBtn) saveBtn.textContent = saveText;
+
+    if (modal) {
+        modal.classList.remove("hidden");
+        modal.style.display = "flex";
+    }
+    modalSaveHandler = saveHandler;
+}
+window.openModal = openModal;
+
+let isModalSaving = false;
+async function executeModalSave(e) {
+    if (e && typeof e.stopPropagation === "function") {
+        try { e.stopPropagation(); } catch(_) {}
+    }
+    if (isModalSaving || !modalSaveHandler) return;
+    isModalSaving = true;
+
+    const button = document.getElementById("modal-save");
+    if (button) button.disabled = true;
+
+    const currentHandler = modalSaveHandler;
+    try {
+        const result = await currentHandler();
+        if (result !== false) {
+            closeModal();
+        }
+    } catch (error) {
+        console.error("Modal save error:", error);
+        showToast(error.message || "Lỗi khi lưu.", true);
+    } finally {
+        isModalSaving = false;
+        if (button) button.disabled = false;
+    }
+}
+window.executeModalSave = executeModalSave;
+
+document.getElementById("close-modal")?.addEventListener("click", closeModal);
+document.getElementById("modal-cancel")?.addEventListener("click", closeModal);
+document.getElementById("modal-save")?.addEventListener("click", executeModalSave);
+document.getElementById("modal")?.addEventListener("click", (event) => {
+    if (event.target.id === "modal") closeModal();
+});
+
+
 /* =========================================================
    SCHEDULE MODAL
 ========================================================= */
@@ -9370,52 +9533,31 @@ async function(
 ) {
 
     if (!currentSemesterId) {
-
-        showToast(
-            "Hãy tạo hoặc chọn học kỳ trước.",
-            true
-        );
-
+        showToast("Hãy tạo hoặc chọn học kỳ trước.", true);
         return;
     }
 
-    const existing =
-        entryId
-            ? scheduleEntries.find(
-                e => e.id === entryId
-            )
-            : null;
+    const existing = entryId
+        ? scheduleEntries.find(e => e.id === entryId)
+        : scheduleEntries.find(e => e.semester_id === currentSemesterId && Number(e.day_of_week) === Number(day) && Number(e.period_number) === Number(period));
 
     openModal(
-        existing
-            ? "Chỉnh sửa tiết học"
-            : "Thêm tiết học",
+        existing ? "Chỉnh sửa tiết học" : "Thêm tiết học",
         `
             <div class="form-group">
                 <label>Ngày</label>
-                <input
-                    value="${DAYS[day - 1]}"
-                    disabled
-                >
+                <input value="${DAYS[day - 1]}" disabled>
             </div>
 
             <div class="form-group">
                 <label>Tiết</label>
-                <input
-                    value="Tiết ${period}"
-                    disabled
-                >
+                <input value="Tiết ${period}" disabled>
             </div>
 
             <div class="form-group">
                 <label>Môn học</label>
-
                 <select id="modal-subject">
-
-                    <option value="">
-                        -- Chọn môn --
-                    </option>
-
+                    <option value="">-- Chọn môn --</option>
                     ${subjects.map(s => `
                         <option
                             value="${s.id}"
@@ -9424,78 +9566,48 @@ async function(
                             ${escapeHTML(s.name)}
                         </option>
                     `).join("")}
-
                 </select>
             </div>
         `,
         async () => {
-
-            const subjectId =
-                document.getElementById(
-                    "modal-subject"
-                ).value;
+            const subjectId = document.getElementById("modal-subject")?.value;
 
             if (!subjectId) {
+                showToast("Hãy chọn môn học nhé vợ ♡", true);
+                return false;
+            }
 
-                showToast(
-                    "Hãy chọn môn học.",
-                    true
-                );
-
+            const uid = getCurrentUserId();
+            if (!uid) {
+                showToast("Vui lòng đăng nhập lại.", true);
                 return false;
             }
 
             if (existing) {
-
-                const { error } =
-                    await db
-                        .from("schedule_entries")
-                        .update({
-                            subject_id:
-                                subjectId
-                        })
-                        .eq(
-                            "id",
-                            existing.id
-                        );
-
-                if (error)
-                    throw error;
-
+                const { error } = await db
+                    .from("schedule_entries")
+                    .update({ subject_id: subjectId })
+                    .eq("id", existing.id);
+                if (error) throw error;
             } else {
-
-                const { error } =
-                    await db
-                        .from("schedule_entries")
-                        .insert({
-                            user_id:
-                                currentUser.id,
-                            semester_id:
-                                currentSemesterId,
-                            subject_id:
-                                subjectId,
-                            day_of_week:
-                                day,
-                            period_number:
-                                period
-                        });
-
-                if (error)
-                    throw error;
+                const { error } = await db
+                    .from("schedule_entries")
+                    .upsert({
+                        user_id: uid,
+                        semester_id: currentSemesterId,
+                        subject_id: subjectId,
+                        day_of_week: day,
+                        period_number: period
+                    }, { onConflict: 'user_id,semester_id,day_of_week,period_number' });
+                if (error) throw error;
             }
 
             await loadAllData();
             renderSchedule();
-
-            showToast(
-                "Đã lưu lịch học ♡"
-            );
-
+            showToast("Đã lưu lịch học ♡");
             return true;
         },
-        existing
-            ? "Lưu thay đổi"
-            : "Thêm"
+        existing ? "Lưu thay đổi" : "Thêm"
     );
 
     if (existing) {
@@ -9697,7 +9809,7 @@ function renderSubjects() {
 }
 
 
-function openSubjectModal(subjectId = null) {
+window.openSubjectModal = function(subjectId = null) {
 
     const subject =
         subjectId
@@ -9810,12 +9922,7 @@ function openSubjectModal(subjectId = null) {
                     await db
                         .from("subjects")
                         .insert({
-                            user_id:
-                                currentUser.id,
-                            name,
-                            teacher,
-                            room,
-                            color
+                            user_id: getCurrentUserId(), name, teacher, room, color
                         });
 
                 if (error)
@@ -9824,11 +9931,7 @@ function openSubjectModal(subjectId = null) {
 
             await loadAllData();
 
-            renderSubjects();
-
-            showToast(
-                "Đã lưu môn học ♡"
-            );
+            renderSubjects(); showToast("Đã lưu môn học ♡"); return true;
 
             return true;
         }
@@ -9956,7 +10059,7 @@ function renderSemesters() {
 }
 
 
-function openSemesterModal(semesterId = null) {
+window.openSemesterModal = function(semesterId = null) {
 
     const semester =
         semesterId
@@ -10053,10 +10156,7 @@ function openSemesterModal(semesterId = null) {
                     await db
                         .from("semesters")
                         .insert({
-                            user_id:
-                                currentUser.id,
-                            name,
-                            start_date: start,
+                            user_id: getCurrentUserId(), name, start_date: start,
                             end_date: end
                         })
                         .select()
@@ -10461,7 +10561,7 @@ function renderNotes() {
 }
 
 
-function openNoteModal(noteId = null) {
+window.openNoteModal = function(noteId = null) {
 
     const note =
         noteId
@@ -10588,11 +10688,7 @@ function openNoteModal(noteId = null) {
                     await db
                         .from("notes")
                         .insert({
-                            user_id:
-                                currentUser.id,
-                            title,
-                            content,
-                            folder_id:
+                            user_id: getCurrentUserId(), title, content, folder_id:
                                 folderId,
                             color
                         });
@@ -10603,12 +10699,7 @@ function openNoteModal(noteId = null) {
 
             await loadAllData();
 
-            renderNotes();
-            renderFolderFilter();
-
-            showToast(
-                "Đã lưu ghi chú ♡"
-            );
+            renderNotes(); renderFolderFilter(); showToast("Đã lưu ghi chú ♡"); return true;
 
             return true;
         }
@@ -10706,7 +10797,7 @@ async function(id) {
    FOLDERS
 ========================================================= */
 
-function openFolderModal() {
+window.openFolderModal = function() {
 
     openModal(
         "Tạo thư mục",
@@ -10743,9 +10834,7 @@ function openFolderModal() {
                 await db
                     .from("note_folders")
                     .insert({
-                        user_id:
-                            currentUser.id,
-                        name
+                        user_id: getCurrentUserId(), name
                     });
 
             if (error)
@@ -11335,165 +11424,6 @@ document
         () => printSchedule()
     );
 
-
-/* =========================================================
-   MODAL SYSTEM
-========================================================= */
-
-function openModal(
-    title,
-    body,
-    saveHandler,
-    saveText = "Lưu"
-) {
-
-    /*
-     * Mỗi lần mở modal phải dọn nút Xóa được thêm động
-     * từ lần mở modal trước. Nếu không, mỗi lần mở lại
-     * một tiết học cũ sẽ tạo thêm một nút Xóa.
-     */
-    const modalFooter =
-        document.querySelector(
-            "#modal .modal-footer"
-        );
-
-    if (modalFooter) {
-        modalFooter
-            .querySelectorAll(".schedule-delete-btn")
-            .forEach(button => button.remove());
-    }
-
-    document
-        .getElementById("modal-title")
-        .textContent = title;
-
-    document
-        .getElementById("modal-body")
-        .innerHTML = body;
-
-    document
-        .getElementById("modal-save")
-        .textContent = saveText;
-
-    document
-        .getElementById("modal")
-        .classList.remove("hidden");
-
-    modalSaveHandler =
-        saveHandler;
-}
-
-
-function closeModal() {
-
-    document
-        .getElementById("modal")
-        .classList.add("hidden");
-
-    const modalFooter =
-        document.querySelector(
-            "#modal .modal-footer"
-        );
-
-    if (modalFooter) {
-        modalFooter
-            .querySelectorAll(".schedule-delete-btn")
-            .forEach(button => button.remove());
-    }
-
-    modalSaveHandler =
-        null;
-}
-
-
-document
-    .getElementById("close-modal")
-    .addEventListener(
-        "click",
-        closeModal
-    );
-
-
-document
-    .getElementById("modal-cancel")
-    .addEventListener(
-        "click",
-        closeModal
-    );
-
-
-document
-    .getElementById("modal-save")
-    .addEventListener(
-        "click",
-        async () => {
-
-            if (!modalSaveHandler) {
-                return;
-            }
-
-            const button =
-                document.getElementById(
-                    "modal-save"
-                );
-
-            button.disabled = true;
-
-            try {
-
-                const result =
-                    await modalSaveHandler();
-
-                if (result !== false) {
-                    closeModal();
-                }
-
-            } catch (error) {
-
-                console.error(error);
-
-                showToast(
-                    error.message,
-                    true
-                );
-
-            } finally {
-
-                button.disabled = false;
-            }
-        }
-    );
-
-
-document
-    .getElementById("modal")
-    .addEventListener(
-        "click",
-        event => {
-
-            if (
-                event.target.id ===
-                "modal"
-            ) {
-                closeModal();
-            }
-        }
-    );
-
-
-
-
-/* =========================================================
-   MOBILE NAVIGATION DRAWER INITIALIZER
-========================================================= */
-(function setupMobileNavigation(){
-    const backdrop = document.getElementById('mobile-menu-backdrop');
-    const closeBtn = document.getElementById('mobile-nav-close');
-    if (backdrop) backdrop.addEventListener('click', () => setMobileMenu(false));
-    if (closeBtn) closeBtn.addEventListener('click', () => setMobileMenu(false));
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') setMobileMenu(false); });
-    window.addEventListener('resize', () => { if (window.innerWidth > 800) setMobileMenu(false); });
-})();
 
 /* =========================================================
    START
@@ -12837,7 +12767,7 @@ document.addEventListener('DOMContentLoaded',()=>window.hydrateYtIcons());
     // 1. Header 3D Crystal Heart
     const headerMark = document.querySelector('#brand-home-link .brand-mark');
     if (headerMark) {
-      window.dthaoHeaderHeart = window.DThao3D.initCrystalHeart(headerMark, { width: 34, height: 34, size: 30 });
+      window.dthaoHeaderHeart = window.DThao3D.initCrystalHeart(headerMark, { width: 22, height: 22, size: 20 });
     }
 
     // 2. Auth Screen 3D Crystal Heart
