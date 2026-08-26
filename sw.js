@@ -1,4 +1,4 @@
-const CACHE_NAME = 'doan-thao-v8';
+const CACHE_NAME = 'doan-thao-v11';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
