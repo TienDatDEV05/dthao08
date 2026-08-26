@@ -6481,6 +6481,15 @@ input:checked + .slider:before {
                 <span class="nav-label">Thời tiết</span>
             </button>
 
+            <button class="nav-btn" data-page="love" type="button" aria-label="Love Days — Ngày yêu và kỷ niệm">
+                <span class="nav-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                    </svg>
+                </span>
+                <span class="nav-label">Love Days</span>
+            </button>
+
             <button class="nav-btn" data-page="chat" type="button" aria-label="Mở Chồng yêu, trợ lý riêng của vợ">
                 <span class="nav-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24" fill="none">
@@ -6569,6 +6578,14 @@ input:checked + .slider:before {
         </svg>
     </span>
     <span class="nav-label">Thời tiết</span>
+</button>
+<button class="nav-btn" data-page="love" type="button" aria-label="Love Days">
+    <span class="nav-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+        </svg>
+    </span>
+    <span class="nav-label">Love Days</span>
 </button>
 <button class="nav-btn" data-page="chat" type="button" aria-label="Mở Chồng yêu, trợ lý riêng của vợ">
                 <span class="nav-icon" aria-hidden="true">
@@ -6907,7 +6924,85 @@ input:checked + .slider:before {
                  SETTINGS PAGE
             ================================================= -->
 
-            <section class="page hidden" id="page-weather" data-page="weather">
+            
+            <!-- =================================================
+                 LOVE DAYS PAGE
+             ================================================= -->
+
+            <section class="page hidden" id="page-love" data-page="love">
+
+                <div class="page-title">
+                    <h2>💗 Love Days</h2>
+                    <p>Đếm ngày yêu và những kỷ niệm đáng nhớ của chúng mình ♡</p>
+                </div>
+
+                <!-- Hero: Love Counter -->
+                <div class="love-hero-card" id="love-hero-card">
+                    <div class="love-hero-bg" aria-hidden="true"></div>
+
+                    <div class="love-hero-body">
+                        <div class="love-hero-label" id="love-hero-label">Chúng mình đã yêu nhau được</div>
+
+                        <div class="love-counter-grid" id="love-counter-grid">
+                            <div class="love-counter-unit">
+                                <span class="love-counter-value" id="lc-days">--</span>
+                                <span class="love-counter-unit-label">ngày</span>
+                            </div>
+                            <div class="love-counter-sep" aria-hidden="true">:</div>
+                            <div class="love-counter-unit">
+                                <span class="love-counter-value" id="lc-hours">--</span>
+                                <span class="love-counter-unit-label">giờ</span>
+                            </div>
+                            <div class="love-counter-sep" aria-hidden="true">:</div>
+                            <div class="love-counter-unit">
+                                <span class="love-counter-value" id="lc-minutes">--</span>
+                                <span class="love-counter-unit-label">phút</span>
+                            </div>
+                            <div class="love-counter-sep" aria-hidden="true">:</div>
+                            <div class="love-counter-unit">
+                                <span class="love-counter-value" id="lc-seconds">--</span>
+                                <span class="love-counter-unit-label">giây</span>
+                            </div>
+                        </div>
+
+                        <div class="love-start-row">
+                            <span class="love-start-text" id="love-start-text">Kể từ ngày ...</span>
+                            <button class="love-edit-start-btn" id="love-edit-start-btn" type="button" title="Đặt ngày bắt đầu yêu">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                                Đặt ngày
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Floating hearts decoration -->
+                    <div class="love-floaty" aria-hidden="true">
+                        <span>♡</span><span>💗</span><span>♡</span><span>💕</span><span>♡</span>
+                    </div>
+                </div>
+
+                <!-- Anniversary toolbar -->
+                <div class="toolbar" style="margin-top: 24px;">
+                    <h3 class="section-title-inline">📅 Ngày kỷ niệm</h3>
+                    <button class="small-btn pink" id="add-anniversary-btn" type="button" onclick="openAnniversaryModal()">
+                        ＋ Thêm kỷ niệm
+                    </button>
+                </div>
+
+                <!-- Anniversary list -->
+                <div id="anniversary-list" class="anniversary-list">
+                    <div class="anniversary-empty" id="anniversary-empty">
+                        <div class="anniversary-empty-icon">💌</div>
+                        <strong>Chưa có ngày kỷ niệm nào</strong>
+                        <span>Bấm "＋ Thêm kỷ niệm" để lưu những dấu mốc đặc biệt ♡</span>
+                    </div>
+                </div>
+
+            </section>
+
+<section class="page hidden" id="page-weather" data-page="weather">
             <div class="page-title">
                 <h2>Thời tiết</h2>
                 <p>Tình hình thời tiết hiện tại và dự báo từng giờ cho vợ đâyyy ♡</p>
@@ -9083,7 +9178,8 @@ async function loadAllData() {
             periodsResult,
             scheduleResult,
             notesResult,
-            foldersResult
+            foldersResult,
+            anniversariesResult
         ] = await Promise.all([
 
             db
@@ -9120,7 +9216,12 @@ async function loadAllData() {
             db
                 .from("note_folders")
                 .select("*")
-                .order("name")
+                .order("name"),
+
+            db
+                .from("anniversaries")
+                .select("*")
+                .order("created_at", { ascending: true })
         ]);
 
         if (semestersResult.error)
@@ -9141,6 +9242,9 @@ async function loadAllData() {
         if (foldersResult.error)
             throw foldersResult.error;
 
+        if (anniversariesResult.error && anniversariesResult.error.code !== 'PGRST116')
+            console.warn('Anniversaries table may not exist yet:', anniversariesResult.error.message);
+
         semesters =
             semestersResult.data || [];
 
@@ -9158,6 +9262,9 @@ async function loadAllData() {
 
         folders =
             foldersResult.data || [];
+
+        anniversaries =
+            anniversariesResult.data || [];
 
         if (!currentSemesterId && semesters.length) {
 
@@ -9449,6 +9556,10 @@ function renderCurrentPage() {
 
     if (currentPage === "youtube-audio") {
         window.youtubeAudioOpen?.();
+    }
+
+    if (currentPage === "love") {
+        renderLovePage();
     }
 }
 
@@ -12308,6 +12419,448 @@ initializeApp();
 
 
 
+
+
+/* ==========================================================
+   LOVE DAYS PAGE
+========================================================== */
+
+#page-love {
+    padding-bottom: 40px;
+}
+
+/* ── Hero counter card ── */
+.love-hero-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 28px;
+    padding: 36px 32px 28px;
+    background: linear-gradient(135deg,
+        rgba(255, 220, 230, .95) 0%,
+        rgba(255, 180, 206, .90) 40%,
+        rgba(240, 145, 185, .85) 100%);
+    border: 1px solid rgba(255, 255, 255, .7);
+    box-shadow:
+        0 16px 48px rgba(226, 103, 148, .22),
+        0 4px 16px rgba(226, 103, 148, .12),
+        inset 0 1px 0 rgba(255, 255, 255, .6);
+    margin-bottom: 4px;
+}
+
+.love-hero-bg {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 80% 20%, rgba(255,255,255,.35) 0%, transparent 60%),
+                radial-gradient(circle at 10% 80%, rgba(255,100,150,.15) 0%, transparent 50%);
+    pointer-events: none;
+}
+
+.love-hero-body {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    text-align: center;
+}
+
+.love-hero-label {
+    font-size: 14px;
+    font-weight: 700;
+    color: rgba(100, 30, 60, .8);
+    letter-spacing: .03em;
+    text-transform: uppercase;
+}
+
+.love-counter-grid {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.love-counter-unit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-width: 64px;
+    padding: 10px 12px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, .55);
+    border: 1px solid rgba(255, 255, 255, .75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 4px 16px rgba(226, 103, 148, .12);
+}
+
+.love-counter-value {
+    font-size: 32px;
+    font-weight: 900;
+    color: #7a1b42;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -.02em;
+    transition: transform .15s ease;
+}
+
+.love-counter-value.tick {
+    transform: scale(1.12);
+}
+
+.love-counter-unit-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: rgba(122, 27, 66, .7);
+    text-transform: uppercase;
+    letter-spacing: .1em;
+}
+
+.love-counter-sep {
+    font-size: 28px;
+    font-weight: 900;
+    color: rgba(122, 27, 66, .5);
+    line-height: 1;
+    margin-top: -10px;
+}
+
+.love-start-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.love-start-text {
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(100, 30, 60, .75);
+}
+
+.love-edit-start-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .65);
+    border: 1px solid rgba(255, 255, 255, .85);
+    color: #9c2356;
+    font-size: 12px;
+    font-weight: 750;
+    cursor: pointer;
+    transition: all .2s ease;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.love-edit-start-btn:hover {
+    background: rgba(255, 255, 255, .85);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(226, 103, 148, .2);
+}
+
+.love-edit-start-btn svg {
+    width: 13px;
+    height: 13px;
+    stroke: currentColor;
+}
+
+/* Floating hearts */
+.love-floaty {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.love-floaty span {
+    position: absolute;
+    font-size: 18px;
+    opacity: .18;
+    animation: loveFloat 6s ease-in-out infinite;
+}
+
+.love-floaty span:nth-child(1) { left: 5%;  top: 15%; animation-delay: 0s;    font-size: 14px; }
+.love-floaty span:nth-child(2) { left: 88%; top: 10%; animation-delay: 1.2s;  font-size: 20px; }
+.love-floaty span:nth-child(3) { left: 20%; top: 75%; animation-delay: 2.4s;  font-size: 12px; }
+.love-floaty span:nth-child(4) { left: 72%; top: 68%; animation-delay: 0.8s;  font-size: 16px; }
+.love-floaty span:nth-child(5) { left: 50%; top: 5%;  animation-delay: 3.6s;  font-size: 11px; }
+
+@keyframes loveFloat {
+    0%, 100% { transform: translateY(0) rotate(-5deg); opacity: .18; }
+    50%       { transform: translateY(-10px) rotate(5deg); opacity: .32; }
+}
+
+/* ── Section title inline ── */
+.section-title-inline {
+    font-size: 16px;
+    font-weight: 800;
+    color: #4a2838;
+    margin: 0;
+}
+
+/* ── Anniversary list ── */
+.anniversary-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.anniversary-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 40px 24px;
+    text-align: center;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, .55);
+    border: 1.5px dashed rgba(226, 103, 148, .3);
+    color: var(--muted, #987688);
+}
+
+.anniversary-empty-icon {
+    font-size: 36px;
+    line-height: 1;
+}
+
+.anniversary-empty strong {
+    font-size: 15px;
+    color: #4a2838;
+}
+
+.anniversary-empty span {
+    font-size: 13px;
+}
+
+/* ── Anniversary card ── */
+.anniversary-card {
+    display: grid;
+    grid-template-columns: 46px 1fr auto;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, .72);
+    border: 1px solid rgba(255, 255, 255, .9);
+    box-shadow: 0 4px 16px rgba(112, 72, 92, .06);
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.anniversary-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(226, 103, 148, .4);
+    box-shadow: 0 8px 24px rgba(226, 103, 148, .14);
+}
+
+.anniversary-card.is-today {
+    background: linear-gradient(135deg, rgba(255, 220, 230, .9), rgba(255, 180, 206, .75));
+    border-color: rgba(226, 103, 148, .5);
+    box-shadow: 0 8px 28px rgba(226, 103, 148, .22);
+}
+
+.anniversary-card.is-today::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,.3) 0%, transparent 60%);
+    pointer-events: none;
+}
+
+.anniversary-card.is-soon {
+    border-color: rgba(251, 191, 36, .45);
+    box-shadow: 0 4px 16px rgba(251, 191, 36, .1);
+}
+
+.anniversary-emoji {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    font-size: 24px;
+    background: rgba(255, 255, 255, .8);
+    border: 1px solid rgba(226, 103, 148, .2);
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.anniversary-info {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.anniversary-title {
+    font-size: 15px;
+    font-weight: 800;
+    color: #4a2838;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.anniversary-date-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.anniversary-date {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #8a5068;
+}
+
+.anniversary-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 9px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 750;
+}
+
+.anniversary-badge.today {
+    background: linear-gradient(135deg, #ff6b9e, #e2387f);
+    color: #fff;
+    animation: badgePulse 2s ease-in-out infinite;
+}
+
+@keyframes badgePulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(226, 56, 127, .4); }
+    50%       { box-shadow: 0 0 0 6px rgba(226, 56, 127, 0); }
+}
+
+.anniversary-badge.soon {
+    background: rgba(251, 191, 36, .2);
+    border: 1px solid rgba(251, 191, 36, .4);
+    color: #b45309;
+}
+
+.anniversary-badge.future {
+    background: rgba(226, 103, 148, .12);
+    border: 1px solid rgba(226, 103, 148, .2);
+    color: #9c2356;
+}
+
+.anniversary-badge.past {
+    background: rgba(150, 150, 150, .1);
+    border: 1px solid rgba(150, 150, 150, .2);
+    color: #888;
+}
+
+.anniversary-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.anniv-action-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    border: 1px solid rgba(226, 103, 148, .2);
+    background: rgba(255, 255, 255, .75);
+    color: #9c2356;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    transition: all .18s ease;
+}
+
+.anniv-action-btn:hover {
+    background: #ffe4ee;
+    border-color: #e26794;
+    transform: scale(1.08);
+}
+
+.anniv-action-btn.delete:hover {
+    background: #ffe4ee;
+    color: #d82b60;
+}
+
+.anniv-action-btn svg {
+    width: 14px;
+    height: 14px;
+    stroke: currentColor;
+    stroke-width: 2;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* ── Emoji picker inside modal ── */
+.emoji-picker-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.emoji-option {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    border: 2px solid transparent;
+    background: rgba(255, 232, 242, .6);
+    font-size: 18px;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    transition: all .15s ease;
+}
+
+.emoji-option:hover,
+.emoji-option.selected {
+    border-color: #e26794;
+    background: rgba(255, 180, 206, .4);
+    transform: scale(1.1);
+}
+
+/* Mobile tweaks */
+@media (max-width: 700px) {
+    .love-hero-card {
+        padding: 24px 18px 20px;
+        border-radius: 22px;
+    }
+    .love-counter-value {
+        font-size: 26px;
+    }
+    .love-counter-unit {
+        min-width: 52px;
+        padding: 8px 8px;
+    }
+    .love-counter-sep {
+        font-size: 22px;
+    }
+    .anniversary-card {
+        grid-template-columns: 40px 1fr auto;
+        gap: 10px;
+        padding: 12px 12px;
+    }
+    .anniversary-emoji {
+        width: 40px;
+        height: 40px;
+        font-size: 20px;
+        border-radius: 12px;
+    }
+}
+
 </style>
 <script id="youtube-svg-icon-system">
 (function(){
@@ -12966,4 +13519,370 @@ document.addEventListener('DOMContentLoaded',()=>window.hydrateYtIcons());
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
 })();
+
+
+/* =========================================================
+   LOVE DAYS ENGINE
+========================================================= */
+
+let anniversaries = [];
+let loveCounterInterval = null;
+
+/* ── Persistent love start date (localStorage per user) ── */
+function getLoveStartKey() {
+    return 'love_start_' + (getCurrentUserId() || 'default');
+}
+
+function getLoveStartDate() {
+    const raw = localStorage.getItem(getLoveStartKey());
+    if (!raw) return null;
+    const d = new Date(raw);
+    return isNaN(d.getTime()) ? null : d;
+}
+
+function setLoveStartDate(dateString) {
+    localStorage.setItem(getLoveStartKey(), dateString);
+}
+
+/* ── Render whole page ── */
+function renderLovePage() {
+    renderLoveCounter();
+    renderAnniversaryList();
+    checkAnniversaryNotifications();
+
+    // Wire up "Set date" button
+    const editBtn = document.getElementById('love-edit-start-btn');
+    if (editBtn) {
+        editBtn.onclick = openLoveStartModal;
+    }
+}
+
+/* ── Counter ── */
+function renderLoveCounter() {
+    const startDate = getLoveStartDate();
+
+    const labelEl   = document.getElementById('love-hero-label');
+    const startEl   = document.getElementById('love-start-text');
+    const daysEl    = document.getElementById('lc-days');
+    const hoursEl   = document.getElementById('lc-hours');
+    const minsEl    = document.getElementById('lc-minutes');
+    const secsEl    = document.getElementById('lc-seconds');
+
+    if (loveCounterInterval) {
+        clearInterval(loveCounterInterval);
+        loveCounterInterval = null;
+    }
+
+    if (!startDate) {
+        if (labelEl)  labelEl.textContent  = 'Hãy đặt ngày bắt đầu yêu nhau ♡';
+        if (startEl)  startEl.textContent  = 'Chưa có ngày bắt đầu';
+        if (daysEl)   daysEl.textContent   = '--';
+        if (hoursEl)  hoursEl.textContent  = '--';
+        if (minsEl)   minsEl.textContent   = '--';
+        if (secsEl)   secsEl.textContent   = '--';
+        return;
+    }
+
+    const fmt = startDate.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    if (labelEl) labelEl.textContent = 'Chúng mình đã yêu nhau được';
+    if (startEl) startEl.textContent = 'Kể từ ngày ' + fmt + ' 💌';
+
+    function tick() {
+        const now  = Date.now();
+        const diff = now - startDate.getTime();
+        if (diff < 0) return;
+
+        const totalSecs = Math.floor(diff / 1000);
+        const s = totalSecs % 60;
+        const m = Math.floor(totalSecs / 60) % 60;
+        const h = Math.floor(totalSecs / 3600) % 24;
+        const d = Math.floor(totalSecs / 86400);
+
+        function animSet(el, val) {
+            if (!el) return;
+            const str = String(val).padStart(2, '0');
+            if (el.textContent !== str) {
+                el.textContent = str;
+                el.classList.remove('tick');
+                // force reflow
+                void el.offsetWidth;
+                el.classList.add('tick');
+                setTimeout(() => el.classList.remove('tick'), 200);
+            }
+        }
+
+        animSet(daysEl, d);
+        animSet(hoursEl, h);
+        animSet(minsEl, m);
+        animSet(secsEl, s);
+    }
+
+    tick();
+    loveCounterInterval = setInterval(tick, 1000);
+}
+
+/* ── Open modal to set love start date ── */
+function openLoveStartModal() {
+    const current = getLoveStartDate();
+    const currentVal = current ? current.toISOString().slice(0, 10) : '';
+
+    openModal(
+        '💗 Ngày bắt đầu yêu nhau',
+        `<div class="form-group">
+            <label>Chọn ngày bắt đầu yêu nhau</label>
+            <input type="date" id="love-start-input" value="${currentVal}" max="${new Date().toISOString().slice(0,10)}">
+        </div>`,
+        () => {
+            const val = document.getElementById('love-start-input')?.value;
+            if (!val) { showToast('Hãy chọn ngày bắt đầu.', true); return false; }
+            setLoveStartDate(val);
+            renderLoveCounter();
+            showToast('Đã lưu ngày bắt đầu yêu nhau ♡');
+            return true;
+        },
+        'Lưu'
+    );
+}
+
+/* ── Get next occurrence of a MM-DD date ── */
+function getNextOccurrence(monthDay) {
+    const [month, day] = monthDay.split('-').map(Number);
+    const now = new Date();
+    const year = now.getFullYear();
+
+    let next = new Date(year, month - 1, day);
+    if (next < now && !(next.getMonth() === now.getMonth() && next.getDate() === now.getDate())) {
+        next = new Date(year + 1, month - 1, day);
+    }
+    return next;
+}
+
+function getDaysUntilNextOccurrence(monthDay) {
+    const next = getNextOccurrence(monthDay);
+    const now  = new Date();
+    const nowDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const nextDay = new Date(next.getFullYear(), next.getMonth(), next.getDate());
+    return Math.round((nextDay - nowDay) / 86400000);
+}
+
+/* ── Render anniversary cards ── */
+function renderAnniversaryList() {
+    const container = document.getElementById('anniversary-list');
+    const emptyEl   = document.getElementById('anniversary-empty');
+    if (!container) return;
+
+    const cards = container.querySelectorAll('.anniversary-card');
+    cards.forEach(c => c.remove());
+
+    if (!anniversaries.length) {
+        if (emptyEl) emptyEl.style.display = '';
+        return;
+    }
+    if (emptyEl) emptyEl.style.display = 'none';
+
+    // Sort: today first, then soonest
+    const now = new Date();
+    const sorted = [...anniversaries].sort((a, b) => {
+        const dA = getDaysUntilNextOccurrence(a.month_day);
+        const dB = getDaysUntilNextOccurrence(b.month_day);
+        return dA - dB;
+    });
+
+    sorted.forEach(ann => {
+        const days   = getDaysUntilNextOccurrence(ann.month_day);
+        const isToday = days === 0;
+        const isSoon  = days > 0 && days <= 7;
+
+        let badgeClass = 'future';
+        let badgeText  = 'Còn ' + days + ' ngày';
+        if (isToday)  { badgeClass = 'today'; badgeText = '🎉 Hôm nay!'; }
+        else if (isSoon) { badgeClass = 'soon'; badgeText = '⏰ Còn ' + days + ' ngày'; }
+
+        // Format display date
+        const [m, d] = ann.month_day.split('-');
+        const dateDisplay = d + '/' + m;
+
+        let cardClass = 'anniversary-card';
+        if (isToday) cardClass += ' is-today';
+        if (isSoon)  cardClass += ' is-soon';
+
+        const card = document.createElement('div');
+        card.className = cardClass;
+        card.dataset.id = ann.id;
+        card.innerHTML = `
+            <div class="anniversary-emoji">${ann.emoji || '💗'}</div>
+            <div class="anniversary-info">
+                <div class="anniversary-title">${ann.title}</div>
+                <div class="anniversary-date-row">
+                    <span class="anniversary-date">📅 Ngày ${dateDisplay} hàng năm</span>
+                    <span class="anniversary-badge ${badgeClass}">${badgeText}</span>
+                </div>
+                ${ann.note ? '<div style="font-size:12px;color:var(--muted);margin-top:2px;">' + ann.note + '</div>' : ''}
+            </div>
+            <div class="anniversary-actions">
+                <button class="anniv-action-btn edit" type="button" onclick="openAnniversaryModal('${ann.id}')" title="Sửa">
+                    <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
+                <button class="anniv-action-btn delete" type="button" onclick="deleteAnniversary('${ann.id}')" title="Xóa">
+                    <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                </button>
+            </div>
+        `;
+        container.appendChild(card);
+    });
+}
+
+/* ── Emoji picker ── */
+const LOVE_EMOJIS = ['💗','💕','💖','💝','💘','💌','🌹','🌸','🎂','🎉','🎊','🥂','🌙','⭐','✨','🎁','🎀','💍','🌺','🦋'];
+
+function renderEmojiPicker(selectedEmoji) {
+    return `<div class="emoji-picker-row" id="emoji-picker-row">${
+        LOVE_EMOJIS.map(e => `<button type="button" class="emoji-option${e === selectedEmoji ? ' selected' : ''}" data-emoji="${e}" onclick="selectEmoji(this)">${e}</button>`).join('')
+    }</div>`;
+}
+
+window.selectEmoji = function(btn) {
+    document.querySelectorAll('.emoji-option').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    const input = document.getElementById('anniv-emoji-hidden');
+    if (input) input.value = btn.dataset.emoji;
+};
+
+/* ── Open modal: add / edit anniversary ── */
+window.openAnniversaryModal = function(id) {
+    const existing = id ? anniversaries.find(a => a.id === id) : null;
+
+    const title   = existing?.title      || '';
+    const emoji   = existing?.emoji      || '💗';
+    const note    = existing?.note       || '';
+    const notifyD = existing?.notify_days ?? 1;
+
+    // Parse month_day to get month and day for input
+    let monthInput = '', dayInput = '';
+    if (existing?.month_day) {
+        const [m, d] = existing.month_day.split('-');
+        monthInput = m || '';
+        dayInput   = d || '';
+    }
+
+    openModal(
+        existing ? '✏️ Sửa kỷ niệm' : '💗 Thêm ngày kỷ niệm',
+        `
+        <div class="form-group">
+            <label>Tên sự kiện</label>
+            <input id="anniv-title" placeholder="VD: Sinh nhật vợ" value="${title}">
+        </div>
+        <div class="form-group">
+            <label>Biểu tượng</label>
+            <input type="hidden" id="anniv-emoji-hidden" value="${emoji}">
+            ${renderEmojiPicker(emoji)}
+        </div>
+        <div class="form-group">
+            <label>Ngày kỷ niệm (hàng năm)</label>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <div>
+                    <label style="font-size:11px;color:var(--muted);">Tháng (1-12)</label>
+                    <input type="number" id="anniv-month" min="1" max="12" placeholder="7" value="${monthInput}" style="margin-top:4px;">
+                </div>
+                <div>
+                    <label style="font-size:11px;color:var(--muted);">Ngày (1-31)</label>
+                    <input type="number" id="anniv-day" min="1" max="31" placeholder="14" value="${dayInput}" style="margin-top:4px;">
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Nhắc trước</label>
+            <select id="anniv-notify">
+                <option value="0"${notifyD===0?' selected':''}>Hôm đó</option>
+                <option value="1"${notifyD===1?' selected':''}>1 ngày trước</option>
+                <option value="3"${notifyD===3?' selected':''}>3 ngày trước</option>
+                <option value="7"${notifyD===7?' selected':''}>1 tuần trước</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Ghi chú (tùy chọn)</label>
+            <input id="anniv-note" placeholder="Nhắc nhở đặc biệt..." value="${note}">
+        </div>
+        `,
+        async () => {
+            const titleVal = document.getElementById('anniv-title')?.value.trim();
+            const emojiVal = document.getElementById('anniv-emoji-hidden')?.value || '💗';
+            const monthVal = parseInt(document.getElementById('anniv-month')?.value || '0');
+            const dayVal   = parseInt(document.getElementById('anniv-day')?.value || '0');
+            const noteVal  = document.getElementById('anniv-note')?.value.trim();
+            const notifyVal = parseInt(document.getElementById('anniv-notify')?.value || '0');
+
+            if (!titleVal) { showToast('Hãy nhập tên sự kiện.', true); return false; }
+            if (!monthVal || monthVal < 1 || monthVal > 12) { showToast('Tháng không hợp lệ (1-12).', true); return false; }
+            if (!dayVal   || dayVal   < 1 || dayVal   > 31) { showToast('Ngày không hợp lệ (1-31).', true); return false; }
+
+            const monthDay = String(monthVal).padStart(2,'0') + '-' + String(dayVal).padStart(2,'0');
+
+            const userId = getCurrentUserId();
+            const payload = {
+                user_id:      userId,
+                title:        titleVal,
+                emoji:        emojiVal,
+                month_day:    monthDay,
+                note:         noteVal || null,
+                notify_days:  notifyVal
+            };
+
+            if (existing) {
+                const { error } = await db.from('anniversaries').update(payload).eq('id', existing.id);
+                if (error) { showToast(error.message, true); return false; }
+                showToast('Đã cập nhật kỷ niệm ♡');
+            } else {
+                const { error } = await db.from('anniversaries').insert(payload);
+                if (error) { showToast(error.message, true); return false; }
+                showToast('Đã thêm ngày kỷ niệm ♡');
+            }
+
+            const { data } = await db.from('anniversaries').select('*').order('created_at', { ascending: true });
+            anniversaries = data || [];
+            renderAnniversaryList();
+            return true;
+        },
+        existing ? 'Lưu' : 'Thêm'
+    );
+};
+
+/* ── Delete anniversary ── */
+window.deleteAnniversary = async function(id) {
+    if (!confirm('Bạn có chắc muốn xóa ngày kỷ niệm này?')) return;
+    const { error } = await db.from('anniversaries').delete().eq('id', id);
+    if (error) { showToast(error.message, true); return; }
+    anniversaries = anniversaries.filter(a => a.id !== id);
+    renderAnniversaryList();
+    showToast('Đã xóa kỷ niệm.');
+};
+
+/* ── Push notifications for anniversaries ── */
+function checkAnniversaryNotifications() {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+    anniversaries.forEach(ann => {
+        const daysUntil = getDaysUntilNextOccurrence(ann.month_day);
+        const notifyAt  = ann.notify_days ?? 0;
+
+        if (daysUntil === notifyAt) {
+            const title = daysUntil === 0
+                ? `🎉 Hôm nay là ${ann.title}!`
+                : `⏰ Còn ${daysUntil} ngày nữa là ${ann.title}`;
+
+            const body = daysUntil === 0
+                ? `Chúc mừng ngày ${ann.emoji} ${ann.title} nhé vợ ♡`
+                : `Đừng quên nhé vợ yêu! ${ann.emoji}`;
+
+            // Throttle: only notify once per day per anniversary
+            const key = 'anniv_notified_' + ann.id + '_' + new Date().toDateString();
+            if (!localStorage.getItem(key)) {
+                new Notification(title, { body, icon: './icons/icon-192.png' });
+                localStorage.setItem(key, '1');
+            }
+        }
+    });
+}
+
+
 </script>
