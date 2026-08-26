@@ -7261,20 +7261,119 @@ function initNotifSettingsEvents() {
 
 
 /* =========================================================
-   PHASE 3 — AI USER PROFILE (Dành cho Chồng yêu)
+   PHASE 3 — AI USER PROFILE (Đồng bộ Cloud Supabase)
 ========================================================= */
 const PROFILE_STORAGE_KEY = 'dthao_user_profile';
 
 function getUserProfile() {
     try {
-        return JSON.parse(localStorage.getItem(PROFILE_STORAGE_KEY) || '{"name":"Đoàn Thảo","school":"","notes":""}');
-    } catch(e) {
-        return { name: 'Đoàn Thảo', school: '', notes: '' };
+        const local = JSON.parse(localStorage.getItem(PROFILE_STORAGE_KEY) || 'null');
+        if (local && typeof local === 'object') return local;
+    } catch(e) {}
+
+    if (currentUser?.user_metadata?.user_profile) {
+        return currentUser.user_metadata.user_profile;
     }
+    if (currentUser?.user_metadata?.profile_name) {
+        return {
+            name: currentUser.user_metadata.profile_name || '',
+            school: currentUser.user_metadata.profile_school || '',
+            notes: currentUser.user_metadata.profile_notes || ''
+        };
+    }
+    return { name: 'Đoàn Thảo', school: '', notes: '' };
 }
 
-function saveUserProfile(profile) {
+function syncProfileFormValues(profile) {
+    const nameInput = document.getElementById('profile-name');
+    const schoolInput = document.getElementById('profile-school');
+    const notesInput = document.getElementById('profile-notes');
+    if (nameInput && profile.name !== undefined) nameInput.value = profile.name;
+    if (schoolInput && profile.school !== undefined) schoolInput.value = profile.school;
+    if (notesInput && profile.notes !== undefined) notesInput.value = profile.notes;
+}
+
+async function fetchProfileFromSupabase() {
+    if (!currentUser) return getUserProfile();
+    let cloudProfile = null;
+
+    // 1. Read from Supabase Auth user_metadata
+    if (currentUser.user_metadata?.user_profile) {
+        cloudProfile = currentUser.user_metadata.user_profile;
+    } else if (currentUser.user_metadata?.profile_name) {
+        cloudProfile = {
+            name: currentUser.user_metadata.profile_name || '',
+            school: currentUser.user_metadata.profile_school || '',
+            notes: currentUser.user_metadata.profile_notes || ''
+        };
+    }
+
+    // 2. Try fetching from user_profiles table if exists
+    try {
+        if (typeof db !== 'undefined' && db && currentUser.id) {
+            const { data, error } = await db.from('user_profiles').select('name, school, notes').eq('user_id', currentUser.id).maybeSingle();
+            if (data && !error) {
+                cloudProfile = {
+                    name: data.name || cloudProfile?.name || '',
+                    school: data.school || cloudProfile?.school || '',
+                    notes: data.notes || cloudProfile?.notes || ''
+                };
+            }
+        }
+    } catch(err) {
+        console.warn("user_profiles table fetch:", err);
+    }
+
+    if (cloudProfile) {
+        localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(cloudProfile));
+        syncProfileFormValues(cloudProfile);
+        return cloudProfile;
+    }
+
+    return getUserProfile();
+}
+
+async function saveUserProfile(profile) {
     localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+
+    if (currentUser && typeof db !== 'undefined' && db) {
+        let cloudSaved = false;
+
+        // 1. Sync to Supabase Auth metadata (always available & reliable across all devices)
+        try {
+            const { data, error } = await db.auth.updateUser({
+                data: {
+                    profile_name: profile.name,
+                    profile_school: profile.school,
+                    profile_notes: profile.notes,
+                    user_profile: profile
+                }
+            });
+            if (!error && data?.user) {
+                currentUser = data.user;
+                cloudSaved = true;
+            }
+        } catch(authErr) {
+            console.warn("Supabase auth metadata update:", authErr);
+        }
+
+        // 2. Also try saving to user_profiles table
+        try {
+            const { error: tableError } = await db.from('user_profiles').upsert({
+                user_id: currentUser.id,
+                name: profile.name,
+                school: profile.school,
+                notes: profile.notes,
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'user_id' });
+            if (!tableError) cloudSaved = true;
+        } catch(tableErr) {
+            console.warn("Supabase user_profiles upsert:", tableErr);
+        }
+
+        return cloudSaved;
+    }
+    return false;
 }
 
 function initProfileUI() {
@@ -7285,19 +7384,37 @@ function initProfileUI() {
     if (!form) return;
 
     const profile = getUserProfile();
-    if (nameInput) nameInput.value = profile.name || '';
-    if (schoolInput) schoolInput.value = profile.school || '';
-    if (notesInput) notesInput.value = profile.notes || '';
+    syncProfileFormValues(profile);
 
-    form.addEventListener('submit', (e) => {
+    form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        saveUserProfile({
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const origText = submitBtn ? submitBtn.innerHTML : 'Lưu hồ sơ ♡';
+        
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span>⏳ Đang lưu lên Supabase...</span>';
+        }
+
+        const newProfile = {
             name: nameInput?.value.trim() || '',
             school: schoolInput?.value.trim() || '',
             notes: notesInput?.value.trim() || ''
-        });
+        };
+
+        const isCloudSaved = await saveUserProfile(newProfile);
+        
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = origText;
+        }
+
         haptic('success');
-        showToast('Đã lưu hồ sơ của vợ rồi nha ♡');
+        if (isCloudSaved) {
+            showToast('☁️ Đã lưu hồ sơ vào Supabase thành công!');
+        } else {
+            showToast('Đã lưu hồ sơ trên thiết bị ♡');
+        }
     });
 }
 
@@ -8506,6 +8623,7 @@ async function enterApp(user) {
             user.email || "";
 
     await loadAllData();
+    await fetchProfileFromSupabase();
 
     window.youtubePhase4Init?.();
     renderCurrentPage();
