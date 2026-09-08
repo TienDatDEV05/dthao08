@@ -1,4 +1,4 @@
-const CACHE_NAME = 'doan-thao-v16';
+const CACHE_NAME = 'doan-thao-v19';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -81,6 +81,23 @@ self.addEventListener('fetch', (event) => {
         });
 
       return cachedResponse || fetchPromise;
+    })
+  );
+});
+
+// Xử lý sự kiện khi người dùng click vào thông báo trên điện thoại/máy tính
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow('./');
+      }
     })
   );
 });
