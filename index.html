@@ -40,8 +40,14 @@ let chatInitializedFor = null;
 let chatMessages = [];
 let chatSending = false;
 
+function getCurrentUserId() {
+    return (typeof currentUser !== 'undefined' && currentUser?.id) || window.currentUser?.id || null;
+}
+window.getCurrentUserId = getCurrentUserId;
+
 function chatStorageKey(){
-    return CHAT_LOCAL_PREFIX + (currentUser?.id || "guest");
+    const uid = (typeof getCurrentUserId === 'function' && getCurrentUserId()) || currentUser?.id || window.currentUser?.id || "guest";
+    return CHAT_LOCAL_PREFIX + uid;
 }
 function loadChatStore(){
     try{return JSON.parse(localStorage.getItem(chatStorageKey()) || '{"conversations":[]}');}
@@ -68,17 +74,19 @@ function getChatConversation(){
     return conv;
 }
 async function syncChatToSupabase(){
-    if(!currentUser || !chatConversationId) return;
+    const u = currentUser || window.currentUser;
+    const client = typeof supa !== 'undefined' ? supa : (typeof db !== 'undefined' ? db : null);
+    if(!u || !client || !chatConversationId) return;
     try {
         const conv = getChatConversation();
-        const { error: convError } = await supa.from("chat_conversations").upsert({
-            id: conv.id, user_id: getCurrentUserId(), title: conv.title, updated_at: new Date(conv.updatedAt).toISOString()
+        const { error: convError } = await client.from("chat_conversations").upsert({
+            id: conv.id, user_id: getCurrentUserId() || u.id, title: conv.title, updated_at: new Date(conv.updatedAt).toISOString()
         }, { onConflict: "id" });
         if(convError) return;
         const rows = chatMessages.slice(-100).map(m => ({
-            id: m.id, conversation_id: chatConversationId, user_id: currentUser.id, role: m.role, content: m.content, created_at: new Date(m.createdAt).toISOString()
+            id: m.id, conversation_id: chatConversationId, user_id: u.id, role: m.role, content: m.content, created_at: new Date(m.createdAt).toISOString()
         }));
-        if(rows.length) await supa.from("chat_messages").upsert(rows, { onConflict: "id" });
+        if(rows.length) await client.from("chat_messages").upsert(rows, { onConflict: "id" });
     } catch (e) {
         console.debug("Chat history Supabase sync skipped:", e.message);
     }
@@ -832,22 +840,33 @@ function openChatConversation(id){
     loadChatFromSupabase();
 }
 async function loadChatFromSupabase(){
-    if(!currentUser) return;
+    const uid = (typeof getCurrentUserId === 'function' && getCurrentUserId()) || currentUser?.id || window.currentUser?.id;
+    const client = typeof supa !== 'undefined' ? supa : (typeof db !== 'undefined' ? db : null);
+    if(!uid || !client) return;
     try{
-        const {data,error}=await supa.from("chat_conversations").select("id,title,created_at,updated_at").eq("user_id",currentUser.id).order("updated_at",{ascending:false}).limit(30);
+        const {data,error}=await client.from("chat_conversations").select("id,title,created_at,updated_at").eq("user_id",uid).order("updated_at",{ascending:false}).limit(30);
         if(error || !data?.length) return;
         const store=loadChatStore();
         for(const c of data){
             let conv=store.conversations.find(x=>x.id===c.id);
             if(!conv){conv={id:c.id,title:c.title||"Cuộc trò chuyện",createdAt:new Date(c.created_at).getTime(),updatedAt:new Date(c.updated_at).getTime(),messages:[]};store.conversations.push(conv);}
-            const {data:msgs}=await supa.from("chat_messages").select("id,role,content,created_at").eq("conversation_id",c.id).order("created_at",{ascending:true}).limit(100);
+            const {data:msgs}=await client.from("chat_messages").select("id,role,content,created_at").eq("conversation_id",c.id).order("created_at",{ascending:true}).limit(100);
             if(msgs?.length) conv.messages=msgs.map(m=>({id:m.id,role:m.role,content:m.content,createdAt:new Date(m.created_at).getTime()}));
         }
         saveChatStore(store);
-        if(chatConversationId){const active=store.conversations.find(x=>x.id===chatConversationId);if(active){chatMessages=active.messages||[];renderChatMessages();}}
+        if(!chatConversationId && store.conversations.length > 0){
+            chatConversationId = store.conversations[0].id;
+            chatMessages = store.conversations[0].messages || [];
+            renderChatMessages();
+        } else if(chatConversationId){
+            const active=store.conversations.find(x=>x.id===chatConversationId);
+            if(active){chatMessages=active.messages||[];renderChatMessages();}
+        }
         renderChatHistory();
+        syncMobileChatHistory();
     }catch(e){console.debug("Chat history load skipped:",e.message);}
 }
+window.loadChatFromSupabase = loadChatFromSupabase;
 
 function createNewChat(){
     chatConversationId=makeChatId();chatMessages=[];
@@ -901,6 +920,7 @@ function openMobileChatHistory(){
   if(typeof setMobileMenu==="function") setMobileMenu(false);
   if(typeof closeChatDrawer==="function") closeChatDrawer();
   syncMobileChatHistory();
+  loadChatFromSupabase();
   const modal=document.getElementById("mobile-chat-history-modal");
   if(!modal) return;
   modal.classList.add("open");
@@ -948,17 +968,20 @@ function openChatDrawer(){
     document.getElementById("chat-drawer-backdrop")?.classList.add("open");
     document.getElementById("chat-drawer")?.setAttribute("aria-hidden","false");
     renderChatHistory();
+    loadChatFromSupabase();
 }
 function closeChatDrawer(){document.getElementById("chat-drawer")?.classList.remove("open");document.getElementById("chat-drawer-backdrop")?.classList.remove("open");document.getElementById("chat-drawer")?.setAttribute("aria-hidden","true");}
 function initChatForCurrentUser(){
-    if(!currentUser)return;
+    const u = currentUser || window.currentUser;
+    if(!u)return;
     const fab=document.getElementById("chat-fab"); if(fab)fab.classList.remove("hidden-fab");
-    if(chatInitializedFor===currentUser.id)return;
-    chatInitializedFor=currentUser.id;
+    if(chatInitializedFor===u.id)return;
+    chatInitializedFor=u.id;
     const store=loadChatStore();let conv=store.conversations.sort((a,b)=>b.updatedAt-a.updatedAt)[0];
     if(!conv){conv={id:makeChatId(),title:"Cuộc trò chuyện mới",createdAt:Date.now(),updatedAt:Date.now(),messages:[]};store.conversations.push(conv);saveChatStore(store);}
     chatConversationId=conv.id;chatMessages=Array.isArray(conv.messages)?conv.messages:[];renderChatMessages();renderChatHistory();
     cleanupOldChatHistory(30);
+    loadChatFromSupabase();
 }
 
 document.addEventListener("DOMContentLoaded",()=>{
@@ -7153,7 +7176,10 @@ input:checked + .slider:before {
                                 <option value="5">5 phút</option>
                                 <option value="10" selected>10 phút</option>
                                 <option value="15">15 phút</option>
+                                <option value="20">20 phút</option>
                                 <option value="30">30 phút</option>
+                                <option value="45">45 phút</option>
+                                <option value="60">60 phút (1 tiếng)</option>
                             </select>
                         </div>
 
@@ -7585,18 +7611,47 @@ if ('serviceWorker' in navigator) {
 /* =========================================================
    PHASE 3 — SCHEDULE REMINDER & NOTIFICATION ENGINE
 ========================================================= */
-const NOTIF_STORAGE_KEY = 'dthao_notif_config';
+function getNotifStorageKey() {
+    const uid = (typeof getCurrentUserId === 'function' && getCurrentUserId()) || currentUser?.id || window.currentUser?.id || 'default';
+    return `dthao_notif_config_${uid}`;
+}
 
 function getNotifConfig() {
     try {
-        return JSON.parse(localStorage.getItem(NOTIF_STORAGE_KEY) || '{"enabled":false,"minutes":10}');
+        const uidKey = getNotifStorageKey();
+        const raw = localStorage.getItem(uidKey) || localStorage.getItem('dthao_notif_config');
+        return JSON.parse(raw || '{"enabled":false,"minutes":10}');
     } catch(e) {
         return { enabled: false, minutes: 10 };
     }
 }
 
-function saveNotifConfig(config) {
-    localStorage.setItem(NOTIF_STORAGE_KEY, JSON.stringify(config));
+async function saveNotifConfig(config) {
+    const key = getNotifStorageKey();
+    try {
+        localStorage.setItem(key, JSON.stringify(config));
+        localStorage.setItem('dthao_notif_config', JSON.stringify(config));
+    } catch(e) {}
+
+    const uid = (typeof getCurrentUserId === 'function' && getCurrentUserId()) || currentUser?.id || window.currentUser?.id;
+    if (uid && typeof db !== 'undefined' && db) {
+        try {
+            await db.auth.updateUser({
+                data: { notif_config: config }
+            });
+        } catch(authErr) {
+            console.debug('Sync notif_config to user_metadata:', authErr);
+        }
+        try {
+            await db.from('user_profiles').upsert({
+                user_id: uid,
+                notif_config: config,
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'user_id' });
+        } catch(dbErr) {
+            console.debug('Sync notif_config to user_profiles table:', dbErr);
+        }
+    }
 }
 
 function updateNotifUI() {
@@ -7681,28 +7736,103 @@ function checkUpcomingPeriods() {
     const todayEntries = scheduleEntries.filter(e => 
         e.semester_id === currentSemesterId && Number(e.day_of_week) === currentDay
     );
+    if (!todayEntries.length) return;
+
+    const sortedPeriods = [...periods].sort((a, b) => Number(a.period_number) - Number(b.period_number));
+
+    const parseMin = (t) => {
+        if (!t) return null;
+        const [h, m] = t.split(':').map(Number);
+        return (h || 0) * 60 + (m || 0);
+    };
+
+    const isAdjacent = (p1, p2) => {
+        if (!p1 || !p2) return false;
+        const isNumAdj = Number(p2.period_number) === Number(p1.period_number) + 1;
+        const t1End = parseMin(p1.end_time);
+        const t2Start = parseMin(p2.start_time);
+        if (t1End !== null && t2Start !== null) {
+            const gap = t2Start - t1End;
+            return gap >= 0 && gap <= 45;
+        }
+        return isNumAdj;
+    };
 
     todayEntries.forEach(entry => {
         const periodNum = Number(entry.period_number);
-        const period = periods.find(p => Number(p.period_number) === periodNum);
+        const pIndex = sortedPeriods.findIndex(p => Number(p.period_number) === periodNum);
+        if (pIndex < 0) return;
+
+        const period = sortedPeriods[pIndex];
         if (!period || !period.start_time) return;
+
+        // Nếu tiết trước đó liền kề học cùng môn -> Chỉ thông báo 1 lần ở tiết đầu, bỏ qua tiết tiếp theo
+        const prevPeriod = pIndex > 0 ? sortedPeriods[pIndex - 1] : null;
+        const isContinuationOfSameSubject = prevPeriod && 
+            isAdjacent(prevPeriod, period) &&
+            todayEntries.some(prevEntry => 
+                Number(prevEntry.period_number) === Number(prevPeriod.period_number) &&
+                prevEntry.subject_id === entry.subject_id
+            );
+        if (isContinuationOfSameSubject) {
+            return;
+        }
+
+        // Tính số tiết học liên tiếp của môn này
+        let consecutiveCount = 1;
+        let lastPeriod = period;
+        let nextIdx = pIndex + 1;
+        while (nextIdx < sortedPeriods.length) {
+            const nextP = sortedPeriods[nextIdx];
+            const isAdj = isAdjacent(lastPeriod, nextP);
+            const nextEntry = todayEntries.find(e => 
+                Number(e.period_number) === Number(nextP.period_number) &&
+                e.subject_id === entry.subject_id
+            );
+            if (isAdj && nextEntry) {
+                consecutiveCount++;
+                lastPeriod = nextP;
+                nextIdx++;
+            } else {
+                break;
+            }
+        }
 
         const [sh, sm] = period.start_time.split(':').map(Number);
         const startMinutes = sh * 60 + sm;
         const diff = startMinutes - nowMinutes;
 
-        // Trigger if within [config.minutes - 1, config.minutes] window and not sent today
+        // Trigger nếu trong khoảng [1, config.minutes] phút trước giờ học và chưa gửi hôm nay
         if (diff > 0 && diff <= config.minutes) {
             const sentKey = `dthao_notif_sent_${todayStr}_${periodNum}`;
-            if (!sessionStorage.getItem(sentKey)) {
-                sessionStorage.setItem(sentKey, '1');
+            const alreadySent = localStorage.getItem(sentKey) || sessionStorage.getItem(sentKey);
+            if (!alreadySent) {
+                try {
+                    localStorage.setItem(sentKey, '1');
+                    sessionStorage.setItem(sentKey, '1');
+                    // Tự động dọn dẹp các key thông báo ngày cũ
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const k = localStorage.key(i);
+                        if (k && k.startsWith('dthao_notif_sent_') && !k.startsWith(`dthao_notif_sent_${todayStr}`)) {
+                            localStorage.removeItem(k);
+                        }
+                    }
+                } catch(_) {}
+
                 const subject = subjects.find(s => s.id === entry.subject_id);
                 const subName = subject ? subject.name : 'Tiết học';
-                const roomInfo = subject?.room ? ` • Phòng: ${subject.room}` : '';
-                const timeInfo = `${timeToDisplay(period.start_time)} - ${timeToDisplay(period.end_time)}`;
+                const roomVal = entry.room || subject?.room || '';
+                const roomInfo = roomVal ? ` • Phòng: ${roomVal.replace(/^phòng\s*/i, '')}` : '';
+
+                const periodLabel = consecutiveCount > 1 
+                    ? `Tiết ${periodNum} - ${lastPeriod.period_number}` 
+                    : `Tiết ${periodNum}`;
+                const countNote = consecutiveCount > 1 ? ` (${consecutiveCount} tiết liên tiếp)` : '';
+                const timeInfo = `${timeToDisplay(period.start_time)} - ${timeToDisplay(lastPeriod.end_time)}`;
+
                 sendScheduleNotification(
-                    `🔔 Tiết ${periodNum} sắp bắt đầu (${diff} phút nữa)`,
-                    `Môn: ${subName}\nThời gian: ${timeInfo}${roomInfo}`
+                    `🔔 ${periodLabel} sắp bắt đầu (${diff} phút nữa)`,
+                    `Môn: ${subName}${countNote}\nThời gian: ${timeInfo}${roomInfo}`
                 );
             }
         }
@@ -7768,11 +7898,15 @@ function initNotifSettingsEvents() {
 /* =========================================================
    PHASE 3 — AI USER PROFILE (Đồng bộ Cloud Supabase)
 ========================================================= */
-const PROFILE_STORAGE_KEY = 'dthao_user_profile';
+function getProfileStorageKey() {
+    const uid = (typeof getCurrentUserId === 'function' && getCurrentUserId()) || currentUser?.id || window.currentUser?.id || 'default';
+    return `dthao_user_profile_${uid}`;
+}
 
 function getUserProfile() {
     try {
-        const local = JSON.parse(localStorage.getItem(PROFILE_STORAGE_KEY) || 'null');
+        const key = getProfileStorageKey();
+        const local = JSON.parse(localStorage.getItem(key) || localStorage.getItem('dthao_user_profile') || 'null');
         if (local && typeof local === 'object') return local;
     } catch(e) {}
 
@@ -7802,7 +7936,39 @@ async function fetchProfileFromSupabase() {
     if (!currentUser) return getUserProfile();
     let cloudProfile = null;
 
-    // 1. Read from Supabase Auth user_metadata
+    // 1. Sync additional preferences from user_metadata (notif_config, current_semester_id, schedule_view_mode)
+    try {
+        if (currentUser.user_metadata?.notif_config) {
+            const cfg = currentUser.user_metadata.notif_config;
+            if (typeof getNotifStorageKey === 'function') {
+                localStorage.setItem(getNotifStorageKey(), JSON.stringify(cfg));
+                localStorage.setItem('dthao_notif_config', JSON.stringify(cfg));
+            }
+            if (typeof updateNotifUI === 'function') updateNotifUI();
+        }
+        if (currentUser.user_metadata?.schedule_view_mode) {
+            const mode = currentUser.user_metadata.schedule_view_mode;
+            if (typeof getScheduleViewModeStorageKey === 'function') {
+                localStorage.setItem(getScheduleViewModeStorageKey(), mode);
+                localStorage.setItem('dthao_schedule_view_mode', mode);
+            }
+            if (typeof setScheduleViewMode === 'function') setScheduleViewMode(mode);
+        }
+        if (currentUser.user_metadata?.current_semester_id) {
+            const semId = currentUser.user_metadata.current_semester_id;
+            if (typeof getSemesterStorageKey === 'function') {
+                localStorage.setItem(getSemesterStorageKey(), semId);
+            }
+            if (typeof semesters !== 'undefined' && semesters.some(s => s.id === semId)) {
+                currentSemesterId = semId;
+                if (typeof renderSemesterSelect === 'function') renderSemesterSelect();
+            }
+        }
+    } catch(prefErr) {
+        console.debug("Preferences sync from user_metadata:", prefErr);
+    }
+
+    // 2. Read profile from Supabase Auth user_metadata
     if (currentUser.user_metadata?.user_profile) {
         cloudProfile = currentUser.user_metadata.user_profile;
     } else if (currentUser.user_metadata?.profile_name) {
@@ -7813,7 +7979,7 @@ async function fetchProfileFromSupabase() {
         };
     }
 
-    // 2. Try fetching from user_profiles table if exists
+    // 3. Try fetching from user_profiles table if exists
     try {
         if (typeof db !== 'undefined' && db && currentUser.id) {
             const { data, error } = await db.from('user_profiles').select('name, school, notes').eq('user_id', currentUser.id).maybeSingle();
@@ -7830,7 +7996,8 @@ async function fetchProfileFromSupabase() {
     }
 
     if (cloudProfile) {
-        localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(cloudProfile));
+        localStorage.setItem(getProfileStorageKey(), JSON.stringify(cloudProfile));
+        localStorage.setItem('dthao_user_profile', JSON.stringify(cloudProfile));
         syncProfileFormValues(cloudProfile);
         return cloudProfile;
     }
@@ -7839,7 +8006,8 @@ async function fetchProfileFromSupabase() {
 }
 
 async function saveUserProfile(profile) {
-    localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+    localStorage.setItem(getProfileStorageKey(), JSON.stringify(profile));
+    localStorage.setItem('dthao_user_profile', JSON.stringify(profile));
 
     if (currentUser && typeof db !== 'undefined' && db) {
         let cloudSaved = false;
@@ -8037,6 +8205,15 @@ function timeToDisplay(time) {
     }
 
     return String(time).slice(0, 5);
+}
+
+function formatRoomName(room) {
+    if (!room) return "";
+    const trimmed = String(room).trim();
+    if (/^(phòng|p\.|p\s|giảng đường|gd\.)/i.test(trimmed)) {
+        return trimmed;
+    }
+    return `Phòng ${trimmed}`;
 }
 
 
@@ -9153,6 +9330,12 @@ async function enterApp(user) {
     await loadAllData();
     await fetchProfileFromSupabase();
 
+    if (typeof loadChatFromSupabase === 'function') {
+        loadChatFromSupabase();
+    } else if (typeof window.loadChatFromSupabase === 'function') {
+        window.loadChatFromSupabase();
+    }
+
     window.youtubePhase4Init?.();
     renderCurrentPage();
 
@@ -9266,10 +9449,17 @@ async function loadAllData() {
         anniversaries =
             anniversariesResult.data || [];
 
-        if (!currentSemesterId && semesters.length) {
+        let savedSemesterId = currentUser?.user_metadata?.current_semester_id;
+        if (!savedSemesterId && typeof getSemesterStorageKey === 'function') {
+            try {
+                savedSemesterId = localStorage.getItem(getSemesterStorageKey());
+            } catch(e) {}
+        }
 
-            currentSemesterId =
-                semesters[0].id;
+        if (savedSemesterId && semesters.some(s => s.id === savedSemesterId)) {
+            currentSemesterId = savedSemesterId;
+        } else if (!currentSemesterId && semesters.length) {
+            currentSemesterId = semesters[0].id;
         }
 
         ensurePeriods();
@@ -9568,6 +9758,40 @@ function renderCurrentPage() {
    SEMESTER SELECT
 ========================================================= */
 
+function getSemesterStorageKey() {
+    const uid = (typeof getCurrentUserId === 'function' && getCurrentUserId()) || currentUser?.id || window.currentUser?.id || 'default';
+    return `dthao_current_semester_${uid}`;
+}
+
+async function persistCurrentSemester(id) {
+    if (!id) return;
+    try {
+        localStorage.setItem(getSemesterStorageKey(), id);
+        localStorage.setItem("dthao_current_semester", id);
+    } catch(e) {}
+    const uid = (typeof getCurrentUserId === 'function' && getCurrentUserId()) || currentUser?.id || window.currentUser?.id;
+    if (uid && typeof db !== 'undefined' && db) {
+        try {
+            await db.auth.updateUser({
+                data: { current_semester_id: id }
+            });
+        } catch(e) {
+            console.debug('Sync semester to auth metadata:', e);
+        }
+        try {
+            await db.from('user_profiles').upsert({
+                user_id: uid,
+                current_semester_id: id,
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'user_id' });
+        } catch(e) {
+            console.debug('Sync semester to user_profiles:', e);
+        }
+    }
+}
+window.persistCurrentSemester = persistCurrentSemester;
+window.getSemesterStorageKey = getSemesterStorageKey;
+
 document
     .getElementById("semester-select")
     .addEventListener(
@@ -9576,6 +9800,8 @@ document
 
             currentSemesterId =
                 event.target.value || null;
+
+            persistCurrentSemester(currentSemesterId);
 
             renderSchedule();
         }
@@ -9639,7 +9865,15 @@ const DAYS = [
 ];
 
 
-let scheduleViewMode = localStorage.getItem("dthao_schedule_view_mode") || "day";
+function getScheduleViewModeStorageKey() {
+    const uid = (typeof getCurrentUserId === 'function' && getCurrentUserId()) || currentUser?.id || window.currentUser?.id || 'default';
+    return `dthao_schedule_view_mode_${uid}`;
+}
+
+let scheduleViewMode = "day";
+try {
+    scheduleViewMode = localStorage.getItem(getScheduleViewModeStorageKey()) || localStorage.getItem("dthao_schedule_view_mode") || "day";
+} catch(e) {}
 let selectedScheduleDay = getTodayDayOfWeek();
 
 function getTodayDayOfWeek() {
@@ -9649,13 +9883,24 @@ function getTodayDayOfWeek() {
 
 function setScheduleViewMode(mode) {
     scheduleViewMode = mode;
-    localStorage.setItem("dthao_schedule_view_mode", mode);
+    try {
+        localStorage.setItem(getScheduleViewModeStorageKey(), mode);
+        localStorage.setItem("dthao_schedule_view_mode", mode);
+    } catch(e) {}
+    const uid = (typeof getCurrentUserId === 'function' && getCurrentUserId()) || currentUser?.id || window.currentUser?.id;
+    if (uid && typeof db !== 'undefined' && db) {
+        db.auth.updateUser({
+            data: { schedule_view_mode: mode }
+        }).catch(e => console.debug('Sync schedule_view_mode:', e));
+    }
     const dayBtn = document.getElementById("view-mode-day");
     const weekBtn = document.getElementById("view-mode-week");
     if (dayBtn) dayBtn.classList.toggle("active", mode === "day");
     if (weekBtn) weekBtn.classList.toggle("active", mode === "week");
     renderSchedule();
 }
+window.setScheduleViewMode = setScheduleViewMode;
+window.getScheduleViewModeStorageKey = getScheduleViewModeStorageKey;
 
 function selectScheduleDay(day) {
     selectedScheduleDay = Number(day);
@@ -9807,6 +10052,7 @@ function renderDailySchedule(container) {
             hasAnyClass = true;
             const subject = subjects.find(s => s.id === entry.subject_id);
             const color = subject?.color || "#ffd6e7";
+            const roomVal = entry.room || subject?.room || "";
 
             listHtml += `
                 <div class="daily-card-item scheduled ${timeStatus}" style="border-left-color:${escapeHTML(color)}" 
@@ -9819,7 +10065,7 @@ function renderDailySchedule(container) {
                     <div class="daily-card-body">
                         <h4 class="daily-subject-title" style="color:var(--text)">${escapeHTML(subject ? subject.name : 'Môn học')}</h4>
                         <div class="daily-subject-details">
-                            ${entry.room ? `<span class="daily-detail-pill">📍 Phòng ${escapeHTML(entry.room)}</span>` : ''}
+                            ${roomVal ? `<span class="daily-detail-pill">📍 ${escapeHTML(formatRoomName(roomVal))}</span>` : '<span class="daily-detail-pill" style="opacity:0.65">📍 Chưa có phòng</span>'}
                             ${subject?.teacher ? `<span class="daily-detail-pill">👨‍🏫 ${escapeHTML(subject.teacher)}</span>` : ''}
                             ${subject?.credits ? `<span class="daily-detail-pill">⭐ ${escapeHTML(subject.credits)} TC</span>` : ''}
                         </div>
@@ -10650,6 +10896,9 @@ window.openSemesterModal = function(semesterId = null) {
 
                 currentSemesterId =
                     data.id;
+                if (typeof persistCurrentSemester === "function") {
+                    persistCurrentSemester(data.id);
+                }
             }
 
             await loadAllData();
@@ -10795,6 +11044,9 @@ async function(id) {
 
         currentSemesterId =
             newSemester.id;
+        if (typeof persistCurrentSemester === "function") {
+            persistCurrentSemester(newSemester.id);
+        }
 
         await loadAllData();
 
@@ -13528,11 +13780,15 @@ document.addEventListener('DOMContentLoaded',()=>window.hydrateYtIcons());
 let anniversaries = [];
 let loveCounterInterval = null;
 
-/* ── Persistent love start date (localStorage per user) ── */
+/* ── Persistent love start date: localStorage (cache) + Supabase (cloud) ── */
 function getLoveStartKey() {
     return 'love_start_' + (getCurrentUserId() || 'default');
 }
 
+/**
+ * Read from localStorage cache (fast, synchronous).
+ * For the authoritative cloud value use loadLoveStartDateFromCloud().
+ */
 function getLoveStartDate() {
     const raw = localStorage.getItem(getLoveStartKey());
     if (!raw) return null;
@@ -13540,20 +13796,77 @@ function getLoveStartDate() {
     return isNaN(d.getTime()) ? null : d;
 }
 
-function setLoveStartDate(dateString) {
+/**
+ * Persist love_start_date to BOTH localStorage (instant) and
+ * Supabase user_profiles table (cross-device sync).
+ */
+async function setLoveStartDate(dateString) {
+    // 1. Local cache first — instant UI update
     localStorage.setItem(getLoveStartKey(), dateString);
+
+    // 2. Supabase sync
+    if (currentUser && typeof db !== 'undefined' && db) {
+        try {
+            const { error } = await db.from('user_profiles').upsert({
+                user_id:         currentUser.id,
+                love_start_date: dateString,
+                updated_at:      new Date().toISOString()
+            }, { onConflict: 'user_id' });
+            if (error) {
+                console.warn('Supabase love_start_date upsert:', error.message);
+            }
+        } catch (e) {
+            console.warn('Supabase love_start_date sync failed:', e.message);
+        }
+    }
 }
 
-/* ── Render whole page ── */
-function renderLovePage() {
+/**
+ * Fetch love_start_date from Supabase, update localStorage cache,
+ * and return as Date object (or null if not set).
+ */
+async function loadLoveStartDateFromCloud() {
+    if (!currentUser || typeof db === 'undefined' || !db) {
+        return getLoveStartDate();
+    }
+    try {
+        const { data, error } = await db
+            .from('user_profiles')
+            .select('love_start_date')
+            .eq('user_id', currentUser.id)
+            .maybeSingle();
+
+        if (!error && data?.love_start_date) {
+            // Update local cache with cloud value
+            localStorage.setItem(getLoveStartKey(), data.love_start_date);
+            const d = new Date(data.love_start_date);
+            return isNaN(d.getTime()) ? null : d;
+        }
+    } catch (e) {
+        console.warn('loadLoveStartDateFromCloud:', e.message);
+    }
+    // Fallback to local cache
+    return getLoveStartDate();
+}
+
+/* ── Render whole page (async: load from cloud first) ── */
+async function renderLovePage() {
+    // Wire up "Set date" button immediately
+    const editBtn = document.getElementById('love-edit-start-btn');
+    if (editBtn) editBtn.onclick = openLoveStartModal;
+
+    // Show cached counter right away while cloud loads
     renderLoveCounter();
     renderAnniversaryList();
     checkAnniversaryNotifications();
 
-    // Wire up "Set date" button
-    const editBtn = document.getElementById('love-edit-start-btn');
-    if (editBtn) {
-        editBtn.onclick = openLoveStartModal;
+    // Then fetch authoritative value from Supabase and re-render if different
+    const cloudDate = await loadLoveStartDateFromCloud();
+    const cachedDate = getLoveStartDate();
+    const cloudStr  = cloudDate ? cloudDate.toISOString().slice(0, 10) : null;
+    const cachedStr = cachedDate ? cachedDate.toISOString().slice(0, 10) : null;
+    if (cloudStr !== cachedStr) {
+        renderLoveCounter();
     }
 }
 
@@ -13632,12 +13945,17 @@ function openLoveStartModal() {
             <label>Chọn ngày bắt đầu yêu nhau</label>
             <input type="date" id="love-start-input" value="${currentVal}" max="${new Date().toISOString().slice(0,10)}">
         </div>`,
-        () => {
+        async () => {
             const val = document.getElementById('love-start-input')?.value;
             if (!val) { showToast('Hãy chọn ngày bắt đầu.', true); return false; }
-            setLoveStartDate(val);
+
+            // Show saving indicator
+            const saveBtn = document.getElementById('modal-save');
+            if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Đang lưu...'; }
+
+            await setLoveStartDate(val);
             renderLoveCounter();
-            showToast('Đã lưu ngày bắt đầu yêu nhau ♡');
+            showToast('Đã lưu ngày bắt đầu yêu nhau ♥ (cả Supabase)');
             return true;
         },
         'Lưu'
@@ -13877,7 +14195,7 @@ function checkAnniversaryNotifications() {
             // Throttle: only notify once per day per anniversary
             const key = 'anniv_notified_' + ann.id + '_' + new Date().toDateString();
             if (!localStorage.getItem(key)) {
-                new Notification(title, { body, icon: './icons/icon-192.png' });
+                new Notification(title, { body, icon: 'assets/icon-192.png' });
                 localStorage.setItem(key, '1');
             }
         }
