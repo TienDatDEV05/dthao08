@@ -7219,8 +7219,9 @@ input:checked + .slider:before {
 
                         <div class="settings-row" style="margin-top: 16px; margin-bottom: 0;">
                             <span id="notif-status-badge" class="notif-status-badge">Đang kiểm tra...</span>
-                            <div style="display: flex; gap: 8px;">
-                                <button class="small-btn" id="notif-test-btn" type="button" style="padding: 6px 12px; font-size: 12px;">Thử thông báo</button>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end;">
+                                <button class="small-btn" id="notif-test-btn" type="button" style="padding: 6px 12px; font-size: 12px;">Thử tại chỗ</button>
+                                <button class="small-btn" id="notif-push-test-btn" type="button" style="padding: 6px 12px; font-size: 12px; background: rgba(255,119,168,0.15); color: #ff5290; border: 1px solid rgba(255,119,168,0.3);" title="Gửi Web Push sau 5s để bạn kịp khóa màn hình iPhone thử nghiệm">📲 Thử Push (Khóa máy)</button>
                                 <button class="small-btn pink" id="notif-perm-btn" type="button" style="padding: 6px 12px; font-size: 12px;">Cấp quyền</button>
                             </div>
                         </div>
@@ -7718,6 +7719,118 @@ function updateNotifUI() {
     }
 }
 
+/* ── WEB PUSH ENGINE (Hỗ trợ Apple APNs cho iOS PWA khi tắt màn hình) ── */
+const VAPID_PUBLIC_KEY = "BFc1YJgWlKUtje6VOoA34wB7S5Yu-CiCsiY-H0xJKFFdm0tvZA9NK6Fv5RKWeDe0sKWWF1tNCBAvfXSylKsPk4g";
+
+function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding)
+        .replace(/\-/g, '+')
+        .replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+}
+
+async function subscribePushNotifications() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+        console.debug('PushManager không hỗ trợ trên trình duyệt này.');
+        return null;
+    }
+    if (Notification.permission !== 'granted') return null;
+
+    try {
+        const reg = await navigator.serviceWorker.ready;
+        if (!reg || !reg.pushManager) return null;
+
+        let sub = await reg.pushManager.getSubscription();
+        if (!sub) {
+            const convertedKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+            sub = await reg.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: convertedKey
+            });
+        }
+
+        if (sub) {
+            const rawKey = sub.getKey ? sub.getKey('p256dh') : null;
+            const rawAuth = sub.getKey ? sub.getKey('auth') : null;
+            const p256dh = rawKey ? btoa(String.fromCharCode.apply(null, new Uint8Array(rawKey))) : '';
+            const auth = rawAuth ? btoa(String.fromCharCode.apply(null, new Uint8Array(rawAuth))) : '';
+
+            const uid = (typeof getCurrentUserId === 'function' && getCurrentUserId()) || currentUser?.id || window.currentUser?.id;
+            if (uid && typeof db !== 'undefined' && db && p256dh && auth) {
+                try {
+                    await db.from('push_subscriptions').upsert({
+                        user_id: uid,
+                        endpoint: sub.endpoint,
+                        p256dh: p256dh,
+                        auth: auth,
+                        user_agent: navigator.userAgent || 'Unknown device',
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: 'endpoint' });
+                    console.log('Đã đồng bộ Web Push Subscription lên Supabase!');
+                } catch(dbErr) {
+                    console.debug('Lỗi lưu push_subscription:', dbErr);
+                }
+            }
+            return sub;
+        }
+    } catch(err) {
+        console.warn('Không thể đăng ký Web Push:', err);
+        return null;
+    }
+    return null;
+}
+
+async function testWebPushNotification() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+        showToast('Trình duyệt này không hỗ trợ Web Push.', true);
+        return;
+    }
+    if (Notification.permission !== 'granted') {
+        const ok = await requestNotificationPermission();
+        if (!ok) return;
+    }
+
+    showToast('Đang kết nối Web Push... Chuẩn bị khóa màn hình!', false);
+    const sub = await subscribePushNotifications();
+    if (!sub) {
+        showToast('Chưa thể đăng ký Push trên thiết bị. Hãy kiểm tra cài đặt Safari.', true);
+        return;
+    }
+
+    const uid = (typeof getCurrentUserId === 'function' && getCurrentUserId()) || currentUser?.id || window.currentUser?.id;
+    showToast('🔔 Đã lên lịch! Khóa máy ngay, thông báo sẽ tới sau 5s ♡', false);
+
+    try {
+        const res = await fetch('https://qwvhudppdoauivpdewin.supabase.co/functions/v1/send-push', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'apikey': SUPABASE_KEY
+            },
+            body: JSON.stringify({
+                action: 'test',
+                subscription: sub,
+                userId: uid,
+                delaySeconds: 5,
+                title: '🔔 Web Push iOS thành công!',
+                body: 'Chồng yêu: Thông báo đẩy đã xuyên qua màn hình khóa iPhone của Vợ rồi nè ♡'
+            })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            console.debug('Phản hồi lỗi từ send-push:', data);
+        }
+    } catch(err) {
+        console.debug('Lỗi gọi Edge Function send-push:', err);
+    }
+}
+
 async function requestNotificationPermission() {
     if (!('Notification' in window)) {
         showToast('Trình duyệt của bạn không hỗ trợ thông báo.', true);
@@ -7730,6 +7843,8 @@ async function requestNotificationPermission() {
         await saveNotifConfig(config);
         updateNotifUI();
         showToast('Đã cấp quyền và bật thông báo nhắc tiết ♡');
+        // Tự động kích hoạt Web Push subscription
+        subscribePushNotifications().catch(() => {});
         checkUpcomingPeriods();
         return true;
     } else {
@@ -7870,10 +7985,13 @@ function checkUpcomingPeriods() {
         const startMinutes = sh * 60 + sm;
         const diff = startMinutes - nowMinutes;
 
-        // Kích hoạt: từ config.minutes trước giờ học đến khi tiết học đã bắt đầu tối đa 10 phút
-        // (Bao phủ cả đúng giờ vào tiết diff === 0 và vừa trễ vài phút diff < 0 khi mở lại app)
+        // Kích hoạt: từ config.minutes trước giờ học đến khi tiết học kết thúc
         const notifyWindowBefore = Number(config.minutes) || 10;
-        if (diff >= -10 && diff <= notifyWindowBefore) {
+        const [eh, em] = (lastPeriod.end_time || period.end_time || '').split(':').map(Number);
+        const endMinutes = eh ? (eh * 60 + (em || 0)) : (startMinutes + 45);
+        const isOngoingOrUpcoming = (nowMinutes >= startMinutes - notifyWindowBefore) && (nowMinutes <= endMinutes);
+
+        if (isOngoingOrUpcoming) {
             const sentKey = `dthao_notif_sent_${todayStr}_${periodNum}`;
             const alreadySent = localStorage.getItem(sentKey) || sessionStorage.getItem(sentKey);
             if (!alreadySent) {
@@ -7908,7 +8026,7 @@ function checkUpcomingPeriods() {
                 } else if (diff === 0) {
                     titlePrefix += ` đang bắt đầu ngay bây giờ!`;
                 } else {
-                    titlePrefix += ` đã bắt đầu (${Math.abs(diff)} phút trước)`;
+                    titlePrefix += ` đang diễn ra (đã bắt đầu ${Math.abs(diff)} phút trước)`;
                 }
 
                 sendScheduleNotification(
@@ -7938,6 +8056,7 @@ function initNotifSettingsEvents() {
     const minutesSelect = document.getElementById('notif-minutes');
     const permBtn = document.getElementById('notif-perm-btn');
     const testBtn = document.getElementById('notif-test-btn');
+    const pushTestBtn = document.getElementById('notif-push-test-btn');
 
     toggle?.addEventListener('change', async () => {
         const config = getNotifConfig();
@@ -7994,6 +8113,10 @@ function initNotifSettingsEvents() {
             'Chồng yêu: Vợ ơi, thông báo nhắc lịch học hoạt động hoàn hảo rồi nhé ♡',
             'dthao-test-notification'
         );
+    });
+
+    pushTestBtn?.addEventListener('click', async () => {
+        await testWebPushNotification();
     });
 }
 
@@ -9363,45 +9486,75 @@ document
 
 
 /* =========================================================
-   SESSION
+   SESSION & AUTH INITIALIZATION
 ========================================================= */
 
+let isEnteringApp = false;
+
 async function initializeApp() {
-
-    const {
-        data: {
-            session
+    try {
+        const { data: { session }, error } = await db.auth.getSession();
+        if (error) {
+            console.warn("Lỗi đọc session ban đầu:", error);
+            const { data: refreshData, error: refreshError } = await db.auth.refreshSession();
+            if (!refreshError && refreshData?.session?.user) {
+                await enterApp(refreshData.session.user);
+                return;
+            }
+            await db.auth.signOut().catch(() => {});
+            showAuth();
+            return;
         }
-    } = await db.auth.getSession();
 
-    if (session?.user) {
-
-        await enterApp(session.user);
-
-    } else {
-
+        if (session?.user) {
+            // Kiểm tra trước nếu JWT access token đã hết hạn hoặc sắp hết hạn trong 60s
+            const isExpired = session.expires_at && (session.expires_at * 1000 <= Date.now() + 60000);
+            if (isExpired) {
+                console.log("Token gần hết hạn, đang tự động làm mới...");
+                const { data: refreshData, error: refreshError } = await db.auth.refreshSession();
+                if (!refreshError && refreshData?.session?.user) {
+                    await enterApp(refreshData.session.user);
+                    return;
+                } else {
+                    console.warn("Token hết hạn và không thể làm mới:", refreshError);
+                    await db.auth.signOut().catch(() => {});
+                    showAuth();
+                    return;
+                }
+            }
+            await enterApp(session.user);
+        } else {
+            showAuth();
+        }
+    } catch(err) {
+        console.warn("Lỗi khởi tạo session:", err);
         showAuth();
     }
 }
 
-
 db.auth.onAuthStateChange(
     async (event, session) => {
+        if (event === "SIGNED_OUT") {
+            currentUser = null;
+            window.currentUser = null;
+            showAuth();
+            return;
+        }
 
         if (session?.user) {
-
+            if (event === "TOKEN_REFRESHED") {
+                currentUser = session.user;
+                window.currentUser = session.user;
+                return;
+            }
             await enterApp(session.user);
-
-        } else {
-
+        } else if (event !== "INITIAL_SESSION") {
             showAuth();
         }
     }
 );
 
-
 function showAuth() {
-
     document
         .getElementById("auth-screen")
         .classList.remove("hidden");
@@ -9411,11 +9564,13 @@ function showAuth() {
         .classList.add("hidden");
 }
 
-
 async function enterApp(user) {
+    if (isEnteringApp) return;
+    isEnteringApp = true;
 
-    currentUser = user;
-    window.currentUser = user;
+    try {
+        currentUser = user;
+        window.currentUser = user;
 
     document
         .getElementById("auth-screen")
@@ -9441,12 +9596,9 @@ async function enterApp(user) {
 
     window.youtubePhase4Init?.();
     renderCurrentPage();
-
-    /*
-     * Thời tiết chỉ dùng vị trí trên thiết bị,
-     * không lưu latitude/longitude vào Supabase.
-     */
-    /* Weather is standalone; request location only when its page opens. */
+    } finally {
+        isEnteringApp = false;
+    }
 }
 
 
@@ -9569,14 +9721,36 @@ async function loadAllData() {
         if (typeof checkUpcomingPeriods === 'function') {
             checkUpcomingPeriods();
         }
+        if (typeof subscribePushNotifications === 'function' && 'Notification' in window && Notification.permission === 'granted') {
+            subscribePushNotifications().catch(() => {});
+        }
 
     } catch (error) {
+        console.error("Lỗi tải dữ liệu:", error);
 
-        console.error(error);
+        // Tự động xử lý thông minh khi JWT hết hạn (tránh hiện toast lỗi khó chịu)
+        const errMsg = String(error?.message || '').toLowerCase();
+        if (errMsg.includes('jwt') || errMsg.includes('token') || errMsg.includes('pgrst301') || error?.code === 'PGRST301') {
+            try {
+                console.log('Phát hiện JWT hết hạn trong loadAllData, đang tự động làm mới session...');
+                const { data: refreshData, error: refreshErr } = await db.auth.refreshSession();
+                if (!refreshErr && refreshData?.session?.user) {
+                    currentUser = refreshData.session.user;
+                    window.currentUser = refreshData.session.user;
+                    return await loadAllData();
+                }
+            } catch(e) {}
+
+            // Nếu refresh token cũng đã hết hạn, đăng xuất êm đẹp
+            await db.auth.signOut().catch(() => {});
+            showAuth();
+            showToast("Phiên đăng nhập đã hết hạn. Vợ đăng nhập lại giúp anh nha ♡", false);
+            return;
+        }
 
         showToast(
             "Không thể tải dữ liệu: " +
-            error.message,
+            (error.message || "Lỗi không xác định"),
             true
         );
     }

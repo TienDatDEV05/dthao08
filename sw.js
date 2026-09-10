@@ -1,4 +1,4 @@
-const CACHE_NAME = 'doan-thao-v19';
+const CACHE_NAME = 'doan-thao-v21';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -85,9 +85,37 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
+// Lắng nghe sự kiện Push từ Server (Apple APNs / Google FCM) khi app ở background hoặc tắt màn hình
+self.addEventListener('push', (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch (e) {
+    data = {
+      title: '🔔 Thông báo lịch học',
+      body: event.data ? event.data.text() : 'Bạn có lịch học sắp đến!'
+    };
+  }
+
+  const title = data.title || '🔔 Nhắc nhở lịch học';
+  const options = {
+    body: data.body || 'Bạn có tiết học sắp diễn ra!',
+    icon: 'assets/icon-192.png',
+    badge: 'assets/favicon-32.png',
+    vibrate: [200, 100, 200],
+    tag: data.tag || `dthao-push-${Date.now()}`,
+    renotify: true,
+    data: data.data || { url: './' }
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
 // Xử lý sự kiện khi người dùng click vào thông báo trên điện thoại/máy tính
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
+  const targetUrl = (event.notification.data && event.notification.data.url) || './';
+
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
       for (const client of clientList) {
@@ -96,8 +124,9 @@ self.addEventListener('notificationclick', (event) => {
         }
       }
       if (clients.openWindow) {
-        return clients.openWindow('./');
+        return clients.openWindow(targetUrl);
       }
     })
   );
 });
+
