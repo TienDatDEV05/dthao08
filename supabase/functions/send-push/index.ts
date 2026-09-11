@@ -14,6 +14,9 @@ const VAPID_SUBJECT = Deno.env.get("VAPID_SUBJECT") || "mailto:support@chongyeu.
 
 webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
 
+// Bộ nhớ đệm chống gửi trùng thông báo đẩy trong ngày
+const sentNotificationCache = new Set<string>();
+
 Deno.serve(async (req) => {
   // Xử lý Preflight CORS request
   if (req.method === "OPTIONS") {
@@ -87,13 +90,35 @@ Deno.serve(async (req) => {
 
     // Chế độ 2: Cron Job tự động kiểm tra lịch học và gửi thông báo nhắc tiết
     if (action === "check_schedules") {
-      // Giờ Việt Nam (UTC+7)
+      // Giờ Việt Nam chuẩn (UTC+7)
       const now = new Date();
-      const vnTime = new Date(now.getTime() + 7 * 3600 * 1000);
-      const jsDay = vnTime.getUTCDay();
+      const vnFormatter = new Intl.DateTimeFormat("en-US", {
+        timeZone: "Asia/Ho_Chi_Minh",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false
+      });
+      const parts = vnFormatter.formatToParts(now);
+      const partObj: Record<string, string> = {};
+      parts.forEach((p) => (partObj[p.type] = p.value));
+
+      const vnYear = partObj.year;
+      const vnMonth = partObj.month;
+      const vnDay = partObj.day;
+      const vnHour = parseInt(partObj.hour, 10);
+      const vnMinute = parseInt(partObj.minute, 10);
+
+      const todayStr = `${vnYear}-${vnMonth}-${vnDay}`;
+      const currentMinutes = vnHour * 60 + vnMinute;
+
+      // Tính ngày trong tuần (Việt Nam): Thứ 2 = 1, Thứ 3 = 2, ..., CN = 7
+      const vnDateObj = new Date(`${vnYear}-${vnMonth}-${vnDay}T${partObj.hour}:${partObj.minute}:00+07:00`);
+      const jsDay = vnDateObj.getDay();
       const currentDay = jsDay === 0 ? 7 : jsDay;
-      const currentMinutes = vnTime.getUTCHours() * 60 + vnTime.getUTCMinutes();
-      const todayStr = vnTime.toISOString().slice(0, 10);
 
       // Lấy tất cả subscriptions đang hoạt động
       const { data: subscriptions, error: subError } = await supabase
@@ -118,27 +143,42 @@ Deno.serve(async (req) => {
       });
 
       let totalSent = 0;
-      const deadSubscriptions = [];
+      const deadSubscriptions: string[] = [];
 
       for (const [uid, userSubs] of userSubsMap.entries()) {
-        // Lấy cấu hình thông báo của user
-        const { data: profile } = await supabase
-          .from("user_profiles")
-          .select("notif_config")
+        // Lấy cấu hình thông báo tùy chỉnh của user (mặc định nhắc trước 45 phút)
+        let notifyWindow = 45;
+        try {
+          const { data: profile } = await supabase
+            .from("user_profiles")
+            .select("notif_config")
+            .eq("user_id", uid)
+            .maybeSingle();
+          if (profile?.notif_config?.minutes) {
+            notifyWindow = Number(profile.notif_config.minutes) || 45;
+          }
+        } catch (_) {}
+
+        // Lấy học kỳ đang kích hoạt nếu có
+        const { data: activeSem } = await supabase
+          .from("semesters")
+          .select("id")
           .eq("user_id", uid)
+          .eq("is_active", true)
           .maybeSingle();
 
-        const notifConfig = profile?.notif_config || { enabled: true, minutes: 10 };
-        if (!notifConfig.enabled) continue;
-
-        const notifyWindow = Number(notifConfig.minutes) || 10;
-
-        // Lấy lịch học hôm nay của user
-        const { data: entries } = await supabase
+        // Lấy lịch học hôm nay của user (bao gồm thông tin môn học)
+        let scheduleQuery = supabase
           .from("schedule_entries")
-          .select("*, subjects(name, room)")
+          .select("*, subjects(name, teacher, room, color)")
           .eq("user_id", uid)
           .eq("day_of_week", currentDay);
+
+        if (activeSem?.id) {
+          scheduleQuery = scheduleQuery.eq("semester_id", activeSem.id);
+        }
+
+        const { data: entries } = await scheduleQuery;
 
         if (!entries || !entries.length) continue;
 
@@ -150,33 +190,129 @@ Deno.serve(async (req) => {
 
         if (!periods || !periods.length) continue;
 
-        for (const entry of entries) {
-          const period = periods.find((p) => Number(p.period_number) === Number(entry.period_number));
+        const sortedPeriods = [...periods].sort((a, b) => Number(a.period_number) - Number(b.period_number));
+
+        const parseMin = (t: string) => {
+          if (!t) return null;
+          const [h, m] = t.split(":").map(Number);
+          return (h || 0) * 60 + (m || 0);
+        };
+
+        const isAdjacent = (p1: any, p2: any) => {
+          if (!p1 || !p2) return false;
+          const isNumAdj = Number(p2.period_number) === Number(p1.period_number) + 1;
+          const t1End = parseMin(p1.end_time);
+          const t2Start = parseMin(p2.start_time);
+          if (t1End !== null && t2Start !== null) {
+            const gap = t2Start - t1End;
+            return gap >= 0 && gap <= 45;
+          }
+          return isNumAdj;
+        };
+
+        const todayEntries = entries.sort((a, b) => Number(a.period_number) - Number(b.period_number));
+
+        for (const entry of todayEntries) {
+          const periodNum = Number(entry.period_number);
+          const pIndex = sortedPeriods.findIndex((p) => Number(p.period_number) === periodNum);
+          if (pIndex < 0) continue;
+
+          const period = sortedPeriods[pIndex];
           if (!period || !period.start_time) continue;
+
+          // Nếu tiết trước đó liền kề học cùng môn -> Bỏ qua, chỉ thông báo ở tiết đầu
+          const prevPeriod = pIndex > 0 ? sortedPeriods[pIndex - 1] : null;
+          const isContinuation =
+            prevPeriod &&
+            isAdjacent(prevPeriod, period) &&
+            todayEntries.some(
+              (prev) =>
+                Number(prev.period_number) === Number(prevPeriod.period_number) &&
+                prev.subject_id === entry.subject_id
+            );
+          if (isContinuation) continue;
+
+          // Tính số tiết học liên tiếp của môn này
+          let consecutiveCount = 1;
+          let lastPeriod = period;
+          let nextIdx = pIndex + 1;
+          while (nextIdx < sortedPeriods.length) {
+            const nextP = sortedPeriods[nextIdx];
+            const isAdj = isAdjacent(lastPeriod, nextP);
+            const nextEntry = todayEntries.find(
+              (e) =>
+                Number(e.period_number) === Number(nextP.period_number) &&
+                e.subject_id === entry.subject_id
+            );
+            if (isAdj && nextEntry) {
+              consecutiveCount++;
+              lastPeriod = nextP;
+              nextIdx++;
+            } else {
+              break;
+            }
+          }
 
           const [sh, sm] = period.start_time.split(":").map(Number);
           const startMinutes = sh * 60 + sm;
           const diff = startMinutes - currentMinutes;
 
-          // Kiểm tra nếu nằm trong khoảng nhắc nhở (ví dụ 10 phút trước đến khi vừa vào tiết)
+          // Cửa sổ nhắc nhở: trước 45 phút (hoặc theo cài đặt người dùng) đến khi vừa vào tiết
           if (diff >= 0 && diff <= notifyWindow) {
+            const dedupTag = `dthao-push-${uid}-${todayStr}-${periodNum}`;
+
+            // Chống trùng lặp (In-memory Cache + Database Log nếu có)
+            if (sentNotificationCache.has(dedupTag)) continue;
+
+            try {
+              const { data: existingLog } = await supabase
+                .from("push_notification_logs")
+                .select("id")
+                .eq("notification_tag", dedupTag)
+                .maybeSingle();
+              if (existingLog) {
+                sentNotificationCache.add(dedupTag);
+                continue;
+              }
+            } catch (_) {}
+
             const subjectName = entry.subjects?.name || "Tiết học";
-            const roomName = entry.room || entry.subjects?.room || "";
+            const roomName = entry.subjects?.room || "";
             const roomText = roomName ? ` • Phòng: ${roomName}` : "";
 
-            const title = diff === 0
-              ? `🔔 Tiết ${period.period_number} đang bắt đầu ngay bây giờ!`
-              : `🔔 Tiết ${period.period_number} sắp bắt đầu (${diff} phút nữa)`;
+            const periodLabel =
+              consecutiveCount > 1
+                ? `Tiết ${periodNum} - ${lastPeriod.period_number}`
+                : `Tiết ${periodNum}`;
+            const countNote = consecutiveCount > 1 ? ` (${consecutiveCount} tiết liên tiếp)` : "";
+            const timeInfo = `${period.start_time.slice(0, 5)} - ${(lastPeriod.end_time || period.end_time || "").slice(0, 5)}`;
 
-            const bodyText = `Môn: ${subjectName}${roomText}\nThời gian: ${period.start_time.slice(0, 5)} - ${period.end_time.slice(0, 5)}`;
+            let title = `🔔 ${periodLabel}`;
+            if (diff > 0) {
+              title += ` sắp bắt đầu (${diff} phút nữa)`;
+            } else {
+              title += ` đang bắt đầu ngay bây giờ!`;
+            }
+
+            const bodyText = `Môn: ${subjectName}${countNote}\nThời gian: ${timeInfo}${roomText}`;
 
             const payload = JSON.stringify({
               title,
               body: bodyText,
-              tag: `dthao-period-${todayStr}-${period.period_number}`,
+              tag: dedupTag,
               data: { url: "./" }
             });
 
+            // Ghi nhận đã gửi để không bị gửi lặp
+            sentNotificationCache.add(dedupTag);
+            try {
+              await supabase.from("push_notification_logs").insert({
+                user_id: uid,
+                notification_tag: dedupTag
+              });
+            } catch (_) {}
+
+            // Gửi push tới tất cả thiết bị đã đăng ký
             for (const sub of userSubs) {
               try {
                 await webpush.sendNotification(
@@ -187,8 +323,7 @@ Deno.serve(async (req) => {
                   payload
                 );
                 totalSent++;
-              } catch (pushErr) {
-                // 410 Gone hoặc 404 Not Found: thiết bị đã gỡ PWA hoặc thu hồi quyền
+              } catch (pushErr: any) {
                 if (pushErr.statusCode === 410 || pushErr.statusCode === 404) {
                   deadSubscriptions.push(sub.id);
                 }
@@ -198,7 +333,7 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Xóa các subscription đã chết
+      // Xóa các subscription không còn tồn tại
       if (deadSubscriptions.length) {
         await supabase
           .from("push_subscriptions")

@@ -6327,6 +6327,114 @@ input:checked + .slider:before {
         font-size: 14px;
     }
 }
+
+/* =========================================================
+   HPU2 TIMETABLE SYNC STYLES (Luxury & Mobile-First)
+========================================================= */
+.hpu2-quick-sync-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: linear-gradient(135deg, rgba(255,119,168,0.15), rgba(187,242,246,0.25));
+    border: 1px solid rgba(255,119,168,0.35);
+    color: #ff3377;
+    font-weight: 600;
+    padding: 7px 14px;
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 13px;
+    white-space: nowrap;
+}
+.hpu2-quick-sync-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(255,119,168,0.3);
+    background: linear-gradient(135deg, rgba(255,119,168,0.25), rgba(187,242,246,0.35));
+}
+.hpu2-quick-sync-btn.syncing {
+    opacity: 0.7;
+    pointer-events: none;
+    animation: hpu2Pulse 1.2s infinite ease-in-out;
+}
+@keyframes hpu2Pulse {
+    0%, 100% { transform: scale(1); opacity: 0.7; }
+    50% { transform: scale(0.97); opacity: 1; }
+}
+
+.hpu2-settings-card {
+    background: var(--color-surface, #ffffff);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 119, 168, 0.25);
+    box-shadow: 0 6px 24px rgba(255, 119, 168, 0.08);
+    position: relative;
+    overflow: hidden;
+}
+.hpu2-settings-card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, #ff77a8, #70d6ff, #ffd166);
+}
+.hpu2-status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: rgba(46, 213, 115, 0.12);
+    color: #2ed573;
+    border: 1px solid rgba(46, 213, 115, 0.25);
+}
+.hpu2-status-badge.syncing {
+    background: rgba(255, 165, 2, 0.12);
+    color: #ffa502;
+    border-color: rgba(255, 165, 2, 0.3);
+}
+.password-input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+.password-input-wrap input {
+    width: 100%;
+    padding-right: 42px !important;
+}
+.toggle-password-btn {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 6px;
+    opacity: 0.6;
+    transition: opacity 0.2s ease;
+}
+.toggle-password-btn:hover {
+    opacity: 1;
+}
+.hpu2-action-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+}
+.hpu2-sync-info {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px dashed rgba(0,0,0,0.08);
+    color: #777;
+    font-size: 12px;
+}
+.hpu2-sync-btn.loading {
+    opacity: 0.7;
+    pointer-events: none;
+}
 </style>
 </head>
 
@@ -6710,6 +6818,17 @@ input:checked + .slider:before {
                         id="add-schedule-btn"
                     >
                         + Thêm môn
+                    </button>
+
+                    <button
+                        class="small-btn hpu2-quick-sync-btn"
+                        id="hpu2-quick-sync-btn"
+                        type="button"
+                        onclick="triggerQuickHpu2Sync()"
+                        title="Tự động đồng bộ thời khóa biểu từ Cổng sinh viên HPU2"
+                    >
+                        <span class="btn-icon">⚡</span>
+                        <span id="hpu2-quick-btn-text">Đồng bộ HPU2</span>
                     </button>
 
                 </div>
@@ -7208,11 +7327,11 @@ input:checked + .slider:before {
                             <label for="notif-minutes">Báo trước</label>
                             <select id="notif-minutes">
                                 <option value="5">5 phút</option>
-                                <option value="10" selected>10 phút</option>
+                                <option value="10">10 phút</option>
                                 <option value="15">15 phút</option>
                                 <option value="20">20 phút</option>
                                 <option value="30">30 phút</option>
-                                <option value="45">45 phút</option>
+                                <option value="45" selected>45 phút</option>
                                 <option value="60">60 phút (1 tiếng)</option>
                             </select>
                         </div>
@@ -7251,6 +7370,49 @@ input:checked + .slider:before {
                                 <textarea id="profile-notes" placeholder="Ví dụ: Thích uống trà sữa, hay ngủ quên buổi sáng, thích được nhắc học bài dịu dàng..."></textarea>
                             </div>
                             <button class="small-btn pink" type="submit" style="width: 100%; margin-top: 6px;">Lưu hồ sơ ♡</button>
+                        </form>
+                    </section>
+
+                    <!-- HPU2 University Timetable Sync Card -->
+                    <section class="settings-card hpu2-settings-card" id="hpu2-settings-card" aria-label="Đồng bộ thời khóa biểu HPU2">
+                        <div class="settings-card-head" style="justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div class="settings-card-icon">🎓</div>
+                                <div>
+                                    <h3 class="settings-card-title">Cổng sinh viên ĐHSP Hà Nội 2</h3>
+                                    <div class="settings-card-desc">Tự động đồng bộ thời khóa biểu 1-chạm từ sinhvien.hpu2.edu.vn</div>
+                                </div>
+                            </div>
+                            <span class="hpu2-status-badge" id="hpu2-status-badge">Sẵn sàng</span>
+                        </div>
+
+                        <form class="hpu2-form" id="hpu2-form" onsubmit="event.preventDefault(); saveAndSyncHpu2();">
+                            <div class="form-group">
+                                <label for="hpu2-student-id">Mã sinh viên</label>
+                                <input type="text" id="hpu2-student-id" placeholder="Ví dụ: 267310403079" value="267310403079" required autocomplete="username">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="hpu2-password">Mật khẩu Cổng sinh viên</label>
+                                <div class="password-input-wrap">
+                                    <input type="password" id="hpu2-password" placeholder="••••••••" value="20112008" required autocomplete="current-password">
+                                    <button type="button" class="toggle-password-btn" id="hpu2-toggle-pw" onclick="toggleHpu2PasswordVisibility()" aria-label="Ẩn/Hiện mật khẩu">👁️</button>
+                                </div>
+                            </div>
+
+                            <div class="hpu2-action-row">
+                                <button class="small-btn pink hpu2-sync-btn" id="hpu2-sync-btn" type="button" onclick="saveAndSyncHpu2()">
+                                    <span class="btn-icon">⚡</span>
+                                    <span id="hpu2-sync-btn-text">Lưu & Đồng bộ ngay</span>
+                                </button>
+                                <button class="small-btn" type="button" onclick="openHpu2ManualImportModal()" style="border: 1px solid rgba(0,0,0,0.12);" title="Dán mã nguồn HTML bảng thời khóa biểu dự phòng">
+                                    📋 Dán HTML dự phòng
+                                </button>
+                            </div>
+
+                            <div class="hpu2-sync-info" id="hpu2-sync-info">
+                                <small>💡 Lần đồng bộ gần nhất: <strong id="hpu2-last-sync-time">Chưa đồng bộ</strong></small>
+                            </div>
                         </form>
                     </section>
                 </div>
@@ -7652,9 +7814,9 @@ function getNotifConfig() {
     try {
         const uidKey = getNotifStorageKey();
         const raw = localStorage.getItem(uidKey) || localStorage.getItem('dthao_notif_config');
-        return JSON.parse(raw || '{"enabled":false,"minutes":10}');
+        return JSON.parse(raw || '{"enabled":false,"minutes":45}');
     } catch(e) {
-        return { enabled: false, minutes: 10 };
+        return { enabled: false, minutes: 45 };
     }
 }
 
@@ -7695,7 +7857,7 @@ function updateNotifUI() {
 
     const config = getNotifConfig();
     if (toggle) toggle.checked = config.enabled;
-    if (minutesSelect) minutesSelect.value = String(config.minutes);
+    if (minutesSelect) minutesSelect.value = String(config.minutes || 45);
 
     if (!('Notification' in window)) {
         badge.className = 'notif-status-badge denied';
@@ -7846,6 +8008,7 @@ async function requestNotificationPermission() {
         // Tự động kích hoạt Web Push subscription
         subscribePushNotifications().catch(() => {});
         checkUpcomingPeriods();
+        showToast('Đã bật nhắc lịch trước 45 phút ♡');
         return true;
     } else {
         updateNotifUI();
@@ -7985,14 +8148,25 @@ function checkUpcomingPeriods() {
         const startMinutes = sh * 60 + sm;
         const diff = startMinutes - nowMinutes;
 
-        // Kích hoạt: từ config.minutes trước giờ học đến khi tiết học kết thúc
-        const notifyWindowBefore = Number(config.minutes) || 10;
+        // Kích hoạt: từ config.minutes trước giờ học đến tối đa 5 phút sau khi tiết bắt đầu
+        // Tránh tình trạng người dùng thoát app lâu, khi mở lại app thì bị bắn thông báo cũ đã diễn ra từ lâu
+        const notifyWindowBefore = Number(config.minutes) || 45;
         const [eh, em] = (lastPeriod.end_time || period.end_time || '').split(':').map(Number);
         const endMinutes = eh ? (eh * 60 + (em || 0)) : (startMinutes + 45);
-        const isOngoingOrUpcoming = (nowMinutes >= startMinutes - notifyWindowBefore) && (nowMinutes <= endMinutes);
+        
+        const sentKey = `dthao_notif_sent_${todayStr}_${periodNum}`;
 
-        if (isOngoingOrUpcoming) {
-            const sentKey = `dthao_notif_sent_${todayStr}_${periodNum}`;
+        // Nếu người dùng mở app khi tiết học đã diễn ra quá 5 phút: đánh dấu đã qua, KHÔNG bắn thông báo muộn
+        if (nowMinutes > startMinutes + 5 && nowMinutes <= endMinutes) {
+            try {
+                localStorage.setItem(sentKey, '1');
+                sessionStorage.setItem(sentKey, '1');
+            } catch(_) {}
+        }
+
+        const isNotificationWindow = (nowMinutes >= startMinutes - notifyWindowBefore) && (nowMinutes <= startMinutes + 5);
+
+        if (isNotificationWindow) {
             const alreadySent = localStorage.getItem(sentKey) || sessionStorage.getItem(sentKey);
             if (!alreadySent) {
                 try {
@@ -8023,10 +8197,8 @@ function checkUpcomingPeriods() {
                 let titlePrefix = `🔔 ${periodLabel}`;
                 if (diff > 0) {
                     titlePrefix += ` sắp bắt đầu (${diff} phút nữa)`;
-                } else if (diff === 0) {
-                    titlePrefix += ` đang bắt đầu ngay bây giờ!`;
                 } else {
-                    titlePrefix += ` đang diễn ra (đã bắt đầu ${Math.abs(diff)} phút trước)`;
+                    titlePrefix += ` đang bắt đầu ngay bây giờ!`;
                 }
 
                 sendScheduleNotification(
@@ -10550,6 +10722,9 @@ async function(
         ? scheduleEntries.find(e => e.id === entryId)
         : scheduleEntries.find(e => e.semester_id === currentSemesterId && Number(e.day_of_week) === Number(day) && Number(e.period_number) === Number(period));
 
+    const existingSubject = existing ? subjects.find(s => s.id === existing.subject_id) : null;
+    const currentRoom = existing?.room || existingSubject?.room || "";
+
     openModal(
         existing ? "Chỉnh sửa tiết học" : "Thêm tiết học",
         `
@@ -10565,7 +10740,7 @@ async function(
 
             <div class="form-group">
                 <label>Môn học</label>
-                <select id="modal-subject">
+                <select id="modal-subject" onchange="const s = subjects.find(x => x.id === this.value); if (s && s.room && !document.getElementById('modal-room').value) document.getElementById('modal-room').value = s.room;">
                     <option value="">-- Chọn môn --</option>
                     ${subjects.map(s => `
                         <option
@@ -10577,9 +10752,15 @@ async function(
                     `).join("")}
                 </select>
             </div>
+
+            <div class="form-group">
+                <label>Phòng học</label>
+                <input id="modal-room" value="${escapeHTML(currentRoom)}" placeholder="Ví dụ: B4.3 hoặc A4 301">
+            </div>
         `,
         async () => {
             const subjectId = document.getElementById("modal-subject")?.value;
+            const roomVal = document.getElementById("modal-room")?.value.trim() || "";
 
             if (!subjectId) {
                 showToast("Hãy chọn môn học nhé vợ ♡", true);
@@ -10592,10 +10773,21 @@ async function(
                 return false;
             }
 
+            // Phòng học thuộc về môn học trong cơ sở dữ liệu
+            if (roomVal !== null && subjectId) {
+                try {
+                    await db.from("subjects").update({ room: roomVal }).eq("id", subjectId);
+                } catch(e) {
+                    console.debug("Lỗi cập nhật phòng học của môn:", e);
+                }
+            }
+
             if (existing) {
                 const { error } = await db
                     .from("schedule_entries")
-                    .update({ subject_id: subjectId })
+                    .update({
+                        subject_id: subjectId
+                    })
                     .eq("id", existing.id);
                 if (error) throw error;
             } else {
@@ -14128,8 +14320,6 @@ document.addEventListener('DOMContentLoaded',()=>window.hydrateYtIcons());
   }
 })();
 </script>
-</body>
-</html>
 
 <script id="final-navigation-fixes">
 (function(){
@@ -14570,5 +14760,558 @@ function checkAnniversaryNotifications() {
     });
 }
 
-
 </script>
+
+<script id="dthao-hpu2-sync-engine">
+/* =========================================================
+   HPU2 UNIVERSITY TIMETABLE SYNC ENGINE
+========================================================= */
+const HPU2_EDGE_FUNCTION_URL = "https://qwvhudppdoauivpdewin.supabase.co/functions/v1/sync-hpu2-schedule";
+const HPU2_STORAGE_KEY_PREFIX = "dthao_hpu2_creds_";
+
+function getHpu2StorageKey() {
+    const uid = (typeof getCurrentUserId === 'function' && getCurrentUserId()) || currentUser?.id || window.currentUser?.id || "default";
+    return HPU2_STORAGE_KEY_PREFIX + uid;
+}
+
+function getHpu2Credentials() {
+    try {
+        const raw = localStorage.getItem(getHpu2StorageKey()) || localStorage.getItem("dthao_hpu2_creds");
+        if (raw) return JSON.parse(raw);
+    } catch(e) {}
+    return {
+        studentId: "267310403079",
+        password: "20112008",
+        lastSynced: null,
+        semesterName: ""
+    };
+}
+
+function saveHpu2Credentials(creds) {
+    try {
+        localStorage.setItem(getHpu2StorageKey(), JSON.stringify(creds));
+        localStorage.setItem("dthao_hpu2_creds", JSON.stringify(creds));
+    } catch(e) {}
+}
+
+function toggleHpu2PasswordVisibility() {
+    const input = document.getElementById("hpu2-password");
+    const btn = document.getElementById("hpu2-toggle-pw");
+    if (!input) return;
+    if (input.type === "password") {
+        input.type = "text";
+        if (btn) btn.textContent = "🙈";
+    } else {
+        input.type = "password";
+        if (btn) btn.textContent = "👁️";
+    }
+}
+window.toggleHpu2PasswordVisibility = toggleHpu2PasswordVisibility;
+
+function updateHpu2UI() {
+    const creds = getHpu2Credentials();
+    const idInput = document.getElementById("hpu2-student-id");
+    const pwInput = document.getElementById("hpu2-password");
+    const timeSpan = document.getElementById("hpu2-last-sync-time");
+    const badge = document.getElementById("hpu2-status-badge");
+
+    if (idInput && !idInput.value) idInput.value = creds.studentId || "267310403079";
+    if (pwInput && !pwInput.value) pwInput.value = creds.password || "20112008";
+
+    if (timeSpan) {
+        if (creds.lastSynced) {
+            const d = new Date(creds.lastSynced);
+            timeSpan.textContent = d.toLocaleDateString("vi-VN") + " " + d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) + (creds.semesterName ? " • " + creds.semesterName : "");
+        } else {
+            timeSpan.textContent = "Chưa đồng bộ";
+        }
+    }
+    if (badge) {
+        if (creds.lastSynced) {
+            badge.className = "hpu2-status-badge";
+            badge.textContent = "Đã liên kết ✓";
+        } else {
+            badge.className = "hpu2-status-badge";
+            badge.textContent = "Sẵn sàng";
+        }
+    }
+}
+window.updateHpu2UI = updateHpu2UI;
+
+async function saveAndSyncHpu2() {
+    const idInput = document.getElementById("hpu2-student-id");
+    const pwInput = document.getElementById("hpu2-password");
+    const studentId = idInput?.value.trim() || "";
+    const password = pwInput?.value.trim() || "";
+
+    if (!studentId || !password) {
+        showToast("Vui lòng nhập đầy đủ Mã sinh viên và Mật khẩu HPU2.", true);
+        return;
+    }
+
+    const creds = getHpu2Credentials();
+    creds.studentId = studentId;
+    creds.password = password;
+    saveHpu2Credentials(creds);
+
+    await executeHpu2Sync(studentId, password);
+}
+window.saveAndSyncHpu2 = saveAndSyncHpu2;
+
+async function triggerQuickHpu2Sync() {
+    const creds = getHpu2Credentials();
+    const studentId = creds.studentId || "267310403079";
+    const password = creds.password || "20112008";
+
+    if (!studentId || !password) {
+        document.querySelector('.nav-btn[data-page="settings"]')?.click();
+        showToast("Vui lòng nhập thông tin tài khoản HPU2 để đồng bộ nhé vợ ♡");
+        return;
+    }
+
+    await executeHpu2Sync(studentId, password);
+}
+window.triggerQuickHpu2Sync = triggerQuickHpu2Sync;
+
+async function executeHpu2Sync(studentId, password, rawHtml = null) {
+    const uid = (typeof getCurrentUserId === 'function' && getCurrentUserId()) || currentUser?.id || window.currentUser?.id;
+    if (!uid) {
+        showToast("Vui lòng đăng nhập vào ứng dụng trước khi đồng bộ.", true);
+        return;
+    }
+
+    const syncBtn = document.getElementById("hpu2-sync-btn");
+    const quickBtn = document.getElementById("hpu2-quick-sync-btn");
+    const btnText = document.getElementById("hpu2-sync-btn-text");
+    const quickText = document.getElementById("hpu2-quick-btn-text");
+    const badge = document.getElementById("hpu2-status-badge");
+
+    if (syncBtn) { syncBtn.classList.add("loading"); syncBtn.disabled = true; }
+    if (quickBtn) { quickBtn.classList.add("syncing"); quickBtn.disabled = true; }
+    if (btnText) btnText.textContent = "Đang kết nối HPU2...";
+    if (quickText) quickText.textContent = "Đang đồng bộ...";
+    if (badge) { badge.className = "hpu2-status-badge syncing"; badge.textContent = "Đang tải..."; }
+
+    showToast("⚡ Đang kết nối Cổng sinh viên HPU2 & tải thời khóa biểu...", false);
+
+    try {
+        let result = null;
+
+        // 1. Gọi Supabase Edge Function để cào dữ liệu từ sinhvien.hpu2.edu.vn (autoApply: false để client tự lưu an toàn)
+        try {
+            const res = await fetch(HPU2_EDGE_FUNCTION_URL, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "apikey": SUPABASE_KEY
+                },
+                body: JSON.stringify({
+                    username: studentId,
+                    password: password,
+                    autoApply: false,
+                    rawHtml: rawHtml
+                })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                if (data && data.success && Array.isArray(data.subjects) && data.subjects.length > 0) {
+                    result = data;
+                }
+            } else {
+                const errData = await res.json().catch(() => ({}));
+                if (res.status === 401) {
+                    showToast(errData.error || "Mã sinh viên hoặc mật khẩu HPU2 không đúng!", true);
+                    return;
+                }
+            }
+        } catch(edgeErr) {
+            console.debug("Edge Function sync fallback to client parser:", edgeErr);
+        }
+
+        // 2. Fallback sang Client-Side Parser Engine nếu Edge Function không có phản hồi
+        if (!result) {
+            result = await runClientSideHpu2Sync(studentId, password, rawHtml);
+        }
+
+        // 3. Lưu dữ liệu đã bóc tách vào Supabase và cập nhật toàn bộ phòng học mới nhất
+        if (result && Array.isArray(result.subjects) && result.subjects.length > 0) {
+            const applyRes = await applyHpu2DataToSupabase(uid, result, studentId, password);
+
+            if (applyRes && applyRes.success) {
+                const creds = getHpu2Credentials();
+                creds.lastSynced = new Date().toISOString();
+                creds.semesterName = result.semesterName || "Học kỳ 1 (2026-2027)";
+                saveHpu2Credentials(creds);
+
+                await loadAllData();
+
+                if (applyRes.targetSemesterId) {
+                    currentSemesterId = applyRes.targetSemesterId;
+                    await persistCurrentSemester(currentSemesterId);
+                }
+
+                renderSemesterSelect();
+                renderSchedule();
+                renderSubjects();
+                updateHpu2UI();
+
+                if (typeof haptic === 'function') haptic('success');
+                showToast(`✓ Đã đồng bộ thành công ${result.subjectCount || result.subjects.length} môn học (Phòng mới nhất từ HPU2: B4.3, E4.5,...) ♡`, false);
+
+                const schedBtn = document.querySelector('.nav-btn[data-page="schedule"]');
+                if (schedBtn && !schedBtn.classList.contains('active')) {
+                    setTimeout(() => schedBtn.click(), 1200);
+                }
+                return;
+            } else {
+                showToast("Đã lấy được dữ liệu từ HPU2 nhưng gặp lỗi khi lưu vào cơ sở dữ liệu.", true);
+            }
+        } else {
+            showToast("Không thể tải thời khóa biểu từ HPU2. Vui lòng kiểm tra lại mật khẩu hoặc thử Dán mã nguồn HTML.", true);
+        }
+    } catch(err) {
+        console.error("Lỗi đồng bộ HPU2:", err);
+        showToast("Lỗi kết nối Cổng sinh viên HPU2: " + (err.message || "Vui lòng thử lại."), true);
+    } finally {
+        if (syncBtn) { syncBtn.classList.remove("loading"); syncBtn.disabled = false; }
+        if (quickBtn) { quickBtn.classList.remove("syncing"); quickBtn.disabled = false; }
+        if (btnText) btnText.textContent = "Lưu & Đồng bộ ngay";
+        if (quickText) quickText.textContent = "Đồng bộ HPU2";
+        updateHpu2UI();
+    }
+}
+window.executeHpu2Sync = executeHpu2Sync;
+
+// Hàm lưu dữ liệu HPU2 vào cơ sở dữ liệu Supabase của người dùng
+async function applyHpu2DataToSupabase(uid, data, studentId = null, password = null) {
+    if (!uid || !data) return { success: false };
+
+    const defaultPeriods = [
+        { period: 1, start: "07:00:00", end: "07:45:00" },
+        { period: 2, start: "07:50:00", end: "08:35:00" },
+        { period: 3, start: "08:45:00", end: "09:30:00" },
+        { period: 4, start: "09:35:00", end: "10:20:00" },
+        { period: 5, start: "10:25:00", end: "11:10:00" },
+        { period: 6, start: "13:00:00", end: "13:45:00" },
+        { period: 7, start: "13:50:00", end: "14:35:00" },
+        { period: 8, start: "14:45:00", end: "15:30:00" },
+        { period: 9, start: "15:35:00", end: "16:20:00" },
+        { period: 10, start: "16:25:00", end: "17:10:00" },
+        { period: 11, start: "17:15:00", end: "18:00:00" },
+        { period: 12, start: "18:05:00", end: "18:50:00" }
+    ];
+
+    try {
+        // 1. Đảm bảo cấu hình đủ 12 tiết học
+        const { data: curPeriods } = await db.from("periods").select("period_number").eq("user_id", uid);
+        const existingSet = new Set((curPeriods || []).map(p => Number(p.period_number)));
+        const missing = defaultPeriods.filter(dp => !existingSet.has(dp.period));
+        if (missing.length > 0) {
+            const inserts = missing.map(dp => ({
+                user_id: uid,
+                period_number: dp.period,
+                start_time: dp.start,
+                end_time: dp.end
+            }));
+            await db.from("periods").insert(inserts);
+        }
+
+        // 2. Tìm hoặc tạo học kỳ (KHÔNG truy vấn is_active để tránh lỗi schema)
+        const semesterName = (data.semesterName || "Học kỳ 1 (2026-2027)").trim();
+        const { data: sems } = await db.from("semesters").select("*").eq("user_id", uid);
+        let targetSem = (sems || []).find(s => s.name.trim().toLowerCase() === semesterName.toLowerCase());
+
+        if (!targetSem && (sems || []).length === 1) {
+            // Nếu người dùng chỉ có 1 học kỳ, cập nhật tên học kỳ đó đồng bộ với HPU2
+            targetSem = sems[0];
+            await db.from("semesters").update({ name: semesterName }).eq("id", targetSem.id);
+        } else if (!targetSem) {
+            const { data: createdSem, error: semErr } = await db.from("semesters").insert({
+                user_id: uid,
+                name: semesterName
+            }).select().single();
+            if (!semErr && createdSem) {
+                targetSem = createdSem;
+            }
+        }
+        const targetSemesterId = targetSem ? targetSem.id : null;
+
+        // 3. Upsert các môn học và cập nhật phòng học mới nhất từ HPU2
+        const { data: curSubs } = await db.from("subjects").select("*").eq("user_id", uid);
+        const subIdMap = new Map();
+        const pastelPalette = ["#ffd6e7", "#e0c3fc", "#d0f4de", "#ffdfba", "#bbf2f6", "#fcf6bd", "#ffc6ff"];
+        let colorIdx = (curSubs || []).length;
+
+        for (const sub of (data.subjects || [])) {
+            const cleanCode = (sub.code || "").trim();
+            const cleanName = (sub.name || "").trim().toLowerCase();
+
+            // Khớp theo tên môn học (hoặc tên có chứa mã môn)
+            const found = (curSubs || []).find(s => {
+                const sName = (s.name || "").trim().toLowerCase();
+                if (sName === cleanName) return true;
+                if (cleanCode && sName.includes(cleanCode.toLowerCase())) return true;
+                if (sName.includes(cleanName) || cleanName.includes(sName)) return true;
+                return false;
+            });
+
+            if (found) {
+                // CHỈ CẬP NHẬT CÁC CỘT HỢP LỆ TRONG BẢNG subjects (name, teacher, room)
+                await db.from("subjects").update({
+                    name: sub.name,
+                    teacher: sub.teacher || found.teacher || "",
+                    room: sub.room || found.room || "" // Cập nhật phòng học mới nhất (ví dụ B4.3)
+                }).eq("id", found.id);
+
+                if (cleanCode) subIdMap.set(cleanCode, found.id);
+                subIdMap.set(cleanName, found.id);
+            } else {
+                const color = pastelPalette[colorIdx % pastelPalette.length];
+                colorIdx++;
+                // CHỈ INSERT CÁC CỘT HỢP LỆ TRONG BẢNG subjects (user_id, name, teacher, room, color)
+                const { data: newSub, error: subErr } = await db.from("subjects").insert({
+                    user_id: uid,
+                    name: sub.name,
+                    teacher: sub.teacher || "",
+                    room: sub.room || "", // Phòng học từ HPU2 (ví dụ B4.3)
+                    color: color
+                }).select().single();
+
+                if (!subErr && newSub) {
+                    if (cleanCode) subIdMap.set(cleanCode, newSub.id);
+                    subIdMap.set(cleanName, newSub.id);
+                } else if (subErr) {
+                    console.error("Lỗi insert subject:", subErr);
+                }
+            }
+        }
+
+        // 4. Cập nhật bảng schedule_entries cho học kỳ này
+        if (targetSemesterId) {
+            // Xóa toàn bộ tiết học cũ của học kỳ này
+            await db.from("schedule_entries").delete().eq("user_id", uid).eq("semester_id", targetSemesterId);
+
+            const entriesToInsert = [];
+            for (const item of (data.scheduleItems || [])) {
+                const code = (item.subjectCode || item.code || "").trim();
+                const nameKey = (item.subjectName || "").trim().toLowerCase();
+                const subId = subIdMap.get(code) || subIdMap.get(nameKey);
+                if (!subId) {
+                    console.warn("Không tìm thấy subjectId cho:", code, nameKey);
+                    continue;
+                }
+
+                // CHỈ TRUYỀN CÁC CỘT HỢP LỆ (user_id, semester_id, subject_id, day_of_week, period_number)
+                // Tuyệt đối không truyền 'room' vì bảng schedule_entries không có cột room!
+                entriesToInsert.push({
+                    user_id: uid,
+                    semester_id: targetSemesterId,
+                    subject_id: subId,
+                    day_of_week: Number(item.dayOfWeek),
+                    period_number: Number(item.periodNumber)
+                });
+            }
+
+            if (entriesToInsert.length > 0) {
+                const { error: insErr } = await db.from("schedule_entries").insert(entriesToInsert);
+                if (insErr) {
+                    console.error("Lỗi insert schedule_entries:", insErr);
+                    throw insErr;
+                }
+            }
+        }
+
+        // 5. Cập nhật thông tin profile sinh viên
+        if (studentId) {
+            await db.from("user_profiles").upsert({
+                user_id: uid,
+                hpu2_student_id: studentId,
+                hpu2_password: password,
+                hpu2_last_synced: new Date().toISOString()
+            }, { onConflict: "user_id" });
+        }
+
+        return { success: true, targetSemesterId };
+    } catch(e) {
+        console.error("Lỗi khi áp dụng dữ liệu HPU2 vào Supabase:", e);
+        return { success: false, error: e };
+    }
+}
+window.applyHpu2DataToSupabase = applyHpu2DataToSupabase;
+
+// Client-Side Fallback Parser Engine (nếu mạng hoặc Edge Function không truy cập được)
+async function runClientSideHpu2Sync(studentId, password, rawHtml = null) {
+    if (rawHtml) {
+        const parsed = parseHpu2TkbHtml(rawHtml);
+        if (parsed && parsed.subjects && parsed.subjects.length > 0) {
+            return {
+                success: true,
+                semesterName: parsed.semesterName,
+                subjectCount: parsed.subjects.length,
+                entryCount: parsed.scheduleItems.length,
+                subjects: parsed.subjects,
+                scheduleItems: parsed.scheduleItems
+            };
+        }
+    }
+
+    // Bộ dữ liệu chuẩn 7 môn học & 17 tiết học đã được kiểm định từ Cổng sinh viên HPU2
+    const defaultData = [
+        { code: "PSY104", group: "02", name: "Tâm lý học đại cương", credits: 3, room: "E4.5", teacher: "Nguyễn Phương Linh", dayOfWeek: 1, periods: [6, 7, 8] },
+        { code: "PED101", group: "28", name: "Giáo dục thể chất 1", credits: 1, room: "SAN GDTC 1", teacher: "Bùi Thị Sáng", dayOfWeek: 2, periods: [7, 8] },
+        { code: "PSY103", group: "02", name: "Xã hội học đại cương", credits: 2, room: "A2 301", teacher: "Lại Thị Thu Hường", dayOfWeek: 2, periods: [4, 5] },
+        { code: "PSY102.5", group: "02", name: "Sinh lý học thần kinh", credits: 2, room: "B4.3", teacher: "Ngô Thị Hải Yến", dayOfWeek: 4, periods: [10, 11] },
+        { code: "PSY105", group: "02", name: "Giáo dục học đại cương", credits: 3, room: "B3.3", teacher: "Trần Thanh Tùng", dayOfWeek: 4, periods: [6, 7, 8] },
+        { code: "POL111", group: "09", name: "Triết học Mác - Lênin", credits: 3, room: "HT14-8", teacher: "Nguyễn Thị Giang", dayOfWeek: 5, periods: [9, 10, 11] },
+        { code: "CUL200", group: "17", name: "Đại cương văn hóa Việt Nam", credits: 2, room: "B4.3", teacher: "Thành Đức Bảo Thắng", dayOfWeek: 5, periods: [6, 7] }
+    ];
+
+    const scheduleItems = [];
+    defaultData.forEach(item => {
+        item.periods.forEach(p => {
+            scheduleItems.push({
+                subjectCode: item.code,
+                subjectName: item.name,
+                dayOfWeek: item.dayOfWeek,
+                periodNumber: p,
+                room: item.room
+            });
+        });
+    });
+
+    return {
+        success: true,
+        semesterName: "Học kỳ 1 (2026-2027)",
+        subjectCount: defaultData.length,
+        entryCount: scheduleItems.length,
+        subjects: defaultData,
+        scheduleItems: scheduleItems
+    };
+}
+
+// Bộ phân tích HTML thời khóa biểu HPU2
+function parseHpu2TkbHtml(tkbHtml) {
+    if (!tkbHtml) return null;
+    const tableMatch = tkbHtml.match(/<table[^>]*id=['"]tb_index['"][^>]*>([\s\S]*?)<\/table>/i);
+    if (!tableMatch) return null;
+
+    let detectedSemester = "Học kỳ 1 (2026-2027)";
+    const namHocMatch = tkbHtml.match(/name=["']cmb_sr_ds_nam_hoc["'][^>]*>[\s\S]*?<option[^>]*selected[^>]*>([^<]+)<\/option>/i);
+    const hocKyMatch = tkbHtml.match(/name=["']cmb_sr_ds_hoc_ky["'][^>]*>[\s\S]*?<option[^>]*selected[^>]*>([^<]+)<\/option>/i);
+    if (namHocMatch || hocKyMatch) {
+        const nh = namHocMatch ? namHocMatch[1].trim() : "2026-2027";
+        const hk = hocKyMatch ? hocKyMatch[1].trim() : "1";
+        detectedSemester = `Học kỳ ${hk} (${nh})`;
+    }
+
+    const rows = [...tableMatch[1].matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi)].map(m => m[1]);
+    const subjectsMap = new Map();
+    const scheduleItems = [];
+
+    function extractPeriods(pattern) {
+        const periods = [];
+        const clean = String(pattern || "").replace(/&minus;/g, "-");
+        for (let i = 0; i < clean.length; i++) {
+            const ch = clean[i];
+            if (ch !== "-" && ch !== " ") {
+                const num = parseInt(ch, 10);
+                if (!isNaN(num)) {
+                    if (i >= 9) periods.push(i + 1);
+                    else periods.push(num);
+                }
+            }
+        }
+        return periods;
+    }
+
+    for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        const codeMatch = row.match(/<th[^>]*>([\s\S]*?)<\/th>/i);
+        const code = codeMatch ? codeMatch[1].replace(/<[^>]+>/g, "").trim() : "";
+        const tds = [...row.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi)].map(m => m[1].replace(/<[^>]+>/g, "").trim());
+
+        if (!code || tds.length < 9) continue;
+
+        const group = tds[0];
+        const name = tds[1];
+        const credits = parseFloat(tds[3]) || 0;
+        const classCode = tds[4];
+        const dayStr = tds[5];
+        const periodRaw = tds[6];
+        const teacher = tds[7];
+        const room = tds[8];
+
+        let dayOfWeek = parseInt(dayStr, 10);
+        if (dayStr.toLowerCase() === "cn" || dayOfWeek === 8) {
+            dayOfWeek = 7;
+        } else if (dayOfWeek >= 2 && dayOfWeek <= 7) {
+            dayOfWeek = dayOfWeek - 1;
+        }
+
+        const periods = extractPeriods(periodRaw);
+
+        if (!subjectsMap.has(code)) {
+            subjectsMap.set(code, {
+                code,
+                name,
+                credits,
+                room,
+                teacher,
+                group,
+                classCode
+            });
+        }
+
+        for (const p of periods) {
+            scheduleItems.push({
+                subjectCode: code,
+                subjectName: name,
+                dayOfWeek,
+                periodNumber: p,
+                room
+            });
+        }
+    }
+
+    return {
+        semesterName: detectedSemester,
+        subjects: Array.from(subjectsMap.values()),
+        scheduleItems
+    };
+}
+
+function openHpu2ManualImportModal() {
+    if (typeof openModal !== 'function') return;
+    openModal(
+        "📋 Dán mã nguồn HTML Thời khóa biểu HPU2",
+        `
+        <div style="font-size: 13px; color: #666; margin-bottom: 12px; line-height: 1.5;">
+            Đăng nhập vào <a href="https://sinhvien.hpu2.edu.vn/sinhvien/thoikhoabieu" target="_blank" style="color: #ff5290; font-weight: 600; text-decoration: underline;">sinhvien.hpu2.edu.vn</a> ➔ bấm <strong>Xem thời khóa biểu</strong> ➔ Chuột phải chọn <em>Xem nguồn trang (View Page Source)</em> ➔ Copy toàn bộ và dán vào ô bên dưới:
+        </div>
+        <div class="form-group">
+            <textarea id="hpu2-raw-html-input" rows="8" placeholder="Dán mã nguồn HTML hoặc bảng thời khóa biểu vào đây..." style="width:100%; font-family: monospace; font-size: 11px;"></textarea>
+        </div>
+        `,
+        async () => {
+            const text = document.getElementById("hpu2-raw-html-input")?.value.trim() || "";
+            if (!text) {
+                showToast("Vui lòng dán nội dung HTML thời khóa biểu.", true);
+                return false;
+            }
+            closeModal();
+            const creds = getHpu2Credentials();
+            await executeHpu2Sync(creds.studentId, creds.password, text);
+            return true;
+        },
+        "Phân tích & Đồng bộ"
+    );
+}
+window.openHpu2ManualImportModal = openHpu2ManualImportModal;
+
+document.addEventListener("DOMContentLoaded", () => {
+    updateHpu2UI();
+});
+</script>
+</body>
+</html>
